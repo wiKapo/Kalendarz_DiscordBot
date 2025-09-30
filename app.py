@@ -56,10 +56,9 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
 
 @bot.tree.command(name="create", description="Tworzy nowy kalendarz")
 async def create(interaction: discord.Interaction):
-    calendar_msg = await interaction.response.send_message(':calendar:\tKalendarz PG 2025\t:calendar:\n\t\t\t\t\tPUSTE')
-    await calendar_msg.edit(content=calendar_msg.content+"\nHiya")
+    await interaction.response.send_message(':calendar:\tKalendarz PG 2025\t:calendar:\n\t\t\t\t\tPUSTE')
     with open('calendar.txt', 'w') as f:
-        f.write(str(calendar_msg))
+        f.write(str(interaction))
 
 
 @bot.tree.command(name="add", description="Dodaje nowe wydarzenie")
@@ -70,17 +69,18 @@ async def add(interaction: discord.Interaction):
 
 @bot.tree.command(name="update", description="Zaktualizuj kalendarz")
 async def update(interaction: discord.Interaction):
-    #  DATA (godzina) ([grupa]) - NAZWA (miejsce)
-    # try:
-    #     with open("calendar.txt", "r") as f:
-    #         calendar_msg = f.read()
-    # except FileNotFoundError:
-    #     await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
-    #     return
-    #
-    # print(calendar_msg)
+    # DATA (godzina) ([grupa]) - NAZWA (miejsce)
+    try:
+        with open("calendar.txt", "r") as f:
+            calendar_interaction = f.read()
+    except FileNotFoundError:
+        await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
+        return
+
+    print(calendar_interaction)
+    await interaction.response.send_message(calendar_interaction.response, ephemeral=True)
+    # await calendar_interaction.edit_original_response(content=calendar_interaction.response)
     # await calendar_msg.edit(content=calendar_msg.content.split('\n')[0]+"HELLO THERE")
-    interaction.message.interaction_metadata
 
     # try:
     #     with open("events.json", "r") as f:
