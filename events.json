@@ -2,5 +2,17 @@
     {
         "date": "01.10.2025",
         "name": "Rozpocz\u0119cie roku"
+    },
+    {
+        "date": "0909",
+        "name": "Kalendarz machen",
+        "group": "XD"
+    },
+    {
+        "date": "01.10.2025",
+        "time": "12:05",
+        "name": "super WYDARZENIE",
+        "group": "8B",
+        "place": "PG WP.pl"
     }
 ]

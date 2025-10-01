@@ -19,6 +19,7 @@ async def on_ready():
 
 
 class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
+    # TODO check for date format and time format optionally
     date = discord.ui.TextInput(label="Data", style=discord.TextStyle.short,
                                 placeholder="Podaj datę (na przykład 01.12.2025)")
     time = discord.ui.TextInput(label="Godzina", style=discord.TextStyle.short, placeholder="Podaj godzinę",
@@ -56,9 +57,9 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
 
 @bot.tree.command(name="create", description="Tworzy nowy kalendarz")
 async def create(interaction: discord.Interaction):
-    await interaction.response.send_message(':calendar:\tKalendarz PG 2025\t:calendar:\n\t\t\t\t\tPUSTE')
+    calendar_msg = await interaction.response.send_message(':calendar:\tKalendarz PG 2025\t:calendar:\n\t\t\t\t\tPUSTE')
     with open('calendar.txt', 'w') as f:
-        f.write(str(interaction))
+        f.write(f'{str(calendar_msg.message_id)} {str(interaction.channel.id)}')
 
 
 @bot.tree.command(name="add", description="Dodaje nowe wydarzenie")
@@ -72,22 +73,38 @@ async def update(interaction: discord.Interaction):
     # DATA (godzina) ([grupa]) - NAZWA (miejsce)
     try:
         with open("calendar.txt", "r") as f:
-            calendar_interaction = f.read()
+            data = f.read()
+            calendar_message_id = data.split(' ')[0]
+            calendar_channel_id = data.split(' ')[1]
     except FileNotFoundError:
         await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
         return
 
-    print(calendar_interaction)
-    await interaction.response.send_message(calendar_interaction.response, ephemeral=True)
-    # await calendar_interaction.edit_original_response(content=calendar_interaction.response)
-    # await calendar_msg.edit(content=calendar_msg.content.split('\n')[0]+"HELLO THERE")
+    print(calendar_message_id)
+    calendar_message = await (await interaction.guild.fetch_channel(calendar_channel_id)).fetch_message(
+        calendar_message_id)
 
-    # try:
-    #     with open("events.json", "r") as f:
-    #         events = json.load(f)
-    #         for event in events:
-    # except FileNotFoundError:
-    #     interaction.message.
+    try:
+        with open("events.json", "r") as f:
+            events = json.load(f)
+            message = "\n"
+            for event in events:
+                message += "**"
+                message += event.get('date') + " "
+                if event.get('time'):
+                    message += "**(" + event.get('time') + ")** "
+                if event.get('group'):
+                    message += "**[" + event.get('group') + "]** "
+                message += event.get('name')
+                if event.get('place'):
+                    message += " -> " + event.get('place')
+                message += " **\n"
+    except FileNotFoundError:
+        message = "\n\t\t\t\t\tPUSTE"
+
+    await calendar_message.edit(content=f'{calendar_message.content.split('\n')[0]}{message}')
+
+    await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)
 
 
 @bot.tree.command(name="delete", description="Usuwa wydarzenie")
