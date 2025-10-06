@@ -1,7 +1,12 @@
+import os
+
 import discord
 from discord.ext import commands
 import json
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -128,4 +133,4 @@ async def edit(interaction: discord.Interaction):
     # await calendar_msg.edit(content=f'{calendar_msg.content}\nHELLO there :)')
 
 
-bot.run()
+bot.run(os.getenv("BOT_TOKEN"))
