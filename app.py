@@ -1,10 +1,10 @@
 import os
-
 import discord
 from discord.ext import commands
 import json
 from datetime import datetime
 from dotenv import load_dotenv
+from operator import itemgetter
 
 load_dotenv()
 
@@ -66,7 +66,7 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
             events = json.load(f)
             events.append(new_event)
             f.seek(0)
-            json.dump(events, f, indent=4)
+            json.dump(sorted(events, key=itemgetter('timestamp')), f, indent=4)
 
         await interaction.response.send_message(f'Dodano wydarzenie *{self.name}* do kalendarza', ephemeral=True)
 
@@ -93,20 +93,21 @@ async def update(interaction: discord.Interaction):
             calendar_message_id = data.split(' ')[0]
             calendar_channel_id = data.split(' ')[1]
     except FileNotFoundError:
-        print("HI")
-        # await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
+        await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
         return
 
-    print(calendar_message_id)
     calendar_message = await (await interaction.guild.fetch_channel(calendar_channel_id)).fetch_message(
         calendar_message_id)
 
     try:
-        with open("events.json", "r") as f:
+        with (open("events.json", "r") as f):
             events = json.load(f)
             message = "\n"
             for event in events:
-                message += "<t:" + str(event.get('timestamp')) + ">** "
+                message += "<t:" + str(event.get('timestamp'))
+                if event.get('whole_day') == 'True':
+                    message += ":D"
+                message += ">** "
                 if event.get('group'):
                     message += "**[" + event.get('group') + "]** "
                 message += event.get('name')
