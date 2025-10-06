@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import json
+from datetime import datetime
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -31,9 +32,18 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
                                  required=False)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        new_event = {"date": self.date.value}
+
         if self.time.value:
-            new_event.update({"time": self.time.value})
+            dt = datetime.strptime(f"{self.date.value} {self.time.value}", "%d.%m.%Y %H:%M")
+        else:
+            dt = datetime.strptime(self.date.value, "%d.%m.%Y")
+        timestamp = int(dt.timestamp())
+
+        new_event = {"timestamp": str(timestamp)}
+        if self.time.value:
+            new_event.update({"whole_day": "False"})
+        else:
+            new_event.update({"whole_day": "True"})
         new_event.update({"name": self.name.value})
         if self.group.value:
             new_event.update({"group": self.group.value})
@@ -46,6 +56,7 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
         except FileExistsError:
             pass
 
+        # Error if events.json file exists and there is nothing inside. To resolve the problem delete the file.
         with open("events.json", "r+") as f:
             events = json.load(f)
             events.append(new_event)
@@ -77,7 +88,8 @@ async def update(interaction: discord.Interaction):
             calendar_message_id = data.split(' ')[0]
             calendar_channel_id = data.split(' ')[1]
     except FileNotFoundError:
-        await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
+        print("HI")
+        # await interaction.response.send_message('Kalendarz nie istnieje', ephemeral=True)
         return
 
     print(calendar_message_id)
@@ -89,10 +101,7 @@ async def update(interaction: discord.Interaction):
             events = json.load(f)
             message = "\n"
             for event in events:
-                message += "**"
-                message += event.get('date') + " "
-                if event.get('time'):
-                    message += "**(" + event.get('time') + ")** "
+                message += "<t:" + str(event.get('timestamp')) + ">** "
                 if event.get('group'):
                     message += "**[" + event.get('group') + "]** "
                 message += event.get('name')
@@ -119,4 +128,4 @@ async def edit(interaction: discord.Interaction):
     # await calendar_msg.edit(content=f'{calendar_msg.content}\nHELLO there :)')
 
 
-bot.run("MTQyMjUwNzUxNzU2MDIyNTgwNQ.GcuSZ_.oEUr39-1rcMJsBr2c5JHpLaXrXlBKaJXWAkSCs")
+bot.run()
