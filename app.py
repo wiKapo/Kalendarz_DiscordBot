@@ -27,6 +27,15 @@ async def on_ready():
         print("Error with syncing bot commands: ", e)
 
 
+async def check_user(interaction):
+    allowed_users = map(int, os.getenv("USERS").split(','))
+    if interaction.user.id in allowed_users:
+        return True
+
+    await interaction.response.send_message('Brak dostępu ;)', ephemeral=True)
+    return False
+
+
 class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
     # TODO check for date format and time format optionally
     date = discord.ui.TextInput(label="Data", style=discord.TextStyle.short,
@@ -76,6 +85,8 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
 
 @bot.tree.command(name="create", description="Tworzy nowy kalendarz")
 async def create(interaction: discord.Interaction):
+    if not await check_user(interaction): return
+
     calendar_msg = await interaction.response.send_message(':calendar:\tKalendarz PG 2025\t:calendar:\n\t\t\t\t\tPUSTE')
     with open('calendar.txt', 'w') as f:
         f.write(f'{str(calendar_msg.message_id)} {str(interaction.channel.id)}')
@@ -83,12 +94,16 @@ async def create(interaction: discord.Interaction):
 
 @bot.tree.command(name="add", description="Dodaje nowe wydarzenie")
 async def add(interaction: discord.Interaction):
+    if not await check_user(interaction): return
+
     modal = CreateCalendarModal()
     await interaction.response.send_modal(modal)
 
 
 @bot.tree.command(name="update", description="Zaktualizuj kalendarz")
 async def update(interaction: discord.Interaction):
+    if not await check_user(interaction): return
+
     # DATA (godzina) ([grupa]) - NAZWA (miejsce)
     try:
         with open("calendar.txt", "r") as f:
@@ -146,6 +161,8 @@ async def delete(interaction: discord.Interaction, id: int):
 
 @bot.tree.command(name="edit", description="Zmienia istniejące wydarzenie")
 async def edit(interaction: discord.Interaction):
+    if not await check_user(interaction): return
+
     await interaction.response.send_message('WIP', ephemeral=True)
     pass
 
