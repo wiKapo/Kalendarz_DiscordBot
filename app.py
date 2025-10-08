@@ -14,6 +14,9 @@ intents.messages = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 
 
+# Switch to sqlite
+
+
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
@@ -57,7 +60,7 @@ class CreateCalendarModal(discord.ui.Modal, title="Dodaj wydarzenie"):
 
         try:
             with open("events.json", "x") as f:
-                f.write(json.dumps([]))
+                f.write('[]')
         except FileExistsError:
             pass
 
@@ -102,20 +105,24 @@ async def update(interaction: discord.Interaction):
     try:
         with (open("events.json", "r") as f):
             events = json.load(f)
-            message = "\n"
-            for event in events:
-                message += "<t:" + str(event.get('timestamp'))
-                if event.get('whole_day') == 'True':
-                    message += ":D"
-                message += ">** "
-                if event.get('group'):
-                    message += "**[" + event.get('group') + "]** "
-                message += event.get('name')
-                if event.get('place'):
-                    message += " -> " + event.get('place')
-                message += " **\n"
     except FileNotFoundError:
+        events = []
+
+    if len(events) == 0:
         message = "\n\t\t\t\t\tPUSTE"
+    else:
+        message = ""
+        for event in events:
+            message += "\n<t:" + str(event.get('timestamp'))
+            if event.get('whole_day') == 'True':
+                message += ":D"
+            message += ">** "
+            if event.get('group'):
+                message += "**[" + event.get('group') + "]** "
+            message += event.get('name')
+            if event.get('place'):
+                message += " -> " + event.get('place')
+            message += " **"
 
     await calendar_message.edit(content=f'{calendar_message.content.split('\n')[0]}{message}')
 
@@ -123,15 +130,24 @@ async def update(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="delete", description="Usuwa wydarzenie")
-async def delete(interaction: discord.Interaction):
+@discord.app_commands.describe(id="Numer wydarzenia do usunięcia (od najstarszego / od góry)")
+async def delete(interaction: discord.Interaction, id: int):
+    if not await check_user(interaction): return
+
+    with open("events.json", "r+") as f:
+        events = json.load(f)
+        f.truncate(0)
+        events.remove(events[id - 1])
+        f.seek(0)
+        json.dump(events, f, indent=4)
+    await interaction.response.send_message(f'Wydarzenie numer {id} zostało usunięte', ephemeral=True)
     pass
 
 
 @bot.tree.command(name="edit", description="Zmienia istniejące wydarzenie")
 async def edit(interaction: discord.Interaction):
+    await interaction.response.send_message('WIP', ephemeral=True)
     pass
-
-    # await calendar_msg.edit(content=f'{calendar_msg.content}\nHELLO there :)')
 
 
 bot.run(os.getenv("BOT_TOKEN"))
