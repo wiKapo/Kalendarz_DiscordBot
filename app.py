@@ -46,8 +46,8 @@ async def check_user(interaction) -> bool:
         return True
 
     connection, cursor = db_connect()
-    cursor.execute('SELECT UserId FROM managers WHERE GuildId = ?', interaction.guild.id)
-    allowed_users = map(lambda a: a[0], cursor.fetchall())
+    cursor.execute('SELECT UserId FROM users WHERE GuildId = ?', interaction.guild.id)
+    allowed_users = cursor.fetchall()[0]
     db_disconnect(connection, cursor)
 
     if interaction.user.id in allowed_users:
