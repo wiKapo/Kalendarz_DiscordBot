@@ -358,9 +358,10 @@ class EventsCog(commands.Cog):
             old_timestamp = cursor.fetchone()[0]
             if not date:
                 date = datetime.fromtimestamp(old_timestamp).date()
+                date = f"{date:%d.%m.%Y}"
             if not time:
                 time = datetime.fromtimestamp(old_timestamp).time()
-                time = f"{time.hour}:{time.minute}"
+                time = f"{time:%H:%M}"
 
             if time:
                 dt = datetime.strptime(f"{date} {time}", "%d.%m.%Y %H:%M")
