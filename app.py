@@ -46,8 +46,8 @@ async def check_user(interaction) -> bool:
         return True
 
     connection, cursor = db_connect()
-    cursor.execute('SELECT UserId FROM users WHERE GuildId = ?', interaction.guild.id)
-    allowed_users = cursor.fetchall()[0]
+    cursor.execute('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
+    allowed_users = map(lambda a: a[0], cursor.fetchall())
     db_disconnect(connection, cursor)
 
     if interaction.user.id in allowed_users:
@@ -113,17 +113,14 @@ class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć 
                              default="Usuwając kalendarz usuniesz również wydarzenia!", required=False)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        print("siema")
         connection, cursor = db_connect()
         cursor.execute("SELECT Id, MessageId FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
-        print("Elo")
         calendar_id, calendar_message_id = cursor.fetchone()
         calendar_message = await (await interaction.guild.fetch_channel(interaction.channel.id)).fetch_message(
             calendar_message_id)
         await calendar_message.delete()
 
-        print("Wow")
         cursor.execute("DELETE FROM events WHERE CalendarId = ?", (calendar_id,))
         cursor.execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
@@ -149,6 +146,8 @@ class CalendarCog(commands.Cog):
         if cursor.fetchone():
             await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
         else:
+            print("[INFO]\tCreating new calendar")
+
             show_title = title
             if show_title is None:
                 show_title = DEFAULT_TITLE
@@ -166,6 +165,7 @@ class CalendarCog(commands.Cog):
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
+        print("[INFO]\tUpdating calendar")
         cursor.execute("SELECT MessageId FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
         calendar_message_id = cursor.fetchone()[0]
@@ -183,7 +183,6 @@ class CalendarCog(commands.Cog):
         calendar_message = await (await interaction.guild.fetch_channel(interaction.channel.id)).fetch_message(
             calendar_message_id)
 
-        print(events)
         if len(events) == 0:
             message = "\nPUSTE"
         else:
@@ -229,6 +228,7 @@ class CalendarCog(commands.Cog):
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
+        print("[INFO]\tEditing calendar")
         cursor.execute("UPDATE calendars SET Title = ? WHERE GuildId = ? AND ChannelId = ?",
                        (title, interaction.guild.id, interaction.channel.id))
         connection.commit()
@@ -244,7 +244,7 @@ class CalendarCog(commands.Cog):
         if not await check_if_calendar_exists(interaction, connection, cursor): return
         db_disconnect(connection, cursor)
 
-        print("test")
+        print("[INFO]\tDeleting calendar")
         await interaction.response.send_modal(DeleteCalendarModal())
 
 
@@ -273,7 +273,6 @@ class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
         cursor.execute("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
         calendar_id = cursor.fetchone()[0]
-        print(calendar_id)
         cursor.execute(
             "INSERT INTO events (CalendarId, Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?, ?)",
             (calendar_id, timestamp, whole_day, self.name.value, self.group.value, self.place.value))
@@ -297,6 +296,7 @@ class EventsCog(commands.Cog):
         if not await check_if_calendar_exists(interaction, connection, cursor): return
         db_disconnect(connection, cursor)
 
+        print("[INFO]\tAdding event")
         await interaction.response.send_modal(AddEventModal())
 
     @event_group.command(name="delete", description="Usuwa wydarzenie")
@@ -309,6 +309,7 @@ class EventsCog(commands.Cog):
 
         if not await check_if_event_id_exists(interaction, connection, cursor, event_id): return
 
+        print(f"[INFO]\tDeleting event number {event_id}")
         cursor.execute(
             "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
             "WHERE GuildId = ? AND ChannelId = ? ORDER BY events.Timestamp LIMIT 1 OFFSET ?)",
@@ -324,6 +325,7 @@ class EventsCog(commands.Cog):
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
+        print("[INFO]\tDeleting expired events")
         cursor.execute(
             "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
             "WHERE GuildId = ? AND ChannelId = ? AND timestamp < ?)",
@@ -345,6 +347,7 @@ class EventsCog(commands.Cog):
 
         if not await check_if_event_id_exists(interaction, connection, cursor, event_id): return
 
+        print(f"[INFO]\tEditing event number {event_id}")
         cursor.execute("SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
                        "WHERE GuildId = ? AND ChannelId = ? ORDER BY events.Timestamp LIMIT 1 OFFSET ?",
                        (interaction.guild.id, interaction.channel.id, event_id - 1))
@@ -396,6 +399,7 @@ class UsersCog(commands.Cog):
     async def add(self, interaction: discord.Interaction, user: discord.User):
         if not await check_user(interaction): return
 
+        print(f"[INFO]\tAdding user {user.name}")
         connection, cursor = db_connect()
         cursor.execute("INSERT INTO users (UserId, Name, GuildId) VALUES (?, ?, ?)",
                        (user.id, user.name, interaction.guild.id))
@@ -412,6 +416,7 @@ class UsersCog(commands.Cog):
         connection, cursor = db_connect()
         cursor.execute("SELECT * FROM users WHERE UserId = ? AND GuildId = ?", (user.id, interaction.guild.id))
         if cursor.fetchone():
+            print(f"[INFO]\tRemoving user {user.name}")
             cursor.execute("DELETE FROM users WHERE UserId = ? AND GuildId = ?", (user.id, interaction.guild.id))
             connection.commit()
             await interaction.response.send_message(f'Usunięto użytkownika *{user.name}*', ephemeral=True)

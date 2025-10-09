@@ -1,2 +1,4 @@
 .env
 /.idea
+calendar_database.db
+/.venv
