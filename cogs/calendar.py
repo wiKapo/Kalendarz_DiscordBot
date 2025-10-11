@@ -122,22 +122,6 @@ class CalendarCog(commands.Cog):
 
         await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)
 
-    @cal_group.command(name="edit", description="Edytuj kalendarz")
-    @discord.app_commands.describe(title="Tytuł kalendarza (pozostawione puste przywraca wartość domyślną)")
-    async def edit(self, interaction: discord.Interaction, title: str | None, show_sections: bool = False):
-        if not await check_user(interaction): return
-
-        connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
-
-        print("[INFO]\tEditing calendar")
-        cursor.execute("UPDATE calendars SET Title = ? WHERE GuildId = ? AND ChannelId = ?",
-                       (title, interaction.guild.id, interaction.channel.id))
-        connection.commit()
-        await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
-
-        db_disconnect(connection, cursor)
-
     @cal_group.command(name="delete", description="Usuń kalendarz")
     async def delete(self, interaction: discord.Interaction):
         if not await check_user(interaction): return
@@ -148,6 +132,44 @@ class CalendarCog(commands.Cog):
 
         print("[INFO]\tDeleting calendar")
         await interaction.response.send_modal(DeleteCalendarModal())
+
+    edit_group = discord.app_commands.Group(name="edit", description="Edycja kalendarza", parent=cal_group)
+
+    @edit_group.command(name="title", description="Edytuj tytuł kalendarza")
+    @discord.app_commands.describe(title="Tytuł kalendarza (pozostawione puste przywraca wartość domyślną)")
+    async def title(self, interaction: discord.Interaction, title: str | None):
+        if not await check_user(interaction): return
+
+        connection, cursor = db_connect()
+        if not await check_if_calendar_exists(interaction, connection, cursor): return
+
+        print("[INFO]\tEditing title of the calendar")
+        cursor.execute("UPDATE calendars SET Title = ? WHERE GuildId = ? AND ChannelId = ?",
+                       (title, interaction.guild.id, interaction.channel.id))
+        connection.commit()
+        await interaction.response.send_message("Tytuł kalendarza został zmieniony", ephemeral=True)
+
+        db_disconnect(connection, cursor)
+
+    @edit_group.command(name="sections", description="Zdecyduj, czy pokazywać sekcje w kalendarzu")
+    @discord.app_commands.describe(
+        choice="Wybierz, czy chcesz pokazywać sekcje w kalendarzu (dzisiaj/jutro/w tym tygodni/itd.) [tak/NIE]")
+    @discord.app_commands.choices(choice=[discord.app_commands.Choice(name="Tak", value=True),
+                                          discord.app_commands.Choice(name="Nie", value=False)])
+    async def sections(self, interaction: discord.Interaction, choice: discord.app_commands.Choice[int]):
+        if not await check_user(interaction): return
+
+        connection, cursor = db_connect()
+        if not await check_if_calendar_exists(interaction, connection, cursor): return
+
+        print("[INFO]\tEditing if calendar shows sections")
+        cursor.execute("UPDATE calendars SET ShowSections = ? WHERE GuildId = ? AND ChannelId = ?",
+                       (choice.value, interaction.guild.id, interaction.channel.id))
+
+        connection.commit()
+        await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
+
+        db_disconnect(connection, cursor)
 
 
 async def setup(bot):

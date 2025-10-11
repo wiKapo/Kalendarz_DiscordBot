@@ -57,41 +57,6 @@ class EventCog(commands.Cog):
         print("[INFO]\tAdding event")
         await interaction.response.send_modal(AddEventModal())
 
-    @event_group.command(name="delete", description="Usuwa wydarzenie")
-    @discord.app_commands.describe(event_id="Numer wydarzenia do usunięcia (od najstarszego / od góry)")
-    async def delete(self, interaction: discord.Interaction, event_id: int):
-        if not await check_user(interaction): return
-
-        connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
-
-        if not await check_if_event_id_exists(interaction, connection, cursor, event_id): return
-
-        print(f"[INFO]\tDeleting event number {event_id}")
-        cursor.execute(
-            "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-            "WHERE GuildId = ? AND ChannelId = ? ORDER BY events.Timestamp LIMIT 1 OFFSET ?)",
-            (interaction.guild.id, interaction.channel.id, event_id - 1))
-        connection.commit()
-        db_disconnect(connection, cursor)
-        await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)
-
-    @event_group.command(name="delete_expired", description="Usuwa przedawnione wydarzenia")
-    async def delete_expired(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
-
-        connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
-
-        print("[INFO]\tDeleting expired events")
-        cursor.execute(
-            "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-            "WHERE GuildId = ? AND ChannelId = ? AND timestamp < ?)",
-            (interaction.guild.id, interaction.channel.id, int(datetime.now().timestamp())))
-        connection.commit()
-        db_disconnect(connection, cursor)
-        await interaction.response.send_message('Usunięto przedawnione wydarzenia', ephemeral=True)
-
     @event_group.command(name="edit", description="Zmienia istniejące wydarzenie")
     @discord.app_commands.describe(event_id="Numer wydarzenia do edycji (od najstarszego / od góry)", date="Data",
                                    time="Godzina", name="Nazwa wydarzenia", group="Grupa przypisana do wydarzenia",
@@ -145,6 +110,44 @@ class EventCog(commands.Cog):
         db_disconnect(connection, cursor)
 
         await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało zmienione', ephemeral=True)
+
+    delete_group = discord.app_commands.Group(name="delete", description="Komendy do usuwania wydarzeń",
+                                              parent=event_group)
+
+    @delete_group.command(name="one", description="Usuwa wydarzenie")
+    @discord.app_commands.describe(event_id="Numer wydarzenia do usunięcia (od najstarszego / od góry)")
+    async def one(self, interaction: discord.Interaction, event_id: int):
+        if not await check_user(interaction): return
+
+        connection, cursor = db_connect()
+        if not await check_if_calendar_exists(interaction, connection, cursor): return
+
+        if not await check_if_event_id_exists(interaction, connection, cursor, event_id): return
+
+        print(f"[INFO]\tDeleting event number {event_id}")
+        cursor.execute(
+            "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
+            "WHERE GuildId = ? AND ChannelId = ? ORDER BY events.Timestamp LIMIT 1 OFFSET ?)",
+            (interaction.guild.id, interaction.channel.id, event_id - 1))
+        connection.commit()
+        db_disconnect(connection, cursor)
+        await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)
+
+    @delete_group.command(name="expired", description="Usuwa przedawnione wydarzenia")
+    async def expired(self, interaction: discord.Interaction):
+        if not await check_user(interaction): return
+
+        connection, cursor = db_connect()
+        if not await check_if_calendar_exists(interaction, connection, cursor): return
+
+        print("[INFO]\tDeleting expired events")
+        cursor.execute(
+            "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
+            "WHERE GuildId = ? AND ChannelId = ? AND timestamp < ?)",
+            (interaction.guild.id, interaction.channel.id, int(datetime.now().timestamp())))
+        connection.commit()
+        db_disconnect(connection, cursor)
+        await interaction.response.send_message('Usunięto przedawnione wydarzenia', ephemeral=True)
 
 
 async def setup(bot):
