@@ -17,7 +17,7 @@ class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
     async def on_submit(self, interaction: discord.Interaction) -> None:
 
         if self.time.value:
-            dt = datetime.strptime(f"{self.date.value} {self.time.value}", "%d.%m.%Y %H:%M")
+            dt = datetime.strptime(f"{self.date.value} {self.time.value.replace(".", ":")}", "%d.%m.%Y %H:%M")
         else:
             dt = datetime.strptime(self.date.value, "%d.%m.%Y")
         timestamp = int(dt.timestamp())
