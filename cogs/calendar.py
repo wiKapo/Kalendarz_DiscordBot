@@ -68,9 +68,9 @@ class CalendarCog(commands.Cog):
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
         print("[INFO]\tUpdating calendar")
-        cursor.execute("SELECT MessageId FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+        cursor.execute("SELECT MessageId, ShowSections FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
-        calendar_message_id = cursor.fetchone()[0]
+        calendar_message_id, show_sections = cursor.fetchone()
 
         cursor.execute(
             "SELECT Timestamp, WholeDay, Name, Team, Place FROM events JOIN calendars ON events.CalendarId = calendars.Id "
@@ -89,8 +89,28 @@ class CalendarCog(commands.Cog):
             message = "\nPUSTE"
         else:
             message = ""
+            current_day_delta = 0
             for event in events:
                 message += "\n"
+
+                if show_sections:
+                    delta_days = (datetime.fromtimestamp(event[0]).date() - datetime.now().date()).days
+                    if delta_days >= 0 and delta_days >= current_day_delta != 99:
+                        if delta_days < 1:
+                            message += "\n\t---==[  Dzisiaj  ]==---\n"
+                            current_day_delta = 1
+                        elif delta_days < 2:
+                            message += "\n\t---==[  Jutro  ]==---\n"
+                            current_day_delta = 2
+                        elif delta_days < 7:
+                            message += "\n\t---==[  W tym tygodniu  ]==---\n"
+                            current_day_delta = 7
+                        elif delta_days < 14:
+                            message += "\n\t---==[  Za tydzień  ]==---\n"
+                            current_day_delta = 14
+                        else:
+                            message += "\n\t---==[  W przyszłości  ]==---\n"
+                            current_day_delta = 99
 
                 # If expired
                 if event[0] < int(datetime.now().timestamp()):
