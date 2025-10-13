@@ -55,11 +55,17 @@ class CalendarCog(commands.Cog):
             show_title = title
             if show_title is None:
                 show_title = DEFAULT_TITLE
+
+            if show_sections is None:
+                show_sections = False
+            else:
+                show_sections = show_sections.value
+
             calendar_msg = await interaction.response.send_message(f':calendar:\t{show_title}\t:calendar:\nPUSTE')
 
             cursor.execute(
                 "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
-                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections.value))
+                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections))
             connection.commit()
 
         db_disconnect(connection, cursor)
