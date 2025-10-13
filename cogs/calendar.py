@@ -37,8 +37,11 @@ class CalendarCog(commands.Cog):
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
     @cal_group.command(name="create", description="Tworzy nowy kalendarz")
-    @discord.app_commands.describe(title="Tytuł kalendarza")
-    async def create(self, interaction: discord.Interaction, title: str | None, show_sections: bool = False):
+    @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
+    @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
+                                                 discord.app_commands.Choice(name="Nie", value=False)])
+    async def create(self, interaction: discord.Interaction, title: str | None,
+                     show_sections: discord.app_commands.Choice[int] | None):
         if not await check_user(interaction): return
 
         connection, cursor = db_connect()
@@ -92,9 +95,9 @@ class CalendarCog(commands.Cog):
             current_day_delta = 0
             for event in events:
                 message += "\n"
+                delta_days = (datetime.fromtimestamp(event[0]).date() - datetime.now().date()).days
 
                 if show_sections:
-                    delta_days = (datetime.fromtimestamp(event[0]).date() - datetime.now().date()).days
                     if delta_days >= 0 and delta_days >= current_day_delta != 99:
                         if delta_days < 1:
                             message += "\n\t---==[  Dzisiaj  ]==---\n"
@@ -113,7 +116,7 @@ class CalendarCog(commands.Cog):
                             current_day_delta = 99
 
                 # If expired
-                if event[0] < int(datetime.now().timestamp()):
+                if delta_days < 0:
                     message += "~~"
 
                 # Timestamp
@@ -133,7 +136,7 @@ class CalendarCog(commands.Cog):
                 message += " **"
 
                 # If expired
-                if event[0] < int(datetime.now().timestamp()):
+                if delta_days < 0:
                     message += "~~"
 
         if title is None:

@@ -18,14 +18,11 @@ class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
 
         if self.time.value:
             dt = datetime.strptime(f"{self.date.value} {self.time.value.replace(".", ":")}", "%d.%m.%Y %H:%M")
-        else:
-            dt = datetime.strptime(self.date.value, "%d.%m.%Y")
-        timestamp = int(dt.timestamp())
-
-        if self.time.value:
             whole_day = False
         else:
+            dt = datetime.strptime(self.date.value, "%d.%m.%Y")
             whole_day = True
+        timestamp = int(dt.timestamp())
 
         connection, cursor = db_connect()
         cursor.execute("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
@@ -59,8 +56,8 @@ class EventCog(commands.Cog):
 
     @event_group.command(name="edit", description="Zmienia istniejące wydarzenie")
     @discord.app_commands.describe(event_id="Numer wydarzenia do edycji (od najstarszego / od góry)", date="Data",
-                                   time="Godzina", name="Nazwa wydarzenia", group="Grupa przypisana do wydarzenia",
-                                   place="Miejsce ")
+                                   time="Godzina (Wpisz '-' aby wydarzenie trwało cały dzień)", name="Nazwa wydarzenia",
+                                   group="Grupa przypisana do wydarzenia", place="Miejsce ")
     async def edit(self, interaction: discord.Interaction, event_id: int, date: str | None, time: str | None,
                    name: str | None, group: str | None, place: str | None):
         if not await check_user(interaction): return
@@ -86,16 +83,13 @@ class EventCog(commands.Cog):
                 time = datetime.fromtimestamp(old_timestamp).time()
                 time = f"{time:%H:%M}"
 
-            if time:
+            if time and time != "-":
                 dt = datetime.strptime(f"{date} {time}", "%d.%m.%Y %H:%M")
-            else:
-                dt = datetime.strptime(date, "%d.%m.%Y")
-            timestamp = int(dt.timestamp())
-
-            if time:
                 whole_day = False
             else:
+                dt = datetime.strptime(date, "%d.%m.%Y")
                 whole_day = True
+            timestamp = int(dt.timestamp())
 
             cursor.execute("UPDATE events SET Timestamp = ?, WholeDay = ? WHERE Id = ?",
                            (timestamp, whole_day, db_event_id))
@@ -141,10 +135,11 @@ class EventCog(commands.Cog):
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
         print("[INFO]\tDeleting expired events")
-        cursor.execute(
-            "DELETE FROM events WHERE Id = (SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-            "WHERE GuildId = ? AND ChannelId = ? AND timestamp < ?)",
-            (interaction.guild.id, interaction.channel.id, int(datetime.now().timestamp())))
+        current_day = int(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0).timestamp())
+
+        cursor.execute("DELETE FROM events WHERE timestamp < ? AND CalendarId = (SELECT CalendarId FROM events "
+                       "JOIN calendars ON events.CalendarId = calendars.Id WHERE GuildId = ? AND ChannelId = ?)",
+                       (current_day, interaction.guild.id, interaction.channel.id))
         connection.commit()
         db_disconnect(connection, cursor)
         await interaction.response.send_message('Usunięto przedawnione wydarzenia', ephemeral=True)
