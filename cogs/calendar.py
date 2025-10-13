@@ -59,7 +59,7 @@ class CalendarCog(commands.Cog):
 
             cursor.execute(
                 "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
-                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections))
+                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections.value))
             connection.commit()
 
         db_disconnect(connection, cursor)
