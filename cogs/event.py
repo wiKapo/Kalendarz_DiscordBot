@@ -74,12 +74,12 @@ class EventCog(commands.Cog):
         db_event_id = cursor.fetchone()[0]
 
         if time or date:
-            cursor.execute("SELECT timestamp FROM events WHERE Id = ?", (db_event_id,))
-            old_timestamp = cursor.fetchone()[0]
+            cursor.execute("SELECT timestamp, WholeDay FROM events WHERE Id = ?", (db_event_id,))
+            old_timestamp, old_whole_day = cursor.fetchone()
             if not date:
                 date = datetime.fromtimestamp(old_timestamp).date()
                 date = f"{date:%d.%m.%Y}"
-            if not time:
+            if not time and not old_whole_day:
                 time = datetime.fromtimestamp(old_timestamp).time()
                 time = f"{time:%H:%M}"
 
