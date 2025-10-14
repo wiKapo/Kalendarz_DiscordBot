@@ -7,9 +7,8 @@ from global_functions import *
 
 
 class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
-    # TODO check for date format and time format optionally
     date = discord.ui.TextInput(label="Data", placeholder="Podaj datę (na przykład 1.12.2025)")
-    time = discord.ui.TextInput(label="Godzina", placeholder="Podaj godzinę", required=False)
+    time = discord.ui.TextInput(label="Godzina", placeholder="Podaj godzinę (np. 12:35)", required=False)
     name = discord.ui.TextInput(label="Nazwa", placeholder="Podaj nazwę wydarzenia")
     group = discord.ui.TextInput(label="Grupa", placeholder="Podaj grupę (np. 1, 3B)", required=False)
     place = discord.ui.TextInput(label="Miejsce", placeholder="Podaj miejsce wydarzenia", required=False)
@@ -34,7 +33,9 @@ class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
         connection.commit()
         db_disconnect(connection, cursor)
 
-        await interaction.response.send_message(f'Dodano wydarzenie *{self.name}* do kalendarza', ephemeral=True)
+        await interaction.response.send_message(
+            f'Dodano wydarzenie *{self.name}* do kalendarza.\nWydarzenia będą automatycznie usuwane po upłynięciu 3 tygodni od dnia wydarzenia',
+            ephemeral=True)
 
 
 class EventCog(commands.Cog):

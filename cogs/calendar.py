@@ -48,10 +48,23 @@ class CalendarCog(commands.Cog):
         calendar_ids = cursor.fetchall()
         db_disconnect(connection, cursor)
 
+        print("[INFO]\tRemoving old messages")
+        self.delete_old_messages()
+
         print("[INFO]\tStart of updating all calendars")
         for calendar_id in calendar_ids:
             await self.update_calendar(calendar_id[0])
         print("[INFO]\tEnd of updating all calendars")
+
+    def delete_old_messages(self):
+        # date 3 weeks ago
+        cutoff_timestamp = int(
+            (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - dt.timedelta(weeks=3)).timestamp())
+
+        connection, cursor = db_connect()
+        cursor.execute("DELETE FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
+        connection.commit()
+        db_disconnect(connection, cursor)
 
     async def update_calendar(self, calendar_id: int):
         connection, cursor = db_connect()
@@ -126,7 +139,7 @@ class CalendarCog(commands.Cog):
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
-    @cal_group.command(name="create", description="Tworzy nowy kalendarz")
+    @cal_group.command(name="create", description="Tworzy nowy kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC")
     @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
     @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
                                                  discord.app_commands.Choice(name="Nie", value=False)])
