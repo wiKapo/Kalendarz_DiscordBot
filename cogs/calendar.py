@@ -1,11 +1,14 @@
+import datetime as dt
 from datetime import datetime
 
 import discord
-from discord.ext import commands
+from discord.ext import tasks, commands
 
 from global_functions import *
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
+
+UPDATE_TIME = dt.time(hour=0, minute=0)
 
 
 class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć ten kalendarz?"):
@@ -33,66 +36,38 @@ class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć 
 class CalendarCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.update_loop.start()
 
-    cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
+    def cog_unload(self):
+        self.update_loop.cancel()
 
-    @cal_group.command(name="create", description="Tworzy nowy kalendarz")
-    @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
-    @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
-                                                 discord.app_commands.Choice(name="Nie", value=False)])
-    async def create(self, interaction: discord.Interaction, title: str | None,
-                     show_sections: discord.app_commands.Choice[int] | None):
-        if not await check_user(interaction): return
-
+    @tasks.loop(time=UPDATE_TIME)
+    async def update_loop(self):
         connection, cursor = db_connect()
-        cursor.execute("SELECT * FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                       (interaction.guild.id, interaction.channel.id))
-        if cursor.fetchone():
-            await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
-        else:
-            print("[INFO]\tCreating new calendar")
-
-            show_title = title
-            if show_title is None:
-                show_title = DEFAULT_TITLE
-
-            if show_sections is None:
-                show_sections = False
-            else:
-                show_sections = show_sections.value
-
-            calendar_msg = await interaction.response.send_message(f':calendar:\t{show_title}\t:calendar:\nPUSTE')
-
-            cursor.execute(
-                "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
-                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections))
-            connection.commit()
-
+        cursor.execute("SELECT Id FROM calendars")
+        calendar_ids = cursor.fetchall()
         db_disconnect(connection, cursor)
 
-    @cal_group.command(name="update", description="Zaktualizuj kalendarz")
-    async def update(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
-        connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
+        print("[INFO]\tStart of updating all calendars")
+        for calendar_id in calendar_ids:
+            await self.update_calendar(calendar_id[0])
+        print("[INFO]\tEnd of updating all calendars")
 
+    async def update_calendar(self, calendar_id: int):
+        connection, cursor = db_connect()
         print("[INFO]\tUpdating calendar")
-        cursor.execute("SELECT MessageId, ShowSections FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                       (interaction.guild.id, interaction.channel.id))
-        calendar_message_id, show_sections = cursor.fetchone()
+        cursor.execute("SELECT GuildId, ChannelId, MessageId, ShowSections, Title FROM calendars WHERE Id = ?",
+                       (calendar_id,))
+        guild_id, channel_id, calendar_message_id, show_sections, title = cursor.fetchone()
 
         cursor.execute(
             "SELECT Timestamp, WholeDay, Name, Team, Place FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-            "WHERE calendars.GuildId = ? AND calendars.ChannelId = ? ORDER BY timestamp",
-            (interaction.guild.id, interaction.channel.id))
+            "WHERE calendars.Id = ? ORDER BY timestamp", (calendar_id,))
         events = cursor.fetchall()
-        cursor.execute("SELECT Title FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                       (interaction.guild.id, interaction.channel.id))
-        title = cursor.fetchone()[0]
         db_disconnect(connection, cursor)
 
-        calendar_message = await (await interaction.guild.fetch_channel(interaction.channel.id)).fetch_message(
-            calendar_message_id)
+        calendar_message = await ((await (await self.bot.fetch_guild(guild_id)).fetch_channel(channel_id))
+                                  .fetch_message(calendar_message_id))
 
         if len(events) == 0:
             message = "\nPUSTE"
@@ -149,6 +124,52 @@ class CalendarCog(commands.Cog):
             title = DEFAULT_TITLE
         await calendar_message.edit(content=f':calendar:\t{title}\t:calendar:{message}')
 
+    cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
+
+    @cal_group.command(name="create", description="Tworzy nowy kalendarz")
+    @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
+    @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
+                                                 discord.app_commands.Choice(name="Nie", value=False)])
+    async def create(self, interaction: discord.Interaction, title: str | None,
+                     show_sections: discord.app_commands.Choice[int] | None):
+        if not await check_user(interaction): return
+
+        connection, cursor = db_connect()
+        cursor.execute("SELECT * FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+                       (interaction.guild.id, interaction.channel.id))
+        if cursor.fetchone():
+            await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
+        else:
+            print("[INFO]\tCreating new calendar")
+
+            show_title = title
+            if show_title is None:
+                show_title = DEFAULT_TITLE
+
+            if show_sections is None:
+                show_sections = False
+            else:
+                show_sections = show_sections.value
+
+            calendar_msg = await interaction.response.send_message(f':calendar:\t{show_title}\t:calendar:\nPUSTE')
+
+            cursor.execute(
+                "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
+                (interaction.guild.id, interaction.channel.id, calendar_msg.message_id, title, show_sections))
+            connection.commit()
+
+        db_disconnect(connection, cursor)
+
+    @cal_group.command(name="update", description="Zaktualizuj kalendarz")
+    async def update(self, interaction: discord.Interaction):
+        if not await check_user(interaction): return
+        connection, cursor = db_connect()
+        calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
+        if calendar_id is None: return
+        db_disconnect(connection, cursor)
+
+        await self.update_calendar(calendar_id)
+
         await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)
 
     @cal_group.command(name="delete", description="Usuń kalendarz")
@@ -170,11 +191,11 @@ class CalendarCog(commands.Cog):
         if not await check_user(interaction): return
 
         connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
+        calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
+        if calendar_id is None: return
 
         print("[INFO]\tEditing title of the calendar")
-        cursor.execute("UPDATE calendars SET Title = ? WHERE GuildId = ? AND ChannelId = ?",
-                       (title, interaction.guild.id, interaction.channel.id))
+        cursor.execute("UPDATE calendars SET Title = ? WHERE Id = ?", (title, calendar_id))
         connection.commit()
         await interaction.response.send_message("Tytuł kalendarza został zmieniony", ephemeral=True)
 
@@ -189,11 +210,11 @@ class CalendarCog(commands.Cog):
         if not await check_user(interaction): return
 
         connection, cursor = db_connect()
-        if not await check_if_calendar_exists(interaction, connection, cursor): return
+        calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
+        if calendar_id is None: return
 
         print("[INFO]\tEditing if calendar shows sections")
-        cursor.execute("UPDATE calendars SET ShowSections = ? WHERE GuildId = ? AND ChannelId = ?",
-                       (choice.value, interaction.guild.id, interaction.channel.id))
+        cursor.execute("UPDATE calendars SET ShowSections = ? WHERE Id = ?", (choice.value, calendar_id))
 
         connection.commit()
         await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)

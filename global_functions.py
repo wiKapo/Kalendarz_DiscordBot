@@ -15,14 +15,15 @@ def db_disconnect(connection, cursor):
     print('[DB]\tDisconnected')
 
 
-async def check_if_calendar_exists(interaction, connection, cursor) -> bool:
-    cursor.execute("SELECT * FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+async def check_if_calendar_exists(interaction, connection, cursor) -> None | int:
+    cursor.execute("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                    (interaction.guild.id, interaction.channel.id))
-    if not cursor.fetchone():
+    calendar_id = cursor.fetchone()
+    if not calendar_id:
         await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
         db_disconnect(connection, cursor)
-        return False
-    return True
+        return None
+    return calendar_id[0]
 
 
 async def check_user(interaction) -> bool:
