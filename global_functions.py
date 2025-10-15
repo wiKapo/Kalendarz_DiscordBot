@@ -27,8 +27,10 @@ async def check_if_calendar_exists(interaction, connection, cursor) -> None | in
 
 
 async def check_user(interaction) -> bool:
-    admins = map(int, os.getenv("USERS").split(','))
+    if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
+        return True
 
+    admins = map(int, os.getenv("USERS").split(','))
     if interaction.user.id in admins:
         return True
 
@@ -36,7 +38,6 @@ async def check_user(interaction) -> bool:
     cursor.execute('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
     allowed_users = map(lambda a: a[0], cursor.fetchall())
     db_disconnect(connection, cursor)
-
     if interaction.user.id in allowed_users:
         return True
 

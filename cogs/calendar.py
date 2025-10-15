@@ -33,6 +33,17 @@ class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć 
         await interaction.response.send_message("Kalendarz został usunięty RAZEM z wydarzeniami", ephemeral=True)
 
 
+def delete_old_messages():
+    # date 3 weeks ago
+    cutoff_timestamp = int(
+        (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - dt.timedelta(weeks=3)).timestamp())
+
+    connection, cursor = db_connect()
+    cursor.execute("DELETE FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
+    connection.commit()
+    db_disconnect(connection, cursor)
+
+
 class CalendarCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -49,22 +60,12 @@ class CalendarCog(commands.Cog):
         db_disconnect(connection, cursor)
 
         print("[INFO]\tRemoving old messages")
-        self.delete_old_messages()
+        delete_old_messages()
 
         print("[INFO]\tStart of updating all calendars")
         for calendar_id in calendar_ids:
             await self.update_calendar(calendar_id[0])
         print("[INFO]\tEnd of updating all calendars")
-
-    def delete_old_messages(self):
-        # date 3 weeks ago
-        cutoff_timestamp = int(
-            (datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - dt.timedelta(weeks=3)).timestamp())
-
-        connection, cursor = db_connect()
-        cursor.execute("DELETE FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
-        connection.commit()
-        db_disconnect(connection, cursor)
 
     async def update_calendar(self, calendar_id: int):
         connection, cursor = db_connect()
@@ -139,14 +140,14 @@ class CalendarCog(commands.Cog):
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
-    @cal_group.command(name="create", description="Tworzy nowy kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC")
+    @cal_group.command(name="create",
+                       description="Tworzy nowy kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC")
     @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
     @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
                                                  discord.app_commands.Choice(name="Nie", value=False)])
+    @discord.app_commands.check(check_user)
     async def create(self, interaction: discord.Interaction, title: str | None,
                      show_sections: discord.app_commands.Choice[int] | None):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         cursor.execute("SELECT * FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
@@ -174,8 +175,8 @@ class CalendarCog(commands.Cog):
         db_disconnect(connection, cursor)
 
     @cal_group.command(name="update", description="Zaktualizuj kalendarz")
+    @discord.app_commands.check(check_user)
     async def update(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
         connection, cursor = db_connect()
         calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
         if calendar_id is None: return
@@ -186,9 +187,8 @@ class CalendarCog(commands.Cog):
         await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)
 
     @cal_group.command(name="delete", description="Usuń kalendarz")
+    @discord.app_commands.check(check_user)
     async def delete(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
         db_disconnect(connection, cursor)
@@ -200,9 +200,8 @@ class CalendarCog(commands.Cog):
 
     @edit_group.command(name="title", description="Edytuj tytuł kalendarza")
     @discord.app_commands.describe(title="Tytuł kalendarza (pozostawione puste przywraca wartość domyślną)")
+    @discord.app_commands.check(check_user)
     async def title(self, interaction: discord.Interaction, title: str | None):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
         if calendar_id is None: return
@@ -219,9 +218,8 @@ class CalendarCog(commands.Cog):
         choice="Wybierz, czy chcesz pokazywać sekcje w kalendarzu (dzisiaj/jutro/w tym tygodni/itd.) [tak/NIE]")
     @discord.app_commands.choices(choice=[discord.app_commands.Choice(name="Tak", value=True),
                                           discord.app_commands.Choice(name="Nie", value=False)])
+    @discord.app_commands.check(check_user)
     async def sections(self, interaction: discord.Interaction, choice: discord.app_commands.Choice[int]):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         calendar_id = await check_if_calendar_exists(interaction, connection, cursor)
         if calendar_id is None: return

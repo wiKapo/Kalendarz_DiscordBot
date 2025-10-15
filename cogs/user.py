@@ -12,9 +12,8 @@ class UserCog(commands.Cog):
 
     @user_group.command(name="add", description="Dodaj menedżera do bota na tym serwerze")
     @discord.app_commands.describe(user="Użytkownik do dodania jako menedżer")
+    @discord.app_commands.check(check_user)
     async def add(self, interaction: discord.Interaction, user: discord.User):
-        if not await check_user(interaction): return
-
         print(f"[INFO]\tAdding user {user.name}")
         connection, cursor = db_connect()
         cursor.execute("INSERT INTO users (UserId, Name, GuildId) VALUES (?, ?, ?)",
@@ -26,9 +25,8 @@ class UserCog(commands.Cog):
 
     @user_group.command(name="remove", description="Usuń menedżera z tego serwera")
     @discord.app_commands.describe(user="Użytkownik do usunięcia")
+    @discord.app_commands.check(check_user)
     async def remove(self, interaction: discord.Interaction, user: discord.User):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         cursor.execute("SELECT * FROM users WHERE UserId = ? AND GuildId = ?", (user.id, interaction.guild.id))
         if cursor.fetchone():

@@ -14,7 +14,6 @@ class AddEventModal(discord.ui.Modal, title="Dodaj wydarzenie"):
     place = discord.ui.TextInput(label="Miejsce", placeholder="Podaj miejsce wydarzenia", required=False)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-
         if self.time.value:
             dt = datetime.strptime(f"{self.date.value} {self.time.value.replace(".", ":")}", "%d.%m.%Y %H:%M")
             whole_day = False
@@ -45,9 +44,8 @@ class EventCog(commands.Cog):
     event_group = discord.app_commands.Group(name="event", description="Komendy do zarządzania wydarzeniami")
 
     @event_group.command(name="add", description="Dodaje nowe wydarzenie")
+    @discord.app_commands.check(check_user)
     async def add(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
         db_disconnect(connection, cursor)
@@ -59,10 +57,9 @@ class EventCog(commands.Cog):
     @discord.app_commands.describe(event_id="Numer wydarzenia do edycji (od najstarszego / od góry)", date="Data",
                                    time="Godzina (Wpisz '-' aby wydarzenie trwało cały dzień)", name="Nazwa wydarzenia",
                                    group="Grupa przypisana do wydarzenia", place="Miejsce ")
+    @discord.app_commands.check(check_user)
     async def edit(self, interaction: discord.Interaction, event_id: int, date: str | None, time: str | None,
                    name: str | None, group: str | None, place: str | None):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
@@ -111,9 +108,8 @@ class EventCog(commands.Cog):
 
     @delete_group.command(name="one", description="Usuwa wydarzenie")
     @discord.app_commands.describe(event_id="Numer wydarzenia do usunięcia (od najstarszego / od góry)")
+    @discord.app_commands.check(check_user)
     async def one(self, interaction: discord.Interaction, event_id: int):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
@@ -129,9 +125,8 @@ class EventCog(commands.Cog):
         await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)
 
     @delete_group.command(name="expired", description="Usuwa przedawnione wydarzenia")
+    @discord.app_commands.check(check_user)
     async def expired(self, interaction: discord.Interaction):
-        if not await check_user(interaction): return
-
         connection, cursor = db_connect()
         if not await check_if_calendar_exists(interaction, connection, cursor): return
 
