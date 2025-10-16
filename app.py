@@ -36,7 +36,6 @@ async def on_ready():
     cursor.execute('CREATE TABLE IF NOT EXISTS users ('
                    'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
                    'UserId BIGINT NOT NULL,'
-                   'Name TEXT NOT NULL,'
                    'GuildId BIGINT NOT NULL'
                    ')')
     cursor.execute('CREATE TABLE IF NOT EXISTS calendars ('
