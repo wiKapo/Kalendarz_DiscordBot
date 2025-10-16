@@ -26,14 +26,17 @@ async def check_if_calendar_exists(interaction, connection, cursor) -> None | in
     return calendar_id[0]
 
 
-async def check_user(interaction) -> bool:
+async def check_admin(interaction) -> bool:
     if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
         return True
 
     admins = map(int, os.getenv("USERS").split(','))
     if interaction.user.id in admins:
         return True
+    return False
 
+
+async def check_manager(interaction) -> bool:
     connection, cursor = db_connect()
     cursor.execute('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
     allowed_users = map(lambda a: a[0], cursor.fetchall())
@@ -41,7 +44,14 @@ async def check_user(interaction) -> bool:
     if interaction.user.id in allowed_users:
         return True
 
+    print(f"[WARN]\tUser {interaction.user.name} doesn't have permissions to use the bot")
     await interaction.response.send_message('Brak dostępu ;)', ephemeral=True)
+    return False
+
+
+async def check_user(interaction) -> bool:
+    if await check_admin(interaction): return True
+    if await check_manager(interaction): return True
     return False
 
 
