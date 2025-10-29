@@ -44,6 +44,13 @@ def delete_old_messages():
     db_disconnect(connection, cursor)
 
 
+async def recreate_calendar(calendar_id: int, interaction, connection, cursor):
+    new_msg = await interaction.response.send_message(
+        "Odtworzono kalendarz. Wpisz `/calendar update`, aby przywrócić poprzednią zawartość :)")
+    cursor.execute("UPDATE calendars SET MessageId = ? WHERE Id = ?", (new_msg.message_id, calendar_id))
+    connection.commit()
+
+
 class CalendarCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -149,10 +156,22 @@ class CalendarCog(commands.Cog):
     async def create(self, interaction: discord.Interaction, title: str | None,
                      show_sections: discord.app_commands.Choice[int] | None):
         connection, cursor = db_connect()
-        cursor.execute("SELECT * FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+        cursor.execute("SELECT Id, MessageId FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                        (interaction.guild.id, interaction.channel.id))
-        if cursor.fetchone():
-            await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
+        result = cursor.fetchone()
+        if result:
+            try:
+                await (await (await self.bot.fetch_guild(interaction.guild.id))
+                              .fetch_channel(interaction.channel.id)).fetch_message(result[1])
+            except discord.NotFound:
+                print("[INFO]\tRecreating calendar in the channel")
+                await recreate_calendar(result[0], interaction, connection, cursor)
+            except discord.HTTPException:
+                await interaction.response.send_message('Błąd HTTP Uh Oh', ephemeral=True)
+            except:
+                await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
+            else:
+                await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
         else:
             print("[INFO]\tCreating new calendar")
 
