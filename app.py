@@ -11,7 +11,7 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
-bot = commands.Bot(command_prefix='/', intents=intents)
+bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
 @bot.event
@@ -66,6 +66,41 @@ async def main():
 @bot.tree.command(name="about")
 async def about(interaction: discord.Interaction):
     await interaction.response.send_message("Bot stworzony przez wiKapo", ephemeral=True)
+
+
+@bot.tree.command(name="help")
+async def help(interaction: discord.Interaction):
+    message = """## Kalendarz by wiKapo
+### ---==[ Polecenia kalendarza ]==---
+`/calendar create <title|show_sections>` - Tworzy nowy kalendarz. 
+Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje. 
+Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
+W przypaku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
+
+`/calendar update` - Aktualizuje kalendarz z tego kanału.
+`/calendar delete` - **Permamentnie** usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
+`/calendar edit title [title]` - Zmienia nazwę kalendarza.
+`/calendar edit sections [choice]` - Zmienia decyzję o wyświetlaniu sekcji.
+
+### ---==[ Polecenia wydarzeń ]==---
+`/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
+`/event edit [id] <date|time|name|group|place>` - Modyfikuje wydarzenie o numerze `id` w kalendarzu.
+`/event delete one [id]` - Usuwa wydarzenie o numerze `id` z kalendarza. Tej operacji nie można cofnąć.
+`/event delete expired` - Usuwa przedawnione wydarzenia z kalendarza. Tej operacji nie można cofnąć.
+
+### ---==[ Polecenia menedżerów]==---
+Menedżerowie są dodawani przez administratorów serwera do danego serwera.
+Dodani menedżerowie otrzymują dostęp do tworzenia, edycji, usuwania kalendarza i wydarzeń na danym serwerze.
+Mendżerowie nie mogą dodawać nowych mendżerów.
+
+`/user add [user]` - Dodaje nowego menedżera do tego serwera.
+`/user list` - Wyświetla menedżerów dodanych do tego serwera.
+`/user remove [user]` - Usuwa menedżera z tego serwera. Tej operacji nie można cofnąć.
+
+### ---==[ Inne polecenia ]==---
+`/about` - informacja o autorze (WIP)
+`/help` - pokazuje tą wiadomość"""
+    await interaction.response.send_message(message, ephemeral=True)
 
 
 asyncio.run(main())
