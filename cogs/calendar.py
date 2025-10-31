@@ -113,6 +113,12 @@ class CalendarCog(commands.Cog):
                         elif delta_days < 14:
                             message += "\n\t---==[  Za tydzień  ]==---\n"
                             current_day_delta = 14
+                        elif delta_days < 30:
+                            message += "\n\t---==[  W tym miesiącu  ]==---\n"
+                            current_day_delta = 30
+                        elif delta_days < 60:
+                            message += "\n\t---==[  Za miesiąc  ]==---\n"
+                            current_day_delta = 60
                         else:
                             message += "\n\t---==[  W przyszłości  ]==---\n"
                             current_day_delta = 99
@@ -162,7 +168,7 @@ class CalendarCog(commands.Cog):
         if result:
             try:
                 await (await (await self.bot.fetch_guild(interaction.guild.id))
-                              .fetch_channel(interaction.channel.id)).fetch_message(result[1])
+                       .fetch_channel(interaction.channel.id)).fetch_message(result[1])
             except discord.NotFound:
                 print("[INFO]\tRecreating calendar in the channel")
                 await recreate_calendar(result[0], interaction, connection, cursor)
