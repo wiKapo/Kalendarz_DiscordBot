@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from global_functions import *
+from util import *
 
 load_dotenv()
 
@@ -14,6 +14,7 @@ intents.messages = True
 bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
+# TODO log to file
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
@@ -23,32 +24,33 @@ async def on_ready():
     except Exception as e:
         print("Error with syncing bot commands: ", e)
 
-    connection, cursor = db_connect()
-    cursor.execute('CREATE TABLE IF NOT EXISTS events ('
-                   'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                   'CalendarId BIGINT NOT NULL,'
-                   'Timestamp INT NOT NULL,'
-                   'WholeDay BOOLEAN NOT NULL,'
-                   'Name TEXT NOT NULL,'
-                   'Team TEXT,'
-                   'Place TEXT'
-                   ');')
-    cursor.execute('CREATE TABLE IF NOT EXISTS users ('
-                   'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                   'UserId BIGINT NOT NULL,'
-                   'GuildId BIGINT NOT NULL'
-                   ')')
-    cursor.execute('CREATE TABLE IF NOT EXISTS calendars ('
-                   'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                   'Title TEXT,'
-                   'ShowSections BOOLEAN NOT NULL DEFAULT FALSE,'
-                   'GuildId BIGINT NOT NULL,'
-                   'ChannelId BIGINT NOT NULL,'
-                   'MessageId BIGINT NOT NULL'
-                   ');')
+    try:
+        Db().execute('CREATE TABLE IF NOT EXISTS calendars ('
+                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                     'Title TEXT,'
+                     'ShowSections BOOLEAN NOT NULL DEFAULT FALSE,'
+                     'GuildId BIGINT NOT NULL,'
+                     'ChannelId BIGINT NOT NULL,'
+                     'MessageId BIGINT NOT NULL'
+                     ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS events ('
+                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                     'CalendarId BIGINT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'Timestamp INT NOT NULL,'
+                     'WholeDay BOOLEAN NOT NULL,'
+                     'Name TEXT NOT NULL,'
+                     'Team TEXT,'
+                     'Place TEXT'
+                     ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS users ('
+                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                     'UserId BIGINT NOT NULL,'
+                     'GuildId BIGINT NOT NULL'
+                     ')')
 
-    print('Tables are ready')
-    db_disconnect(connection, cursor)
+        print('Tables are ready')
+    except Exception as e:
+        print("Error with syncing database: ", e)
 
 
 async def load():
