@@ -32,49 +32,47 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
         await interaction.response.send_message("Kalendarz został usunięty RAZEM z wydarzeniami", ephemeral=True)
 
 
-class CalEditLabel(discord.ui.Label):
-    def __init__(self, text: str, required: bool, default: str, description: str):
-        super().__init__(text=text, description=description,
-                         component=discord.ui.TextInput(required=required, default=default))
-
-
 class EditCalendarModal(discord.ui.Modal):
     def __init__(self, interaction: discord.Interaction):
         calendar = Db().fetch_one("SELECT Title, ShowSections  FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                                   (interaction.guild.id, interaction.channel.id))
+        calendar = list(calendar)
         super().__init__(title="Edytuj kalendarz")
         TITLE = 0
         SHOW_SECTIONS = 1
-        print(calendar)
+        if calendar[SHOW_SECTIONS] == 1:
+            calendar[SHOW_SECTIONS] = True
+        else:
+            calendar[SHOW_SECTIONS] = False
 
-        self.add_item(CalEditLabel("Tytuł", False, calendar[TITLE],
-                                   "Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną"))
-        self.add_item(CalEditLabel("Pokaż sekcje WIP", False, calendar[SHOW_SECTIONS],
-                                   "Wpisz `True` lub `False`"))  # TODO dynamic sections
+        self.add_item(discord.ui.Label(text="Tytuł",
+                                       description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
+                                       component=discord.ui.TextInput(required=False, default=calendar[TITLE],
+                                                                      placeholder=DEFAULT_TITLE)))
+        self.add_item(discord.ui.Label(text="Pokaż sekcje", component=discord.ui.Select(
+            options=[discord.SelectOption(label="Nie", value="0", default=not calendar[SHOW_SECTIONS]),
+                     discord.SelectOption(label="Tak", value="1", default=calendar[SHOW_SECTIONS])])))
+        # TODO dynamic sections
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         data = []
         for child in self.walk_children():
             if type(child) is discord.ui.TextInput:
                 data.append(str(child))
+            if type(child) is discord.ui.Select:
+                data.append(child.values[0])
 
         print(data)
         TITLE = 0
         SHOW_SECTIONS = 1
 
         if data[TITLE] == "": data[TITLE] = DEFAULT_TITLE
-        if data[SHOW_SECTIONS] == "True":
-            data[SHOW_SECTIONS] = True
-        else:
-            data[SHOW_SECTIONS] = False
         print(data)
         try:
             calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                                          (interaction.guild.id, interaction.channel.id))[0]
-            print(1)
             Db().execute("UPDATE calendars SET Title = ?, ShowSections = ? WHERE Id = ?",
                          (data[TITLE], data[SHOW_SECTIONS], calendar_id))
-            print(2)
             await update_calendar(interaction, calendar_id)
         except Exception as e:
             print(e)
