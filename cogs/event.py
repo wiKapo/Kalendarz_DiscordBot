@@ -58,7 +58,6 @@ class EventEditModal(discord.ui.Modal):
         for child in self.walk_children():
             if type(child) is discord.ui.TextInput:
                 data.append(str(child))
-        # print(data)
 
         NAME = 0
         DATE = 1
@@ -103,7 +102,6 @@ def format_event_entries(interaction: discord.Interaction) -> list[discord.Selec
     events = Db().fetch_all(
         "SELECT Name, Timestamp, WholeDay, Team, Place FROM events JOIN calendars ON events.CalendarId = calendars.Id "
         "WHERE GuildId = ? AND ChannelId = ? ORDER BY timestamp", (interaction.guild.id, interaction.channel.id))
-    # print(events)
 
     NAME = 0
     TIMESTAMP = 1
@@ -205,6 +203,7 @@ class EventCog(commands.Cog):
         try:
             await interaction.response.send_modal(EventEditModal(interaction))
         except Exception as e:
+            await interaction.response.send_message('Błąd przy wysyłaniu modala', ephemeral=True)
             print(f"ERROR {e}")
 
     @event_group.command(name="edit", description="Zmienia wydarzenie")

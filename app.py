@@ -15,6 +15,7 @@ bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
 # TODO log to file
+# TODO add notification system
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
@@ -35,7 +36,7 @@ async def on_ready():
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS events ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'CalendarId BIGINT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
                      'Timestamp INT NOT NULL,'
                      'WholeDay BOOLEAN NOT NULL,'
                      'Name TEXT NOT NULL,'
@@ -46,7 +47,7 @@ async def on_ready():
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
                      'UserId BIGINT NOT NULL,'
                      'GuildId BIGINT NOT NULL'
-                     ')')
+                     ');')
 
         print('Tables are ready')
     except Exception as e:
@@ -71,9 +72,10 @@ async def about(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="help")
-async def help(interaction: discord.Interaction):
+async def help(interaction: discord.Interaction):  # TODO Update help
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
+NIE JEST ZAKTUALIZOWANE DO NAJNOWSZEJ WERSJI
 `/calendar create <title|show_sections>` - Tworzy nowy kalendarz. 
 Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje. 
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.

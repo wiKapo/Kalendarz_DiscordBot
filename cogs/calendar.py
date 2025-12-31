@@ -10,10 +10,9 @@ DEFAULT_TITLE = "Kalendarz by wiKapo"
 UPDATE_TIME = base_datetime.time(hour=0, minute=0)
 
 
-class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć ten kalendarz?"):
-    _ = discord.ui.TextInput(label="Wyślij aby potwierdzić",
-                             placeholder="placeholder, bo discord jest głupi i musi być text input",
-                             default="Usuwając kalendarz usuniesz również wydarzenia!", required=False)
+class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
+    _ = discord.ui.TextDisplay(
+        "# Czy na pewno chcesz usunąć ten kalendarz?\nUsuwając kalendarz usuniesz również wydarzenia!")
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         calendar_id, calendar_message_id = Db().fetch_one(
@@ -31,6 +30,55 @@ class DeleteCalendarModal(discord.ui.Modal, title="Czy na pewno chcesz usunąć 
         print("[INFO] The calendar and its events have been removed from the database.")
 
         await interaction.response.send_message("Kalendarz został usunięty RAZEM z wydarzeniami", ephemeral=True)
+
+
+class CalEditLabel(discord.ui.Label):
+    def __init__(self, text: str, required: bool, default: str, description: str):
+        super().__init__(text=text, description=description,
+                         component=discord.ui.TextInput(required=required, default=default))
+
+
+class EditCalendarModal(discord.ui.Modal):
+    def __init__(self, interaction: discord.Interaction):
+        calendar = Db().fetch_one("SELECT Title, ShowSections  FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+                                  (interaction.guild.id, interaction.channel.id))
+        super().__init__(title="Edytuj kalendarz")
+        TITLE = 0
+        SHOW_SECTIONS = 1
+        print(calendar)
+
+        self.add_item(CalEditLabel("Tytuł", False, calendar[TITLE],
+                                   "Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną"))
+        self.add_item(CalEditLabel("Pokaż sekcje WIP", False, calendar[SHOW_SECTIONS],
+                                   "Wpisz `True` lub `False`"))  # TODO dynamic sections
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        data = []
+        for child in self.walk_children():
+            if type(child) is discord.ui.TextInput:
+                data.append(str(child))
+
+        print(data)
+        TITLE = 0
+        SHOW_SECTIONS = 1
+
+        if data[TITLE] == "": data[TITLE] = DEFAULT_TITLE
+        if data[SHOW_SECTIONS] == "True":
+            data[SHOW_SECTIONS] = True
+        else:
+            data[SHOW_SECTIONS] = False
+        print(data)
+        try:
+            calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+                                         (interaction.guild.id, interaction.channel.id))[0]
+            print(1)
+            Db().execute("UPDATE calendars SET Title = ?, ShowSections = ? WHERE Id = ?",
+                         (data[TITLE], data[SHOW_SECTIONS], calendar_id))
+            print(2)
+            await update_calendar(interaction, calendar_id)
+        except Exception as e:
+            print(e)
+        await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
 
 
 def delete_old_messages():
@@ -54,8 +102,7 @@ async def recreate_calendar(calendar_id: int, interaction: discord.Interaction):
 
 
 def create_calendar_message(calendar_id: int):
-    show_sections, title = Db().fetch_one("SELECT ShowSections, Title FROM calendars WHERE Id = ?",
-                                          (calendar_id,))
+    show_sections, title = Db().fetch_one("SELECT ShowSections, Title FROM calendars WHERE Id = ?", (calendar_id,))
 
     events = Db().fetch_all(
         "SELECT Timestamp, WholeDay, Name, Team, Place FROM events JOIN calendars "
@@ -70,7 +117,7 @@ def create_calendar_message(calendar_id: int):
             message += "\n"
             delta_days = (datetime.fromtimestamp(event[0]).date() - datetime.now().date()).days
 
-            if show_sections: #TODO make sections dynamic and per calendar
+            if show_sections:  # TODO make sections dynamic and per calendar
                 if delta_days >= 0 and delta_days >= current_day_delta != 99:
                     if delta_days < 1:
                         message += "\n\t---==[  Dzisiaj  ]==---\n"
@@ -170,8 +217,7 @@ class CalendarCog(commands.Cog):
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
-    @cal_group.command(name="create",
-                       description="Tworzy nowy kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC")
+    @cal_group.command(name="create", description="Tworzy nowy kalendarz")
     @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
     @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
                                                  discord.app_commands.Choice(name="Nie", value=False)])
@@ -201,6 +247,7 @@ class CalendarCog(commands.Cog):
                 try:
                     await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
                 except Exception as e:
+                    await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
                     print(f"[ERROR]\tInternal error: {e}")
                 print("Done")
         else:
@@ -222,7 +269,9 @@ class CalendarCog(commands.Cog):
                 "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
                 (interaction.guild.id, interaction.channel.id, calendar_msg.id, title, show_sections))
 
-            await interaction.response.send_message("Stworzono kalendarz", ephemeral=True)
+            await interaction.response.send_message(
+                "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC",
+                ephemeral=True)
 
     @create.error
     async def cal_group_error(self, interaction: discord.Interaction, error):
@@ -230,7 +279,7 @@ class CalendarCog(commands.Cog):
             print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to create calendars.")
             await interaction.response.send_message("Brak uprawnień", ephemeral=True)
 
-    @cal_group.command(name="update", description="Zaktualizuj kalendarz")
+    @cal_group.command(name="update", description="Aktualizuje kalendarz")
     @discord.app_commands.check(check_user)
     async def update(self, interaction: discord.Interaction):
         calendar_id = await check_if_calendar_exists(interaction)
@@ -240,7 +289,7 @@ class CalendarCog(commands.Cog):
 
         await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)
 
-    @cal_group.command(name="delete", description="Usuń kalendarz")
+    @cal_group.command(name="delete", description="Usuwa kalendarz")
     @discord.app_commands.check(check_user)
     async def delete(self, interaction: discord.Interaction):
         if not await check_if_calendar_exists(interaction): return
@@ -248,33 +297,17 @@ class CalendarCog(commands.Cog):
         print("[INFO]\tDeleting calendar")
         await interaction.response.send_modal(DeleteCalendarModal())
 
-    edit_group = discord.app_commands.Group(name="edit", description="Edycja kalendarza", parent=cal_group)
-    # TODO Change to one big modal
-
-    @edit_group.command(name="title", description="Edytuj tytuł kalendarza")
-    @discord.app_commands.describe(title="Tytuł kalendarza (pozostawione puste przywraca wartość domyślną)")
+    @cal_group.command(name="edit", description="Edytuje kalendarz")
     @discord.app_commands.check(check_user)
-    async def title(self, interaction: discord.Interaction, title: str | None):
-        calendar_id = await check_if_calendar_exists(interaction)
-        if calendar_id is None: return
+    async def edit(self, interaction: discord.Interaction):
+        if not await check_if_calendar_exists(interaction): return
 
-        print("[INFO]\tEditing title of the calendar")
-        Db().execute("UPDATE calendars SET Title = ? WHERE Id = ?", (title, calendar_id))
-        await interaction.response.send_message("Tytuł kalendarza został zmieniony", ephemeral=True)
-
-    @edit_group.command(name="sections", description="Zdecyduj, czy pokazywać sekcje w kalendarzu")
-    @discord.app_commands.describe(
-        choice="Wybierz, czy chcesz pokazywać sekcje w kalendarzu (dzisiaj/jutro/w tym tygodni/itd.) [tak/NIE]")
-    @discord.app_commands.choices(choice=[discord.app_commands.Choice(name="Tak", value=True),
-                                          discord.app_commands.Choice(name="Nie", value=False)])
-    @discord.app_commands.check(check_user)
-    async def sections(self, interaction: discord.Interaction, choice: discord.app_commands.Choice[int]):
-        calendar_id = await check_if_calendar_exists(interaction)
-        if calendar_id is None: return
-
-        print("[INFO]\tEditing if calendar shows sections")
-        Db().execute("UPDATE calendars SET ShowSections = ? WHERE Id = ?", (choice.value, calendar_id))
-        await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
+        print("[INFO]\tEditing calendar")
+        try:
+            await interaction.response.send_modal(EditCalendarModal(interaction))
+        except Exception as e:
+            await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
+            print(e)
 
 
 async def setup(bot):
