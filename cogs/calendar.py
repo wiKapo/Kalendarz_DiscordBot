@@ -1,4 +1,4 @@
-import datetime as base_datetime
+from datetime import time, timedelta
 
 import discord
 from discord.ext import tasks, commands
@@ -7,7 +7,7 @@ from util import *
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
 
-UPDATE_TIME = base_datetime.time(hour=0, minute=0)
+UPDATE_TIME = time()
 
 
 class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
@@ -40,18 +40,14 @@ class EditCalendarModal(discord.ui.Modal):
         super().__init__(title="Edytuj kalendarz")
         TITLE = 0
         SHOW_SECTIONS = 1
-        if calendar[SHOW_SECTIONS] == 1:
-            calendar[SHOW_SECTIONS] = True
-        else:
-            calendar[SHOW_SECTIONS] = False
 
         self.add_item(discord.ui.Label(text="Tytuł",
                                        description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
                                        component=discord.ui.TextInput(required=False, default=calendar[TITLE],
                                                                       placeholder=DEFAULT_TITLE)))
         self.add_item(discord.ui.Label(text="Pokaż sekcje", component=discord.ui.Select(
-            options=[discord.SelectOption(label="Nie", value="0", default=not calendar[SHOW_SECTIONS]),
-                     discord.SelectOption(label="Tak", value="1", default=calendar[SHOW_SECTIONS])])))
+            options=[discord.SelectOption(label="Nie", value="0", default=calendar[SHOW_SECTIONS] == 0),
+                     discord.SelectOption(label="Tak", value="1", default=calendar[SHOW_SECTIONS] == 1)])))
         # TODO dynamic sections
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -62,17 +58,15 @@ class EditCalendarModal(discord.ui.Modal):
             if type(child) is discord.ui.Select:
                 data.append(child.values[0])
 
-        print(data)
         TITLE = 0
         SHOW_SECTIONS = 1
 
-        if data[TITLE] == "": data[TITLE] = DEFAULT_TITLE
         print(data)
         try:
             calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                                          (interaction.guild.id, interaction.channel.id))[0]
             Db().execute("UPDATE calendars SET Title = ?, ShowSections = ? WHERE Id = ?",
-                         (data[TITLE], data[SHOW_SECTIONS], calendar_id))
+                         (data[TITLE] if data[TITLE] != "" else None, data[SHOW_SECTIONS], calendar_id))
             await update_calendar(interaction, calendar_id)
         except Exception as e:
             print(e)
@@ -80,9 +74,9 @@ class EditCalendarModal(discord.ui.Modal):
 
 
 def delete_old_messages():
-    # date 3 weeks ago
+    # dated 3 weeks ago
     cutoff_timestamp = int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
-                            base_datetime.timedelta(weeks=3)).timestamp())
+                            timedelta(weeks=3)).timestamp())
     old_events = Db().fetch_all("SELECT * FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
     print("[INFO]\tDeleting old messages")
     for old_event in old_events:
@@ -249,23 +243,18 @@ class CalendarCog(commands.Cog):
                     print(f"[ERROR]\tInternal error: {e}")
                 print("Done")
         else:
-            print(
-                f"[INFO]\tCreating calendar with title \"{title}\"")
+            print(f"[INFO]\tCreating calendar with {f'title \"{title}\"' if title is not None else 'default title'}")
 
-            show_title = title
-            if show_title is None:
-                show_title = DEFAULT_TITLE
-
-            if show_sections is None:
-                show_sections = False
-            else:
-                show_sections = show_sections.value
-
-            calendar_msg = await interaction.channel.send(f':calendar:\t{show_title}\t:calendar:\nPUSTE')
+            calendar_msg = await interaction.channel.send(f'Kaledarz pojawi się tutaj')
 
             Db().execute(
                 "INSERT INTO calendars (GuildId, ChannelId, MessageId, Title, ShowSections) VALUES (?, ?, ?, ?, ?)",
-                (interaction.guild.id, interaction.channel.id, calendar_msg.id, title, show_sections))
+                (interaction.guild.id, interaction.channel.id, calendar_msg.id, title,
+                 show_sections if show_sections is not None else False))
+            calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
+                                         (interaction.guild.id, interaction.channel.id))[0]
+
+            await update_calendar(interaction, calendar_id)
 
             await interaction.response.send_message(
                 "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC",
