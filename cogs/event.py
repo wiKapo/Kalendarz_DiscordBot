@@ -98,7 +98,8 @@ class EventEditModal(discord.ui.Modal):
         await update_calendar(interaction, calendar_id)
 
 
-def format_event_entries(interaction: discord.Interaction) -> list[discord.SelectOption]:
+def format_event_entries(interaction: discord.Interaction, selected_event: int | None = None) -> list[
+    discord.SelectOption]:
     events = Db().fetch_all(
         "SELECT Name, Timestamp, WholeDay, Team, Place FROM events JOIN calendars ON events.CalendarId = calendars.Id "
         "WHERE GuildId = ? AND ChannelId = ? ORDER BY timestamp", (interaction.guild.id, interaction.channel.id))
@@ -124,7 +125,8 @@ def format_event_entries(interaction: discord.Interaction) -> list[discord.Selec
             discord.SelectOption(
                 label=f"{date} {event[NAME]}",
                 description=description,
-                value=f'{i}'
+                value=f'{i}',
+                default=i == selected_event
             )
         )
 
