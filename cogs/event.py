@@ -13,9 +13,9 @@ class EventEditLabel(discord.ui.Label):
 
 
 class EventEditModal(discord.ui.Modal):
-    db_event_id: int | None = None
+    db_event_id: int = None
 
-    def __init__(self, interaction: discord.Interaction, event_id: list[str] | int | None = None):
+    def __init__(self, interaction: discord.Interaction, event_id: int | None = None):
         if event_id is None:
             title = "Dodaj wydarzenie"
         else:
@@ -25,8 +25,6 @@ class EventEditModal(discord.ui.Modal):
         if event_id is None:
             event = [""] * 5
         else:
-            if type(event_id) is not int:
-                event_id = int(event_id[0])
             self.db_event_id = \
                 Db().fetch_one("SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
                                "WHERE GuildId = ? AND ChannelId = ? ORDER BY events.Timestamp LIMIT 1 OFFSET ?",
@@ -98,6 +96,38 @@ class EventEditModal(discord.ui.Modal):
         await update_calendar(interaction, calendar_id)
 
 
+def format_event(event: tuple) -> str:
+    """
+    Pass event in this pattern:\n
+    Name, Timestamp, WholeDay, Team, Place
+    """
+    NAME = 0
+    TIMESTAMP = 1
+    WHOLE_DAY = 2
+    TEAM = 3
+    PLACE = 4
+
+    message = ""
+
+    # Timestamp
+    message += f"<t:{str(event[TIMESTAMP])}"
+    if event[WHOLE_DAY]:
+        message += ":D"
+    message += "> "
+
+    # Team
+    if event[TEAM]:
+        message += f"[{event[TEAM]}] "
+    # Name
+    message += f"**{event[NAME]}"
+    # Place
+    if event[PLACE]:
+        message += f" @ {event[PLACE]}"
+    message += " **"
+
+    return message
+
+
 def format_event_entries(interaction: discord.Interaction, selected_event: int | None = None) -> list[
     discord.SelectOption]:
     events = Db().fetch_all(
@@ -134,23 +164,26 @@ def format_event_entries(interaction: discord.Interaction, selected_event: int |
 
 
 class SelectEvent(discord.ui.Select):
-    def __init__(self, interaction: discord.Interaction):
+    result_modal: type
+
+    def __init__(self, interaction: discord.Interaction, placeholder: str, result_modal: type):
         options = format_event_entries(interaction)
-        super().__init__(placeholder="Wybierz wydarzenie do edytowania", options=options, max_values=1)
+        super().__init__(placeholder=placeholder, options=options, max_values=1)
+        self.result_modal = result_modal
 
     async def callback(self, interaction: discord.Interaction):
         try:
-            print(f"Recieved values from select: {self.values}")
-            await interaction.response.send_modal(EventEditModal(interaction, self.values))
+            print(f"Recieved value from select: {self.values}")
+            await interaction.response.send_modal(self.result_modal(interaction, int(self.values[0])))
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wysyłaniu Modala", ephemeral=True)
             print(e)
 
 
 class SelectEventView(discord.ui.View):
-    def __init__(self, interaction: discord.Interaction):
+    def __init__(self, interaction: discord.Interaction, placeholder: str, result_modal: type):
         super().__init__()
-        self.add_item(SelectEvent(interaction))
+        self.add_item(SelectEvent(interaction, placeholder, result_modal))
         print("[INFO]\tSent event selection form")
 
 
@@ -228,7 +261,7 @@ class EventCog(commands.Cog):
                         "WHERE GuildId = ? AND ChannelId = ?", (interaction.guild.id, interaction.channel.id))[0] > 0:
                     print("[INFO]\tShowing event select form")
                     await interaction.response.send_message(
-                        view=SelectEventView(interaction),
+                        view=SelectEventView(interaction, "Wybierz wydarzenie do edytowania", EventEditModal),
                         ephemeral=True)
                 else:
                     print("[INFO]\tNo events found in the calendar")

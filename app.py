@@ -48,6 +48,14 @@ async def on_ready():
                      'UserId BIGINT NOT NULL,'
                      'GuildId BIGINT NOT NULL'
                      ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
+                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                     'UserId BIGINT NOT NULL,'
+                     'EventId INTEGER NOT NULL REFERENCES events(Id) ON DELETE CASCADE,'
+                     'Timestamp INT NOT NULL,'
+                     'TimeTag TEXT NOT NULL,'
+                     'Description TEXT'
+                     ');')
 
         print('Tables are ready')
     except Exception as e:
@@ -72,34 +80,41 @@ async def about(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="help")
-async def help(interaction: discord.Interaction):  # TODO Update help
+async def help(interaction: discord.Interaction):  # TODO Add showing permission needed to execute command
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
-NIE JEST ZAKTUALIZOWANE DO NAJNOWSZEJ WERSJI
-`/calendar create <title|show_sections>` - Tworzy nowy kalendarz. 
-Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje. 
+`/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
+Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
 W przypaku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
-`/calendar update` - Aktualizuje kalendarz z tego kanału.
+`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu i sekcji kalendarza.
 `/calendar delete` - **Permamentnie** usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
-`/calendar edit title [title]` - Zmienia nazwę kalendarza.
-`/calendar edit sections [choice]` - Zmienia decyzję o wyświetlaniu sekcji.
+`/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
 
 ### ---==[ Polecenia wydarzeń ]==---
 `/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
-`/event edit [id] <date|time|name|group|place>` - Modyfikuje wydarzenie o numerze `id` w kalendarzu.
-`/event delete one [id]` - Usuwa wydarzenie o numerze `id` z kalendarza. Tej operacji nie można cofnąć.
-`/event delete expired` - Usuwa przedawnione wydarzenia z kalendarza. Tej operacji nie można cofnąć.
+`/event edit <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
+Podając `event_id` wydarzenia wysyła od razu okienko edycji.
+`/event delete <event_id>` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je.
+Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie można cofnąć**.
 
-### ---==[ Polecenia menedżerów]==---
+### ---==[ Polecenia menedżerów ]==---
 Menedżerowie są dodawani przez administratorów serwera do danego serwera.
 Dodani menedżerowie otrzymują dostęp do tworzenia, edycji, usuwania kalendarza i wydarzeń na danym serwerze.
 Mendżerowie nie mogą dodawać nowych mendżerów.
 
 `/user add [user]` - Dodaje nowego menedżera do tego serwera.
 `/user list` - Wyświetla menedżerów dodanych do tego serwera.
-`/user remove [user]` - Usuwa menedżera z tego serwera. Tej operacji nie można cofnąć.
+`/user remove [user]` - Usuwa menedżera z tego serwera. **Tej operacji nie można cofnąć**.
+
+### ---==[ Polecenia powiadomień ]==---
+`/notification add <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
+Po wyborze wydarzenia otwiera okienko tworzenia powiadomień. Podając `event_id` od razu pokazuje okienko tworzenia.
+`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
+Podając `event_id` pokazuje od razu listę powiadomień. Po wyborze powiadomienia otwiera okienko edycji wybranego powiadomienia.
+`/notification delete <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia otwiera okienko z listą powiadomień przypisanych do tego wydarzenia.
+Podając `event_id` pokazuje od razu to okienko. Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
 
 ### ---==[ Inne polecenia ]==---
 `/about` - informacja o autorze (WIP)
