@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from util import *
+from g.util import *
 
 load_dotenv()
 
@@ -64,8 +64,8 @@ async def on_ready():
 
 async def load():
     for filename in os.listdir("./cogs"):
-        if filename.endswith(".py"):
-            await bot.load_extension(f"cogs.{filename[:-3]}")
+        if not filename.endswith("__"):
+            await bot.load_extension(f"cogs.{filename}.{filename}")
 
 
 async def main():

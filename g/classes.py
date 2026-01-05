@@ -44,7 +44,7 @@ class Db:
         self.commit_disconnect()
 
     def connect(self) -> sqlite3.Cursor:
-        self.connection = sqlite3.connect('calendar_database.db')
+        self.connection = sqlite3.connect('../calendar_database.db')
         self.cursor = self.connection.cursor()
         return self.cursor
 

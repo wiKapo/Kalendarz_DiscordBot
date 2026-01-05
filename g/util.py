@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-from classes import Db
+from g.classes import Db
 
 
 async def check_if_calendar_exists(interaction) -> None | int:
