@@ -1,5 +1,12 @@
 import discord
+
 from g.util import *
+
+NAME = 0
+TIMESTAMP = 1
+WHOLE_DAY = 2
+TEAM = 3
+PLACE = 4
 
 
 def format_event(event: tuple) -> str:
@@ -7,12 +14,6 @@ def format_event(event: tuple) -> str:
     Pass event in this pattern:\n
     Name, Timestamp, WholeDay, Team, Place
     """
-    NAME = 0
-    TIMESTAMP = 1
-    WHOLE_DAY = 2
-    TEAM = 3
-    PLACE = 4
-
     message = ""
 
     # Timestamp
@@ -34,17 +35,11 @@ def format_event(event: tuple) -> str:
     return message
 
 
-def format_event_entries(interaction: discord.Interaction, selected_event: int | None = None) -> list[
-    discord.SelectOption]:
+def format_event_entries(interaction: discord.Interaction, selected_event: int | None = None) \
+        -> list[discord.SelectOption]:
     events = Db().fetch_all(
         "SELECT Name, Timestamp, WholeDay, Team, Place FROM events JOIN calendars ON events.CalendarId = calendars.Id "
         "WHERE GuildId = ? AND ChannelId = ? ORDER BY timestamp", (interaction.guild.id, interaction.channel.id))
-
-    NAME = 0
-    TIMESTAMP = 1
-    WHOLE_DAY = 2
-    TEAM = 3
-    PLACE = 4
 
     options = []
     for i, event in enumerate(events):

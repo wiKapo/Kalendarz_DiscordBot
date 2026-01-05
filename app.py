@@ -15,7 +15,6 @@ bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
 # TODO log to file
-# TODO add notification system
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')

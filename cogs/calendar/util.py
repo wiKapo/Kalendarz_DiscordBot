@@ -2,9 +2,16 @@ from datetime import timedelta
 
 import discord
 
+from cogs.event.util import format_event
 from g.util import *
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
+
+NAME = 0
+TIMESTAMP = 1
+WHOLE_DAY = 2
+TEAM = 3
+PLACE = 4
 
 
 def delete_old_messages():
@@ -24,14 +31,14 @@ async def recreate_calendar(calendar_id: int, interaction: discord.Interaction):
 
     await update_calendar(interaction, calendar_id)
 
-    await interaction.response.send_message("Odtworzono kalendarz.")
+    await interaction.response.send_message("Odtworzono kalendarz.",ephemeral=True)
 
 
 def create_calendar_message(calendar_id: int):
     show_sections, title = Db().fetch_one("SELECT ShowSections, Title FROM calendars WHERE Id = ?", (calendar_id,))
 
     events = Db().fetch_all(
-        "SELECT Timestamp, WholeDay, Name, Team, Place FROM events JOIN calendars "
+        "SELECT Name, Timestamp, WholeDay, Team, Place FROM events JOIN calendars "
         "ON events.CalendarId = calendars.Id WHERE calendars.Id = ? ORDER BY timestamp", (calendar_id,))
 
     if len(events) == 0:
@@ -41,7 +48,7 @@ def create_calendar_message(calendar_id: int):
         current_day_delta = 0
         for event in events:
             message += "\n"
-            delta_days = (datetime.fromtimestamp(event[0]).date() - datetime.now().date()).days
+            delta_days = (datetime.fromtimestamp(event[TIMESTAMP]).date() - datetime.now().date()).days
 
             if show_sections:  # TODO make sections dynamic and per calendar
                 if delta_days >= 0 and delta_days >= current_day_delta != 99:
@@ -71,21 +78,7 @@ def create_calendar_message(calendar_id: int):
             if delta_days < 0:
                 message += "~~"
 
-            # Timestamp
-            message += f"<t:{str(event[0])}"
-            if event[1]:
-                message += ":D"
-            message += "> "
-
-            # Group
-            if event[3]:
-                message += f"[{event[3]}] "
-            # Name
-            message += f"**{event[2]}"
-            # Place
-            if event[4]:
-                message += f" @ {event[4]}"
-            message += " **"
+            message += format_event(event)
 
             # If expired
             if delta_days < 0:
