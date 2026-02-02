@@ -48,6 +48,8 @@ async def check_if_event_id_exists(interaction, event_id) -> bool:
 
 def text_to_timestamp(time: str, date: str) -> tuple[int, bool]:
     if time == "":
+        if len(date.split(".")) == 2:
+            date += f".{datetime.now().year}"
         dt = datetime.strptime(date, "%d.%m.%Y")
         whole_day = True
     else:

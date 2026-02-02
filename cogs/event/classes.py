@@ -77,7 +77,7 @@ class EventEditModal(discord.ui.Modal):
             date = ""
         else:
             time, date = timestamp_to_text(int(event[TIMESTAMP]), bool(int(event[WHOLE_DAY])))
-        self.add_item(EventEditLabel("Data", True, date, "Podaj datę (na przykład 1.12.2025)"))
+        self.add_item(EventEditLabel("Data", True, date, "Podaj datę (np. 1.12.2025 lub 6.02 [doda obecny rok])"))
         self.add_item(EventEditLabel("Godzina", False, time, "Podaj godzinę (np. 12:35)"))
         self.add_item(EventEditLabel("Grupa", False, event[TEAM], "Podaj grupę (np. 1, 3B)"))
         self.add_item(EventEditLabel("Miejsce", False, event[PLACE], "Podaj miejsce wydarzenia"))
