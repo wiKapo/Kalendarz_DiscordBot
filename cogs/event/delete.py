@@ -2,6 +2,7 @@ from cogs.calendar.util import update_calendar
 from cogs.event.classes import DeleteEventsModal
 from cogs.event.util import *
 
+
 async def event_delete(interaction: discord.Interaction, event_id: int | None):
     if not await check_if_calendar_exists(interaction): return
 

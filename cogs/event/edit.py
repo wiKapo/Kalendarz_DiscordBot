@@ -1,6 +1,7 @@
-from cogs.event.util import *
 from cogs.event.classes import EventEditModal
 from cogs.event.classes import SelectEventView
+from cogs.event.util import *
+
 
 async def event_edit(interaction: discord.Interaction, event_id: int | None):
     if not await check_if_calendar_exists(interaction): return
