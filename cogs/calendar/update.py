@@ -2,9 +2,10 @@ from cogs.calendar.util import *
 
 
 async def calendar_update(interaction: discord.Interaction):
-    calendar_id = await check_if_calendar_exists(interaction)
-    if calendar_id is None: return
+    if not await check_if_calendar_exists(interaction): return
 
-    await update_calendar(interaction, calendar_id)
+    calendar = Calendar()
+    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+    await update_calendar(interaction, calendar)
 
     await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)

@@ -1,17 +1,8 @@
 from datetime import timedelta
 
-import discord
-
-from cogs.event.util import format_event
 from g.util import *
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
-
-NAME = 0
-TIMESTAMP = 1
-WHOLE_DAY = 2
-TEAM = 3
-PLACE = 4
 
 
 def delete_old_messages():
@@ -25,22 +16,18 @@ def delete_old_messages():
     Db().execute("DELETE FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
 
 
-async def recreate_calendar(calendar_id: int, interaction: discord.Interaction):
+async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):
     new_msg = await interaction.channel.send("Nowa wiadomość kalendarza")
-    Db().execute("UPDATE calendars SET MessageId = ? WHERE Id = ?", (new_msg.id, calendar_id))
+    calendar.messageId = new_msg.id
+    calendar.update()
 
-    await update_calendar(interaction, calendar_id)
+    await update_calendar(interaction, calendar)
 
-    await interaction.response.send_message("Odtworzono kalendarz.",ephemeral=True)
+    await interaction.response.send_message("Odtworzono kalendarz.", ephemeral=True)
 
 
-def create_calendar_message(calendar_id: int):
-    show_sections, title = Db().fetch_one("SELECT ShowSections, Title FROM calendars WHERE Id = ?", (calendar_id,))
-
-    events = Db().fetch_all(
-        "SELECT Name, Timestamp, WholeDay, Team, Place FROM events JOIN calendars "
-        "ON events.CalendarId = calendars.Id WHERE calendars.Id = ? ORDER BY timestamp", (calendar_id,))
-
+def create_calendar_message(calendar: Calendar):
+    events: list[Event] = fetch_events_by_calendar(calendar.id)
     if len(events) == 0:
         message = "\nPUSTE"
     else:
@@ -48,9 +35,9 @@ def create_calendar_message(calendar_id: int):
         current_day_delta = 0
         for event in events:
             message += "\n"
-            delta_days = (datetime.fromtimestamp(event[TIMESTAMP]).date() - datetime.now().date()).days
+            delta_days = (datetime.fromtimestamp(event.timestamp).date() - datetime.now().date()).days
 
-            if show_sections:  # TODO make sections dynamic and per calendar
+            if calendar.showSections == 1:  # TODO make sections dynamic and per calendar
                 if delta_days >= 0 and delta_days >= current_day_delta != 99:
                     if delta_days < 1:
                         message += "\n\t---==[  Dzisiaj  ]==---\n"
@@ -84,32 +71,24 @@ def create_calendar_message(calendar_id: int):
             if delta_days < 0:
                 message += "~~"
 
-    if title is None:
-        title = DEFAULT_TITLE
-
-    return title, message
+    return (DEFAULT_TITLE if calendar.title is None else calendar.title), message
 
 
-async def update_calendar(interaction: discord.Interaction, calendar_id: int):
-    title, message = create_calendar_message(calendar_id)
+async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
+    title, message = create_calendar_message(calendar)
 
     print(f"[INFO]\tUpdating calendar {title} in [{interaction.guild.name} - {interaction.guild.id}]"
           f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
-    calendar_message_id = Db().fetch_one("SELECT MessageId FROM calendars WHERE Id = ?", (calendar_id,))[0]
-    calendar_message = await interaction.channel.fetch_message(calendar_message_id)
-
-    await calendar_message.edit(content=f':calendar:\t{title}\t:calendar:{message}')
+    await ((await interaction.channel.fetch_message(calendar.messageId))
+           .edit(content=f':calendar:\t{title}\t:calendar:{message}'))
 
 
-async def bot_update_calendar(self, calendar_id: int):
-    title, message = create_calendar_message(calendar_id)
+async def bot_update_calendar(self, calendar: Calendar):
+    title, message = create_calendar_message(calendar)
 
     print(f"[INFO]\tBot is updating calendar {title}")
-    guild_id, channel_id, calendar_message_id = Db().fetch_one(
-        "SELECT GuildId, ChannelId, MessageId FROM calendars WHERE Id = ?", (calendar_id,))
-
-    calendar_message = await ((await (await self.bot.fetch_guild(guild_id)).fetch_channel(channel_id))
-                              .fetch_message(calendar_message_id))
+    calendar_message = await ((await (await self.bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId))
+                              .fetch_message(calendar.messageId))
 
     await calendar_message.edit(content=f':calendar:\t{title}\t:calendar:{message}')

@@ -1,6 +1,5 @@
 from datetime import time
 
-import discord
 from discord.ext import tasks, commands
 
 from cogs.notification.add import notification_add
@@ -17,6 +16,7 @@ EVENT = 2
 TIMESTAMP = 3
 DESCRIPTION = 4
 
+
 # TODO add error handling
 class NotificationCog(commands.Cog):
     def __init__(self, bot):
@@ -32,17 +32,17 @@ class NotificationCog(commands.Cog):
         current_time = hour_rounder(datetime.now()).timestamp()
         print(f"[INFO]\tChecking for notifications to send at {current_time}")
 
-        notifications = Db().fetch_all("SELECT Id, UserId, EventId, Timestamp, Description FROM notifications")
+        notifications = fetch_all_notifications()
         if len(notifications) == 0:
             return
         print(len(notifications))
         for notification in notifications:
-            print(f"Checking notification: {notification} |{notification[TIMESTAMP] <= current_time}|")
+            print(f"Checking notification: {notification} | {notification.timestamp <= current_time} |")
             if notification[TIMESTAMP] <= current_time:
-                user = await self.bot.fetch_user(notification[USER])
-                print(f"Sending notification to [{user} {notification[USER]}]")
+                user = await self.bot.fetch_user(notification.userId)
+                print(f"Sending notification to [{user} {notification.userId}]")
                 event_name, calendar_id = Db().fetch_one("SELECT Name, CalendarId FROM events WHERE Id = ?",
-                                                         (notification[EVENT],))
+                                                         (notification.eventId,))
                 guild_id, channel_id, message_id = Db().fetch_one(
                     "SELECT GuildId, ChannelId, MessageId FROM calendars WHERE Id = ?", (calendar_id,))
                 await user.send(f"Powiadomienie o wydarzeniu \"{event_name}\"\n"

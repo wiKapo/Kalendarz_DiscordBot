@@ -8,17 +8,19 @@ async def event_delete(interaction: discord.Interaction, event_id: int | None):
 
     if event_id is None:
         print("Sending delete events modal")
-        await interaction.response.send_modal(DeleteEventsModal(interaction))
+        events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
+        await interaction.response.send_modal(DeleteEventsModal(events))
     else:
         print(f"[INFO]\tDeleting event number {event_id} from [{interaction.guild.name} - {interaction.guild.id}]"
               f" [{interaction.channel.name} - {interaction.channel.id}]")
-        calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                                     (interaction.guild.id, interaction.channel.id))[0]
 
-        Db().execute(
-            "DELETE FROM events WHERE Id = (SELECT Id FROM events WHERE CalendarId = ? "
-            "ORDER BY Timestamp LIMIT 1 OFFSET ?)", (calendar_id, event_id - 1))
+        calendar = Calendar()
+        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
-        await update_calendar(interaction, calendar_id)
+        event = Event()
+        event.fetch_local(event_id, interaction.guild_id, interaction.channel_id)
+        event.delete()
+
+        await update_calendar(interaction, calendar)
 
         await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)

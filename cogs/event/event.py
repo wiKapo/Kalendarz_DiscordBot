@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 from cogs.event.add import event_add

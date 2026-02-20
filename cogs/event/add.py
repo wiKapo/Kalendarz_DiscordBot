@@ -8,7 +8,11 @@ async def event_add(interaction: discord.Interaction):
     print(f"[INFO]\tAdding event in [{interaction.guild.name} - {interaction.guild.id}]"
           f" in [{interaction.channel.name} - {interaction.channel.id}]")
     try:
-        await interaction.response.send_modal(EventEditModal(interaction))
+        calendar = Calendar()
+        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+        event = Event()
+        event.calendarId = calendar.id
+        await interaction.response.send_modal(EventEditModal(event))
     except Exception as e:
         await interaction.response.send_message('Błąd przy wysyłaniu modala', ephemeral=True)
         print(f"ERROR {e}")

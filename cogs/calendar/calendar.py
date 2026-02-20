@@ -22,14 +22,14 @@ class CalendarCog(commands.Cog):
 
     @tasks.loop(time=UPDATE_TIME)
     async def update_loop(self):
-        calendar_ids = Db().fetch_all("SELECT Id FROM calendars")
+        calendars = fetch_all_calendars()
 
         print("[INFO]\tRemoving old messages")
         delete_old_messages()
 
         print("[INFO]\tStart of updating all calendars")
-        for calendar_id in calendar_ids:
-            await bot_update_calendar(self, calendar_id[0])
+        for calendar in calendars:
+            await bot_update_calendar(self, calendar)
         print("[INFO]\tEnd of updating all calendars")
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")

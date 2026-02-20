@@ -7,7 +7,9 @@ async def calendar_edit(interaction: discord.Interaction):
 
     print("[INFO]\tEditing calendar")
     try:
-        await interaction.response.send_modal(EditCalendarModal(interaction))
+        calendar = Calendar()
+        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+        await interaction.response.send_modal(EditCalendarModal(calendar))
     except Exception as e:
         await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
         print(e)

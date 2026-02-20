@@ -1,8 +1,6 @@
-import discord
-
-from cogs.event.classes import SelectEventView
-from cogs.notification.classes import AddNotificationModal
-from g.util import check_if_calendar_exists
+from cogs.notification.classes import AddNotificationModal, send_add_notification_modal
+from g.discord_classes import SelectEventView
+from g.util import *
 
 
 async def notification_add(interaction: discord.Interaction, event_id: int | None):
@@ -12,7 +10,8 @@ async def notification_add(interaction: discord.Interaction, event_id: int | Non
           f" in [{interaction.channel.name} - {interaction.channel.id}] for [{interaction.user.name} - {interaction.user.id}]")
 
     if event_id is None:
+        events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
         await interaction.response.send_message(
-            view=SelectEventView(interaction, "Wybierz wydarzenie", AddNotificationModal), ephemeral=True)
+            view=SelectEventView(events, "Wybierz wydarzenie", send_add_notification_modal), ephemeral=True)
     else:
         await interaction.response.send_modal(AddNotificationModal(interaction, event_id))

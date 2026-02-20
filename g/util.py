@@ -1,7 +1,9 @@
 import os
 from datetime import datetime
 
-from g.classes import Db
+import discord
+
+from g.classes import *
 
 
 async def check_if_calendar_exists(interaction) -> None | int:
@@ -72,3 +74,53 @@ def timestamp_to_text(timestamp: int, whole_day: bool) -> tuple[str, str]:
     date = dt.strftime("%d.%m.%Y")
 
     return time, date
+
+
+def format_event(event: Event) -> str:
+    message = ""
+
+    # Timestamp
+    message += f"<t:{str(event.timestamp)}"
+    if event.wholeDay:
+        message += ":D"
+    message += "> "
+
+    # Team
+    if event.team:
+        message += f"[{event.team}] "
+    # Name
+    message += f"**{event.name}"
+    # Place
+    if event.place:
+        message += f" @ {event.place}"
+    message += " **"
+
+    return message
+
+
+def format_event_entries(events: list[Event], selected_event: int | None = None) -> list[discord.SelectOption]:
+    options = []
+    for i, event in enumerate(events):
+        time, date = timestamp_to_text(event.timestamp, event.wholeDay)
+        if time != "": date = f"{date} {time}"
+
+        description = ""
+        if event.team != "":
+            description += f'[{event.team}] '
+        if event.place != "":
+            description += event.place
+
+        options.append(
+            discord.SelectOption(
+                label=f"{date} {event.name}",
+                description=description,
+                value=f"{i}",
+                default=i == selected_event
+            )
+        )
+
+    return options
+
+
+# async def send_modal(modal, interaction, values):
+#     await interaction.response.send_modal(modal(values))

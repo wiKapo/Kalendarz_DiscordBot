@@ -1,6 +1,6 @@
-from cogs.event.classes import EventEditModal
-from cogs.event.classes import SelectEventView
+from cogs.event.classes import EventEditModal, send_event_edit_modal
 from cogs.event.util import *
+from g.discord_classes import SelectEventView
 
 
 async def event_edit(interaction: discord.Interaction, event_id: int | None):
@@ -13,14 +13,16 @@ async def event_edit(interaction: discord.Interaction, event_id: int | None):
             if not await check_if_event_id_exists(interaction, event_id): return
 
             print(f"[INFO]\tEditing event number {event_id}")
-            await interaction.response.send_modal(EventEditModal(interaction, event_id))
+            event = Event()
+            event.fetch_local(event_id, interaction.guild_id, interaction.channel_id)
+            await interaction.response.send_modal(EventEditModal(event))
         else:
-            if Db().fetch_one(
-                    "SELECT COUNT(events.Id) FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-                    "WHERE GuildId = ? AND ChannelId = ?", (interaction.guild.id, interaction.channel.id))[0] > 0:
+            events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
+            if len(events) > 0:
                 print("[INFO]\tShowing event select form")
+
                 await interaction.response.send_message(
-                    view=SelectEventView(interaction, "Wybierz wydarzenie do edytowania", EventEditModal),
+                    view=SelectEventView(events, "Wybierz wydarzenie do edytowania", send_event_edit_modal),
                     ephemeral=True)
             else:
                 print("[INFO]\tNo events found in the calendar")
