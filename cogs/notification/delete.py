@@ -14,4 +14,6 @@ async def notification_delete(interaction: discord.Interaction, event_id: int | 
         await interaction.response.send_message(
             view=SelectEventView(events, "Wybierz wydarzenie", send_delete_notification_modal), ephemeral=True)
     else:
-        await interaction.response.send_modal(DeleteNotificationModal(interaction, event_id))
+        event = Event()
+        event.fetch_local(event_id, interaction.guild_id, interaction.channel_id)
+        await interaction.response.send_modal(DeleteNotificationModal(event, interaction.user.id))
