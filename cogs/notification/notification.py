@@ -1,10 +1,12 @@
 from datetime import time
 
 from discord.ext import tasks, commands
+from discord.ext.commands import Bot
 
 from cogs.notification.add import notification_add
 from cogs.notification.delete import notification_delete
 from cogs.notification.edit import notification_edit
+from cogs.notification.list import notification_list
 from cogs.notification.util import hour_rounder
 from g.util import *
 
@@ -17,7 +19,6 @@ TIMESTAMP = 3
 DESCRIPTION = 4
 
 
-# TODO add error handling
 class NotificationCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -46,28 +47,51 @@ class NotificationCog(commands.Cog):
                 guild_id, channel_id, message_id = Db().fetch_one(
                     "SELECT GuildId, ChannelId, MessageId FROM calendars WHERE Id = ?", (calendar_id,))
                 await user.send(f"Powiadomienie o wydarzeniu \"{event_name}\"\n"
-                                f"Link do wiadomości: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}\n"
-                                f"{notification[DESCRIPTION] if notification[DESCRIPTION] else None}")
-                # TODO make better notification message
-                Db().execute("DELETE FROM notifications WHERE Id = ?", (notification[ID],))
+                                f"Z kalendarza: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}\n"
+                                f"{notification.description if notification.description else ""}")
+                Db().execute("DELETE FROM notifications WHERE Id = ?", (notification.id,))
         print("DONE checking notifications")
 
     notify_group = discord.app_commands.Group(name="notification", description="Polecenia powiadomień")
 
     @notify_group.command(name="add", description="Dodaje lub edytuje powiadomienia do wybranego wydarzenia")
     @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
-    async def add(self, interaction: discord.Interaction, event_id: int | None):
+    async def add(self, interaction: discord.Interaction, event_id: int | None = None):
         await notification_add(interaction, event_id)
 
-    @notify_group.command(name="edit", description="Edytuje powiadomienia do wybranego wydarzenia")
-    @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
-    async def edit(self, interaction: discord.Interaction, event_id: int | None):
-        await notification_edit(interaction, event_id)
+    @add.error
+    async def add_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
+
+    # TODO może kiedyś
+    # @notify_group.command(name="edit", description="Edytuje powiadomienia do wybranego wydarzenia")
+    # @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
+    # async def edit(self, interaction: discord.Interaction, event_id: int | None = None):
+    #     await notification_edit(interaction, event_id)
+
+    # @edit.error
+    # async def edit_error(self, interaction: discord.Interaction, error):
+    #     await send_error_message(interaction, error)
+
+    @notify_group.command(name="list", description="Wyświetla powiadomienia użytkownika")
+    async def list(self, interaction: discord.Interaction):
+        if isinstance(self, Bot):
+            await notification_list(interaction, self)
+        else:
+            await notification_list(interaction, self.bot)
+
+    @list.error
+    async def list_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
     @notify_group.command(name="delete", description="Usuwa wszystkie powiadomienia związane z wybranym wydarzeniem")
     @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
-    async def delete(self, interaction: discord.Interaction, event_id: int | None):
+    async def delete(self, interaction: discord.Interaction, event_id: int | None = None):
         await notification_delete(interaction, event_id)
+
+    @delete.error
+    async def delete_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
     @notify_group.command(name="test", description="DEBUG ONLY")
     @discord.app_commands.check(check_admin)
@@ -79,6 +103,9 @@ class NotificationCog(commands.Cog):
             print(e)
         await interaction.response.send_message("Done", ephemeral=True)
 
+    @test.error
+    async def test_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
 async def setup(bot):
     await bot.add_cog(NotificationCog(bot))

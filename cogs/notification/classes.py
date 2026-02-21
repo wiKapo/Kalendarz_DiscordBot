@@ -40,7 +40,7 @@ class AddNotificationModal(discord.ui.Modal):
         super().__init__(title="Dodaj powiadomienie")
         self.add_item(discord.ui.TextDisplay(f"Do wydarzenia: {format_event(event)}"))
 
-        self.notifications = fetch_notifications_by_user(user_id, event.id)
+        self.notifications = fetch_notifications_by_event(user_id, event.id)
         selected_time_tags = [n.timeTag for n in self.notifications]
         selected_custom_time_tags = [tag for tag in selected_time_tags if tag not in self.default_time_tags]
         time_options = [
@@ -130,9 +130,9 @@ async def send_add_notification_modal(interaction: discord.Interaction, events: 
 
 async def send_delete_notification_modal(interaction: discord.Interaction, events: list[Event], values: list[str]):
     event = events[int(values[0])]
-    notifications = fetch_notifications_by_user(interaction.user.id, event.id)
+    notifications = fetch_notifications_by_event(interaction.user.id, event.id)
     if len(notifications) > 0:
         await interaction.response.send_modal(DeleteNotificationModal(events[int(values[0])], interaction.user.id))
     else:
-        await interaction.response.send_message("Wydarzenie nie posiada żadnych przypisanych powiadomień",
+        await interaction.response.send_message("Nie masz żadnych powiadomień dotyczących tego wydarzenia",
                                                 ephemeral=True)

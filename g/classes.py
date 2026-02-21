@@ -67,21 +67,28 @@ class Calendar:
     guildId: int = None
     channelId: int = None
     messageId: int = None
-    notificationMessageId: int | None = None
+    guildName: str = None
+    """
+    Only for displaying in notifications
+    """
+    channelName: str = None
+    """
+    Only for displaying in notifications
+    """
 
     def __init__(self, data: list = None):
         """
         :param data: for parsing fields from the database.
         """
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, self.notificationMessageId = data
+            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
 
     def __str__(self):
-        return f"Calendar[{self.id}]: {self.title} {self.showSections} ({self.guildId}, {self.channelId}, {self.messageId}) NMId{self.notificationMessageId}"
+        return f"Calendar[{self.id}]: {self.title} {self.showSections} ({self.guildId}, {self.channelId}, {self.messageId})"
 
     def set_insert_and_fetch(self, data: list):
         """
-        :param data: title, showSections, guildId, channelId, messageId, notificationMessageId
+        :param data: title, showSections, guildId, channelId, messageId
         """
         self.set(data)
         self.insert()
@@ -89,28 +96,28 @@ class Calendar:
 
     def set(self, data: list):
         """
-        :param data: title, showSections, guildId, channelId, messageId, notificationMessageId
+        :param data: title, showSections, guildId, channelId, messageId
         """
-        self.title, self.showSections, self.guildId, self.channelId, self.messageId, self.notificationMessageId = data
+        self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
 
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, self.notificationMessageId = data
+            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, self.notificationMessageId = data
+            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
 
     def insert(self):
         Db().execute(
-            "INSERT INTO calendars (Title, ShowSections, GuildId, ChannelId, MessageId, NotificationMessageId) VALUES (?, ?, ?, ?, ?, ?)",
-            (self.title, self.showSections, self.guildId, self.channelId, self.messageId, self.notificationMessageId))
+            "INSERT INTO calendars (Title, ShowSections, GuildId, ChannelId, MessageId) VALUES (?, ?, ?, ?, ?)",
+            (self.title, self.showSections, self.guildId, self.channelId, self.messageId))
 
     def update(self):
-        Db().execute("UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, NotificationMessageId=? WHERE id=?",
-                     (self.title, self.showSections, self.messageId, self.notificationMessageId, self.id))
+        Db().execute("UPDATE calendars SET Title=?, ShowSections=?, MessageId=? WHERE id=?",
+                     (self.title, self.showSections, self.messageId, self.id))
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
@@ -212,6 +219,10 @@ class Event:
     def delete(self):
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
 
+    def get_guild_and_channel_id(self):
+        return Db().fetch_one("SELECT GuildId, ChannelId FROM events "
+                              "JOIN calendars ON events.CalendarId = calendars.Id WHERE events.Id=?", (self.id,))
+
 
 def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:
     data = Db().fetch_all("SELECT events.* FROM events INNER JOIN calendars ON events.CalendarId = calendars.Id "
@@ -246,6 +257,12 @@ class Notification:
     def __str__(self):
         return f"Notification[{self.id}]: user[{self.userId}] event[{self.eventId}] {self.timestamp} {self.timeTag} {self.description}"
 
+    def get_guild_and_channel_id(self):
+        return Db().fetch_one(
+            "SELECT GuildId, ChannelId FROM notifications JOIN events ON notifications.EventId = events.Id "
+            "JOIN calendars ON events.CalendarId = calendars.Id WHERE notifications.Id=?",
+            (self.eventId,))
+
     def fetch(self, notification_id: int):
         data = Db().fetch_one("SELECT * FROM notifications WHERE Id=?", (notification_id,))
         if data is not None:
@@ -261,14 +278,34 @@ class Notification:
                      (self.timestamp, self.timeTag, self.description, self.id))
 
 
-def fetch_all_notifications():
+def fetch_all_notifications() -> list[Notification]:
     data = Db().fetch_all("SELECT * FROM notifications")
     return [Notification(x) for x in data]
 
 
-def fetch_notifications_by_user(user_id: int, event_id: int = None) -> list[Notification]:
-    if event_id is not None:
-        data = Db().fetch_all("SELECT * FROM notifications WHERE UserId=? AND EventId=?", (user_id, event_id))
-    else:
-        data = Db().fetch_all("SELECT * FROM notifications WHERE UserId=?", (user_id,))
+def fetch_notifications_by_user(user_id: int) -> list[Notification]:
+    data = Db().fetch_all("SELECT * FROM notifications WHERE UserId=?", (user_id,))
     return [Notification(x) for x in data]
+
+
+def fetch_notifications_by_event(user_id: int, event_id: int) -> list[Notification]:
+    data = Db().fetch_all("SELECT * FROM notifications WHERE UserId=? AND EventId=?", (user_id, event_id))
+    return [Notification(x) for x in data]
+
+
+def fetch_notifications_by_calendar(user_id: int, calendar_id: int) -> list[Notification]:
+    data = Db().fetch_all("SELECT notifications.* FROM notifications JOIN events ON notifications.EventId = events.Id "
+                          "WHERE UserId=? AND CalendarId=?", (user_id, calendar_id))
+    return [Notification(x) for x in data]
+
+
+def fetch_events_with_notifications(user_id: int) -> list[Event]:
+    return [Event(x) for x in Db().fetch_all(
+        "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=?",
+        (user_id,))]
+
+
+def fetch_events_with_notifications_by_calendar(user_id: int, calendar_id: int) -> list[Event]:
+    return [Event(x) for x in Db().fetch_all(
+        "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=? AND CalendarId=?",
+        (user_id, calendar_id))]

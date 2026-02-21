@@ -33,9 +33,17 @@ async def check_manager(interaction) -> bool:
 
 
 async def check_user(interaction) -> bool:
-    if await check_admin(interaction): return True
-    if await check_manager(interaction): return True
+    """
+    Checks if the user is admin or manager AND if it is called in a guild
+    """
+    if not check_dm(interaction):
+        if await check_admin(interaction): return True
+        if await check_manager(interaction): return True
     return False
+
+
+def check_dm(interaction) -> bool:
+    return isinstance(interaction.channel, discord.channel.DMChannel)
 
 
 async def check_if_event_id_exists(interaction, event_id) -> bool:
@@ -122,5 +130,18 @@ def format_event_entries(events: list[Event], selected_event: int | None = None)
     return options
 
 
-# async def send_modal(modal, interaction, values):
-#     await interaction.response.send_modal(modal(values))
+async def send_error_message(interaction: discord.Interaction, error):
+    command_name = interaction.command.qualified_name
+    if isinstance(error, discord.app_commands.CheckFailure):
+        if check_dm(interaction):
+            print(f"[INFO]\tUser {interaction.user.name} tried to use /{command_name} in DM channel. LOL")
+            await interaction.response.send_message(f"`/{command_name}` nie jest wspierane w prywatnych wiadomościach",
+                                                    ephemeral=True)
+        else:
+            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to use /{command_name}")
+            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+    else:
+        print(f"[ERROR]\t{error}")
+        await interaction.response.send_message(
+            f"Błąd: {error}\nZgłoś do @wiKapo lub "
+            f"w wątku: https://discord.com/channels/1284116042473279509/1474884364520259737", ephemeral=True)

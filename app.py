@@ -11,6 +11,7 @@ load_dotenv()
 intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
+intents.members = True
 bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
 
@@ -79,7 +80,8 @@ async def about(interaction: discord.Interaction):
 
 
 @bot.tree.command(name="help")
-async def help(interaction: discord.Interaction):  # TODO Add showing permission needed to execute command
+async def help(interaction: discord.Interaction):
+    print("HI")
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
 `/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
@@ -97,28 +99,32 @@ W przypaku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar 
 Podając `event_id` wydarzenia wysyła od razu okienko edycji.
 `/event delete <event_id>` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je.
 Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie można cofnąć**.
+"""
+    await interaction.response.send_message(message, ephemeral=True)
 
-### ---==[ Polecenia menedżerów ]==---
-Menedżerowie są dodawani przez administratorów serwera do danego serwera.
+    message = """~~### ---==[ Polecenia menedżerów ]==---~~ *(w następnej aktualizacji zostanie zastąpione rolami)*
+~~Menedżerowie są dodawani przez administratorów serwera do danego serwera.
 Dodani menedżerowie otrzymują dostęp do tworzenia, edycji, usuwania kalendarza i wydarzeń na danym serwerze.
 Mendżerowie nie mogą dodawać nowych mendżerów.
 
 `/user add [user]` - Dodaje nowego menedżera do tego serwera.
 `/user list` - Wyświetla menedżerów dodanych do tego serwera.
-`/user remove [user]` - Usuwa menedżera z tego serwera. **Tej operacji nie można cofnąć**.
+`/user remove [user]` - Usuwa menedżera z tego serwera. **Tej operacji nie można cofnąć**.~~
 
 ### ---==[ Polecenia powiadomień ]==---
 `/notification add <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
 Po wyborze wydarzenia otwiera okienko tworzenia powiadomień. Podając `event_id` od razu pokazuje okienko tworzenia.
-`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
-Podając `event_id` pokazuje od razu listę powiadomień. Po wyborze powiadomienia otwiera okienko edycji wybranego powiadomienia.
+(WIP) ~~`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
+Podając `event_id` pokazuje od razu listę powiadomień. Po wyborze powiadomienia otwiera okienko edycji wybranego powiadomienia.~~
 `/notification delete <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia otwiera okienko z listą powiadomień przypisanych do tego wydarzenia.
 Podając `event_id` pokazuje od razu to okienko. Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
+`/notification list` - Wysyła wiadomość z listą powiadomień użytkownika
+    
+    ### ---==[ Inne polecenia ]==---
+    `/about` - informacja o autorze
+    `/help` - pokazuje tą wiadomość"""
 
-### ---==[ Inne polecenia ]==---
-`/about` - informacja o autorze (WIP)
-`/help` - pokazuje tą wiadomość"""
-    await interaction.response.send_message(message, ephemeral=True)
+    await interaction.followup.send(message, ephemeral=True)
 
 
 asyncio.run(main())

@@ -11,7 +11,6 @@ from cogs.calendar.util import *
 UPDATE_TIME = time()
 
 
-# TODO add error handling
 class CalendarCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -29,7 +28,7 @@ class CalendarCog(commands.Cog):
 
         print("[INFO]\tStart of updating all calendars")
         for calendar in calendars:
-            await bot_update_calendar(self, calendar)
+            await bot_update_calendar(self.bot, calendar)
         print("[INFO]\tEnd of updating all calendars")
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
@@ -44,25 +43,35 @@ class CalendarCog(commands.Cog):
         await calendar_create(self, interaction, title, show_sections)
 
     @create.error
-    async def cal_group_error(self, interaction: discord.Interaction, error):
-        if await check_manager(interaction) and isinstance(error, discord.app_commands.CheckFailure):
-            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to create calendars.")
-            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+    async def create_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
     @cal_group.command(name="update", description="Aktualizuje kalendarz")
     @discord.app_commands.check(check_user)
     async def update(self, interaction: discord.Interaction):
-        await calendar_update(interaction)
+        await calendar_update(interaction, self.bot)
+
+    @update.error
+    async def update_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
     @cal_group.command(name="delete", description="Usuwa kalendarz")
     @discord.app_commands.check(check_user)
     async def delete(self, interaction: discord.Interaction):
         await calendar_delete(interaction)
 
+    @delete.error
+    async def delete_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
+
     @cal_group.command(name="edit", description="Edytuje kalendarz")
     @discord.app_commands.check(check_user)
     async def edit(self, interaction: discord.Interaction):
         await calendar_edit(interaction)
+
+    @edit.error
+    async def edit_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
 
 async def setup(bot):
