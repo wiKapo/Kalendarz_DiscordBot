@@ -145,3 +145,10 @@ async def send_error_message(interaction: discord.Interaction, error):
         await interaction.response.send_message(
             f"Błąd: {error}\nZgłoś do @wiKapo lub "
             f"w wątku: https://discord.com/channels/1284116042473279509/1474884364520259737", ephemeral=True)
+
+
+def remove_old_events(events: list[Event]) -> list[Event]:
+    for event in events:
+        if event.timestamp < datetime.now().timestamp():
+            events.remove(event)
+    return events
