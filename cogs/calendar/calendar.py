@@ -40,7 +40,7 @@ class CalendarCog(commands.Cog):
     @discord.app_commands.check(check_user)
     async def create(self, interaction: discord.Interaction, title: str | None,
                      show_sections: discord.app_commands.Choice[int] | None):
-        await calendar_create(self, interaction, title, show_sections)
+        await calendar_create(self.bot, interaction, title, show_sections)
 
     @create.error
     async def create_error(self, interaction: discord.Interaction, error):

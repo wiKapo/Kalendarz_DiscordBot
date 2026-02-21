@@ -83,7 +83,7 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
           f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
     await ((await interaction.channel.fetch_message(calendar.messageId))
-           .edit(content=f':calendar:\t{title}\t:calendar:{message}'))
+           .edit(content=f':calendar:\t{title}\t:calendar:{message}\n\nZarządzaj powiadomieniami przyciskami poniżej'))
 
 
 async def update_notification_buttons(bot: Bot, interaction: discord.Interaction, calendar: Calendar):

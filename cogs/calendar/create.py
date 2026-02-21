@@ -1,7 +1,7 @@
 from cogs.calendar.util import *
 
 
-async def calendar_create(self, interaction, title: str = None, show_sections: bool = None):
+async def calendar_create(bot: Bot, interaction, title: str = None, show_sections: bool = None):
     print(f"[INFO]\tCreating calendar in [{interaction.guild.name} - {interaction.guild.id}]"
           f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
@@ -14,7 +14,7 @@ async def calendar_create(self, interaction, title: str = None, show_sections: b
 
     if calendar.id:
         try:
-            await (await (await self.bot.fetch_guild(interaction.guild.id))
+            await (await (await bot.fetch_guild(interaction.guild.id))
                    .fetch_channel(interaction.channel.id)).fetch_message(calendar.messageId)
 
         except discord.NotFound:
@@ -36,8 +36,10 @@ async def calendar_create(self, interaction, title: str = None, show_sections: b
 
         calendar.set_insert_and_fetch(
             [title, show_sections if show_sections is not None else False, interaction.guild_id, interaction.channel_id,
-             calendar_msg.id, None])
+             calendar_msg.id])
         await update_calendar(interaction, calendar)
+        print("Heyo")
+        await update_notification_buttons(bot, interaction, calendar)
 
         await interaction.response.send_message(
             "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC",
