@@ -148,7 +148,8 @@ async def send_error_message(interaction: discord.Interaction, error):
 
 
 def remove_old_events(events: list[Event]) -> list[Event]:
+    good_events = []
     for event in events:
-        if event.timestamp < datetime.now().timestamp():
-            events.remove(event)
-    return events
+        if event.timestamp > datetime.now().timestamp():
+            good_events.append(event)
+    return good_events
