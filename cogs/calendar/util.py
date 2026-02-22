@@ -76,6 +76,34 @@ def create_calendar_message(calendar: Calendar):
     return (DEFAULT_TITLE if calendar.title is None else calendar.title), message
 
 
+class AddRoleButtonView(discord.ui.View):
+    role: int
+
+    def __init__(self, role: int):
+        super().__init__(timeout=None)
+        self.role = role
+
+    @discord.ui.button(label="Otrzymuj powiadomienia o aktualizacji kalendarza", style=discord.ButtonStyle.secondary,
+                       custom_id="ping")
+    async def ping(self, interaction: discord.Interaction, _):
+        role: discord.role.Role = interaction.guild.get_role(self.role)
+        try:
+            if role in interaction.user.roles:
+                await interaction.user.remove_roles(role)
+                await interaction.response.send_message(
+                    "Nie będziesz już otrzymywał powiadomień o aktualizacjach tego kalendarza", ephemeral=True)
+            else:
+                await interaction.user.add_roles(role)
+                await interaction.response.send_message(
+                    "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza\n"
+                    "Aby zrezygnować kliknij ponownie.", ephemeral=True)
+        except discord.Forbidden:
+            await interaction.response.send_message("**Bot nie posiada uprawnień do zmieniania ról**\n"
+                                                    "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
+                                                    "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
+                                                    ephemeral=True)
+
+
 async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
     title, message = create_calendar_message(calendar)
 
@@ -94,7 +122,8 @@ async def send_calendar_ping(interaction: discord.Interaction, calendar: Calenda
 
     if calendar.pingRoleId is not None:
         message = await interaction.channel.send(
-            f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>")
+            f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
+            view=AddRoleButtonView(calendar.pingRoleId))
         calendar.pingMessageId = message.id
         calendar.update()
 
