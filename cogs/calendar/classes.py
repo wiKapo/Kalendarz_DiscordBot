@@ -25,7 +25,7 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
 class EditCalendarModal(discord.ui.Modal):
     calendar: Calendar
 
-    def __init__(self, calendar: Calendar):
+    def __init__(self, calendar: Calendar, ping_role: Role | None, user_role: Role | None) -> None:
         self.calendar = calendar
         super().__init__(title="Edytuj kalendarz")
 
@@ -36,12 +36,16 @@ class EditCalendarModal(discord.ui.Modal):
         self.add_item(discord.ui.Label(text="Pokaż sekcje", component=discord.ui.Select(
             options=[discord.SelectOption(label="Nie", value="0", default=calendar.showSections == 0),
                      discord.SelectOption(label="Tak", value="1", default=calendar.showSections == 1)])))
-        self.add_item(discord.ui.Label(text="Wybierz rolę do powiadomień",
-                                       description="Będzie wysyłana przy zmianie w kalendarzu",
-                                       component=discord.ui.RoleSelect(placeholder="Rola do powiadomień")))
-        self.add_item(discord.ui.Label(text="Wybierz rolę dla menedżerów kalendarza",
-                                       description="Osoby z tą rolą będą mogły edytować kalendarz (Zastępuje wszystko związane z `/user`)",
-                                       component=discord.ui.RoleSelect(placeholder="[WIP] Rola menedżerów kalendarza")))
+        self.add_item(
+            discord.ui.Label(text="Wybierz rolę do powiadomień",
+                             description="Będzie wysyłana przy zmianie w kalendarzu",
+                             component=discord.ui.RoleSelect(placeholder="Rola do powiadomień",
+                                                             default_values=[ping_role] if ping_role else [])))
+        self.add_item(
+            discord.ui.Label(text="Wybierz rolę dla menedżerów kalendarza",
+                             description="Osoby z tą rolą będą mogły edytować kalendarz (Zastępuje wszystko związane z `/user`)",
+                             component=discord.ui.RoleSelect(placeholder="[WIP] Rola menedżerów kalendarza",
+                                                             default_values=[user_role] if user_role else [])))
         self.add_item(discord.ui.TextDisplay("-# Rola dla menedżerów nic obecnie nie robi :)"))
         # TODO dynamic sections
 
@@ -53,11 +57,10 @@ class EditCalendarModal(discord.ui.Modal):
             if type(child) is discord.ui.Select:
                 data.append(child.values[0])
             if type(child) is discord.ui.RoleSelect:
-                if type(child.values[0]) is Role:
+                if len(child.values) > 0:
                     data.append(child.values[0].id)
                 else:
                     data.append(None)
-
         self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId, self.calendar.userRoleId = data
         if self.calendar.title == "": self.calendar.title = None
 

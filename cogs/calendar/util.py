@@ -118,14 +118,20 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
 
 async def send_calendar_ping(interaction: discord.Interaction, calendar: Calendar):
     if calendar.pingMessageId is not None:
+        print(f"[INFO]\tRemoving old message in [{calendar.messageId}] {interaction.guild.name} - {interaction.guild.id},"
+              f" {interaction.channel.name} - {interaction.channel.id}")
         await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
+        calendar.pingMessageId = None
 
     if calendar.pingRoleId is not None:
+        print(f"[INFO]\tSending update message in [{calendar.messageId}] {interaction.guild.name} - {interaction.guild.id},"
+              f" {interaction.channel.name} - {interaction.channel.id}")
         message = await interaction.channel.send(
             f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
             view=AddRoleButtonView(calendar.pingRoleId))
         calendar.pingMessageId = message.id
-        calendar.update()
+
+    calendar.update()
 
 
 async def update_notification_buttons(bot: Bot, interaction: discord.Interaction, calendar: Calendar):
