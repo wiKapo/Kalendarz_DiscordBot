@@ -32,7 +32,10 @@ async def on_ready():
                      'ShowSections BOOLEAN NOT NULL DEFAULT FALSE,'
                      'GuildId BIGINT NOT NULL,'
                      'ChannelId BIGINT NOT NULL,'
-                     'MessageId BIGINT NOT NULL'
+                     'MessageId BIGINT NOT NULL,'
+                     'UserRoleId BIGINT,'
+                     'PingRoleId BIGINT,'
+                     'PingMessageId BIGINT'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS events ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'

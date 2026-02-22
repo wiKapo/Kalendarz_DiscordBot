@@ -85,6 +85,19 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
     await ((await interaction.channel.fetch_message(calendar.messageId))
            .edit(content=f':calendar:\t{title}\t:calendar:{message}\n\nZarządzaj powiadomieniami przyciskami poniżej'))
 
+    await send_calendar_ping(interaction, calendar)
+
+
+async def send_calendar_ping(interaction: discord.Interaction, calendar: Calendar):
+    if calendar.pingMessageId is not None:
+        await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
+
+    if calendar.pingRoleId is not None:
+        message = await interaction.channel.send(
+            f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>")
+        calendar.pingMessageId = message.id
+        calendar.update()
+
 
 async def update_notification_buttons(bot: Bot, interaction: discord.Interaction, calendar: Calendar):
     print(f"[INFO]\tUpdating notification buttons of calendar [no. {calendar.id}] "

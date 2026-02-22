@@ -68,6 +68,9 @@ class Calendar:
     channelId: int = None
     messageId: int = None
     guildName: str = None
+    userRoleId: int | None = None
+    pingRoleId: int | None = None
+    pingMessageId: int | None = None
     """
     Only for displaying in notifications
     """
@@ -81,20 +84,23 @@ class Calendar:
         :param data: for parsing fields from the database.
         """
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
+            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
+                self.userRoleId, self.pingRoleId, self.pingMessageId = data
 
     def __str__(self):
-        return f"Calendar[{self.id}]: {self.title} {self.showSections} ({self.guildId}, {self.channelId}, {self.messageId})"
+        return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
+                f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
+                f"userRoleId:{self.userRoleId} (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
-    def set_insert_and_fetch(self, data: list):
+    def prepare_calendar_base(self, data: list):
         """
         :param data: title, showSections, guildId, channelId, messageId
         """
-        self.set(data)
+        self.set_base(data)
         self.insert()
         self.fetch_by_channel(self.guildId, self.channelId)
 
-    def set(self, data: list):
+    def set_base(self, data: list):
         """
         :param data: title, showSections, guildId, channelId, messageId
         """
@@ -103,12 +109,14 @@ class Calendar:
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
+            (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
+             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
-            self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
+            (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
+             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
 
     def insert(self):
         Db().execute(
@@ -116,8 +124,10 @@ class Calendar:
             (self.title, self.showSections, self.guildId, self.channelId, self.messageId))
 
     def update(self):
-        Db().execute("UPDATE calendars SET Title=?, ShowSections=?, MessageId=? WHERE id=?",
-                     (self.title, self.showSections, self.messageId, self.id))
+        Db().execute(
+            "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, UserRoleId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
+            (self.title, self.showSections, self.messageId, self.userRoleId, self.pingRoleId, self.pingMessageId,
+             self.id))
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))

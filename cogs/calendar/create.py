@@ -34,7 +34,7 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
 
         calendar_msg = await interaction.channel.send(f'Kaledarz pojawi się tutaj')
 
-        calendar.set_insert_and_fetch(
+        calendar.prepare_calendar_base(
             [title, show_sections if show_sections is not None else False, interaction.guild_id, interaction.channel_id,
              calendar_msg.id])
         await update_calendar(interaction, calendar)
@@ -42,5 +42,7 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
         await update_notification_buttons(bot, interaction, calendar)
 
         await interaction.response.send_message(
-            "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC",
+            "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC\n"
+            "Dodaj role dla menedżerów i do powiadomień przez wykonanie `/calendar edit`\n"
+            "Wszystkie komendy są opisane w `/help`",
             ephemeral=True)

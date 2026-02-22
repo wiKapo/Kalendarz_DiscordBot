@@ -1,3 +1,5 @@
+from discord.role import Role
+
 from cogs.calendar.util import *
 
 
@@ -34,6 +36,13 @@ class EditCalendarModal(discord.ui.Modal):
         self.add_item(discord.ui.Label(text="Pokaż sekcje", component=discord.ui.Select(
             options=[discord.SelectOption(label="Nie", value="0", default=calendar.showSections == 0),
                      discord.SelectOption(label="Tak", value="1", default=calendar.showSections == 1)])))
+        self.add_item(discord.ui.Label(text="Wybierz rolę do powiadomień",
+                                       description="Będzie wysyłana przy zmianie w kalendarzu",
+                                       component=discord.ui.RoleSelect(placeholder="Rola do powiadomień")))
+        self.add_item(discord.ui.Label(text="Wybierz rolę dla menedżerów kalendarza",
+                                       description="Osoby z tą rolą będą mogły edytować kalendarz (Zastępuje wszystko związane z `/user`)",
+                                       component=discord.ui.RoleSelect(placeholder="[WIP] Rola menedżerów kalendarza")))
+        self.add_item(discord.ui.TextDisplay("-# Rola dla menedżerów nic obecnie nie robi :)"))
         # TODO dynamic sections
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -43,8 +52,13 @@ class EditCalendarModal(discord.ui.Modal):
                 data.append(str(child))
             if type(child) is discord.ui.Select:
                 data.append(child.values[0])
+            if type(child) is discord.ui.RoleSelect:
+                if type(child.values[0]) is Role:
+                    data.append(child.values[0].id)
+                else:
+                    data.append(None)
 
-        self.calendar.title, self.calendar.showSections = data
+        self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId, self.calendar.userRoleId = data
         if self.calendar.title == "": self.calendar.title = None
 
         try:
