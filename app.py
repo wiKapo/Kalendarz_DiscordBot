@@ -59,6 +59,12 @@ async def on_ready():
                      'TimeTag TEXT NOT NULL,'
                      'Description TEXT'
                      ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS messages ('
+                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
+                     'EventId BIGINT NOT NULL,'
+                     'Timestamp INT NOT NULL,'
+                     'Message TEXT NOT NULL'
+                     ');')
 
         print('Tables are ready')
     except Exception as e:

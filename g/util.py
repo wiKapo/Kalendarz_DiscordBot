@@ -153,3 +153,10 @@ def remove_old_events(events: list[Event]) -> list[Event]:
         if event.timestamp > datetime.now().timestamp():
             good_events.append(event)
     return good_events
+
+
+def create_event_update_message(new_event: Event, old_event: Event | None = None):
+    if old_event:
+        print(f"OLD: {old_event}\nNEW: {new_event}")
+    else:
+        print(f"NEW: {new_event}")

@@ -87,7 +87,7 @@ class Calendar:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
                 self.userRoleId, self.pingRoleId, self.pingMessageId = data
 
-    def __str__(self):
+    def __repr__(self):
         return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
                 f"userRoleId:{self.userRoleId} (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
@@ -155,8 +155,8 @@ class Event:
         if data is not None:
             self.id, self.calendarId, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
 
-    def __str__(self):
-        return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} {self.team} {self.place} {self.timestamp} {self.wholeDay}"
+    def __repr__(self):
+        return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
 
     def set_and_update(self, data: list):
         """
@@ -264,7 +264,7 @@ class Notification:
         if data is not None:
             self.id, self.userId, self.eventId, self.timestamp, self.timeTag, self.description = data
 
-    def __str__(self):
+    def __repr__(self):
         return f"Notification[{self.id}]: user[{self.userId}] event[{self.eventId}] {self.timestamp} {self.timeTag} {self.description}"
 
     def get_guild_and_channel_id(self):
@@ -319,3 +319,31 @@ def fetch_events_with_notifications_by_calendar(user_id: int, calendar_id: int) 
     return [Event(x) for x in Db().fetch_all(
         "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=? AND CalendarId=?",
         (user_id, calendar_id))]
+
+class Message:
+    id: int = None
+    EventId: int = None
+    Timestamp: int = None
+    Message: str = None
+
+    def __init__(self, data: list = None):
+        """
+        :param data: for parsing fields from the database.
+        """
+        if data is not None:
+            self.id, self.EventId, self.Timestamp, self.Message = data
+
+    def __repr__(self):
+        return f"Message [{self.id}]: Event[{self.EventId}] {self.Timestamp} {self.Message}"
+
+    def insert(self):
+        Db().execute("INSERT INTO messages (EventId, Timestamp, Message) VALUES (?, ?, ?)",
+                     (self.EventId, self.Timestamp, self.Message))
+
+    def delete(self):
+        Db().execute("DELETE FROM messages WHERE Id=?", (self.id,))
+
+
+def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
+    data = Db().fetch_all("SELECT * FROM messages JOIN events ON messages.EventId=events.Id WHERE CalendarId=?", (calendar_id,))
+    return [Message(x) for x in data]
