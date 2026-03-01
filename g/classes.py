@@ -145,8 +145,8 @@ class Event:
     timestamp: int = None
     wholeDay: bool = None
     name: str = None
-    team: str = None
-    place: str = None
+    team: str | None = None
+    place: str | None = None
 
     def __init__(self, data: list = None):
         """
@@ -320,30 +320,56 @@ def fetch_events_with_notifications_by_calendar(user_id: int, calendar_id: int) 
         "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=? AND CalendarId=?",
         (user_id, calendar_id))]
 
+
 class Message:
     id: int = None
-    EventId: int = None
-    Timestamp: int = None
-    Message: str = None
+    calendarId: int = None
+    timestamp: int = None
+    deleteBy: int = None
+    message: str = None
 
     def __init__(self, data: list = None):
         """
         :param data: for parsing fields from the database.
         """
         if data is not None:
-            self.id, self.EventId, self.Timestamp, self.Message = data
+            self.id, self.calendarId, self.timestamp, self.deleteBy, self.message = data
 
     def __repr__(self):
-        return f"Message [{self.id}]: Event[{self.EventId}] {self.Timestamp} {self.Message}"
+        return f"Message [{self.id}]: Event[{self.calendarId}] {self.timestamp} {self.deleteBy} {self.message}"
+
+    def set_time(self, delay_in_days: int = 1):
+        from datetime import datetime, timedelta
+        current_time = datetime.now()
+        self.timestamp = int(current_time.timestamp())
+        self.deleteBy = int((current_time + timedelta(days=delay_in_days)).timestamp())
+
+    def insert_with_check(self):
+        if not self.check_if_duplicate():
+            self.insert()
 
     def insert(self):
-        Db().execute("INSERT INTO messages (EventId, Timestamp, Message) VALUES (?, ?, ?)",
-                     (self.EventId, self.Timestamp, self.Message))
+        Db().execute("INSERT INTO messages (CalendarId, Timestamp, DeleteBy, Message) VALUES (?, ?, ?, ?)",
+                     (self.calendarId, self.timestamp, self.deleteBy, self.message))
 
-    def delete(self):
-        Db().execute("DELETE FROM messages WHERE Id=?", (self.id,))
+    def check_if_duplicate(self) -> bool:
+        data = Db().fetch_one("SELECT * FROM messages WHERE CalendarId=? AND Message=?",
+                              (self.calendarId, self.message))
+        return data is not None
+
+
+def delete_old_update_messages(calendar_id: int):
+    from datetime import datetime
+
+    print("[INFO]\tDeleting old update messages")
+    data = Db().fetch_all("SELECT * FROM messages WHERE DeleteBy<? AND CalendarId=?",
+                          (datetime.now().timestamp(), calendar_id))
+    print(data)
+
+    Db().execute("DELETE FROM messages WHERE DeleteBy<? AND CalendarId=?",
+                 (datetime.now().timestamp(), calendar_id))
 
 
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
-    data = Db().fetch_all("SELECT * FROM messages JOIN events ON messages.EventId=events.Id WHERE CalendarId=?", (calendar_id,))
+    data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=?", (calendar_id,))
     return [Message(x) for x in data]

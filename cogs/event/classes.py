@@ -1,3 +1,5 @@
+import copy
+
 from cogs.calendar.util import update_calendar
 from cogs.event.util import *
 
@@ -25,6 +27,7 @@ class DeleteEventsModal(discord.ui.Modal):
 
         events_to_delete = [events[i] for i in event_ids]
         for event in events_to_delete:
+            create_event_delete_message(event)
             event.delete()
 
         await update_calendar(interaction, calendar)
@@ -56,7 +59,7 @@ class EventEditModal(discord.ui.Modal):
             title = "Edytuj wydarzenie"
         super().__init__(title=title)
 
-        print(f"Event [DB ID]: {event}")
+        print(event)
 
         self.add_item(EventEditLabel("Nazwa", True, event.name, "Podaj nazwę wydarzenia"))
         if event.id is None:
@@ -90,7 +93,7 @@ class EventEditModal(discord.ui.Modal):
                 print(
                     f"[INFO]\tEditing event [DB ID {self.event.id}] with values [Name = {data[0]}, Date = {data[1]}, "
                     f"Time = {data[2]}, Group = {data[3]}, Place = {data[4]}]")
-                old_event = self.event
+                old_event = copy.deepcopy(self.event)
                 self.event.set_and_update(data)
                 create_event_update_message(self.event, old_event)
                 print("[INFO]\tEdited this event")

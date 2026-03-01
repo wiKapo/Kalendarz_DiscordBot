@@ -23,8 +23,8 @@ class CalendarCog(commands.Cog):
     async def update_loop(self):
         calendars = fetch_all_calendars()
 
-        print("[INFO]\tRemoving old messages")
-        delete_old_messages()
+        print("[INFO]\tRemoving old events")
+        delete_old_events()
 
         print("[INFO]\tStart of updating all calendars")
         for calendar in calendars:
