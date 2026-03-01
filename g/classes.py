@@ -87,7 +87,7 @@ class Calendar:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
                 self.userRoleId, self.pingRoleId, self.pingMessageId = data
 
-    def __str__(self):
+    def __repr__(self):
         return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
                 f"userRoleId:{self.userRoleId} (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
@@ -145,8 +145,8 @@ class Event:
     timestamp: int = None
     wholeDay: bool = None
     name: str = None
-    team: str = None
-    place: str = None
+    team: str | None = None
+    place: str | None = None
 
     def __init__(self, data: list = None):
         """
@@ -155,8 +155,8 @@ class Event:
         if data is not None:
             self.id, self.calendarId, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
 
-    def __str__(self):
-        return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} {self.team} {self.place} {self.timestamp} {self.wholeDay}"
+    def __repr__(self):
+        return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
 
     def set_and_update(self, data: list):
         """
@@ -264,7 +264,7 @@ class Notification:
         if data is not None:
             self.id, self.userId, self.eventId, self.timestamp, self.timeTag, self.description = data
 
-    def __str__(self):
+    def __repr__(self):
         return f"Notification[{self.id}]: user[{self.userId}] event[{self.eventId}] {self.timestamp} {self.timeTag} {self.description}"
 
     def get_guild_and_channel_id(self):
@@ -319,3 +319,57 @@ def fetch_events_with_notifications_by_calendar(user_id: int, calendar_id: int) 
     return [Event(x) for x in Db().fetch_all(
         "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=? AND CalendarId=?",
         (user_id, calendar_id))]
+
+
+class Message:
+    id: int = None
+    calendarId: int = None
+    timestamp: int = None
+    deleteBy: int = None
+    message: str = None
+
+    def __init__(self, data: list = None):
+        """
+        :param data: for parsing fields from the database.
+        """
+        if data is not None:
+            self.id, self.calendarId, self.timestamp, self.deleteBy, self.message = data
+
+    def __repr__(self):
+        return f"Message [{self.id}]: Event[{self.calendarId}] {self.timestamp} {self.deleteBy} {self.message}"
+
+    def set_time(self, delay_in_days: int = 1):
+        from datetime import datetime, timedelta
+        current_time = datetime.now()
+        self.timestamp = int(current_time.timestamp())
+        self.deleteBy = int((current_time + timedelta(days=delay_in_days)).timestamp())
+
+    def insert_with_check(self):
+        if not self.check_if_duplicate():
+            self.insert()
+
+    def insert(self):
+        Db().execute("INSERT INTO messages (CalendarId, Timestamp, DeleteBy, Message) VALUES (?, ?, ?, ?)",
+                     (self.calendarId, self.timestamp, self.deleteBy, self.message))
+
+    def check_if_duplicate(self) -> bool:
+        data = Db().fetch_one("SELECT * FROM messages WHERE CalendarId=? AND Message=?",
+                              (self.calendarId, self.message))
+        return data is not None
+
+
+def delete_old_update_messages(calendar_id: int):
+    from datetime import datetime
+
+    print("[INFO]\tDeleting old update messages")
+    data = Db().fetch_all("SELECT * FROM messages WHERE DeleteBy<? AND CalendarId=?",
+                          (datetime.now().timestamp(), calendar_id))
+    print(data)
+
+    Db().execute("DELETE FROM messages WHERE DeleteBy<? AND CalendarId=?",
+                 (datetime.now().timestamp(), calendar_id))
+
+
+def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
+    data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=?", (calendar_id,))
+    return [Message(x) for x in data]
