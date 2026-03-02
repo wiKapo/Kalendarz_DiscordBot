@@ -98,7 +98,7 @@ async def update_all_calendars(interaction: discord.Interaction):
         message = Message()
         message.calendarId = calendar.id
         message.set_time(5)
-        message.message = "**Aktualizacja kalendarza** Dodano listę ostatnich zmian kalendarza"  # TODO ALWAYS UPDATE ME
+        message.message = "**Aktualizacja kalendarza** Dodano kropkę"  # TODO ALWAYS UPDATE ME
         message.insert_with_check()
         try:
             await admin_update_calendar(bot, calendar)

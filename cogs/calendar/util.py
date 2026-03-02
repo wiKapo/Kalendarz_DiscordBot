@@ -109,7 +109,7 @@ class UpdateMessageView(discord.ui.View):
             else:
                 await interaction.user.add_roles(role)
                 await interaction.response.send_message(
-                    "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza\n"
+                    "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza.\n"
                     "Aby zrezygnować kliknij ponownie.", ephemeral=True)
         except discord.Forbidden:
             await interaction.response.send_message("**Bot nie posiada uprawnień do zmieniania ról**\n"
