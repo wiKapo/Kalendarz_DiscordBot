@@ -46,9 +46,9 @@ async def on_ready():
                      'Place TEXT'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS managerRoles ('
-                     'CalendarId INTEGER REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'GuildId INTEGER,'
                      'RoleId BIGINT NOT NULL,'
-                     'PRIMARY KEY (CalendarId, RoleId)'
+                     'PRIMARY KEY (GuildId, RoleId)'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
@@ -136,7 +136,14 @@ Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie moż
 """
     await interaction.response.send_message(message, ephemeral=True)
 
-    message = """### ---==[ Polecenia powiadomień ]==---
+    message = """### ---==[ Polecenia menedżerów ]==---
+Role menedżerów są dodawane przez administratorów na danym serwerze.
+Menedżerowie otrzymują dostęp do wszyskich komend `/calendar`, `/event` i `/notification` na danym serwerze.
+Mendżerowie nie mogą dodawać nowych mendżerów.
+
+`/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
+    
+### ---==[ Polecenia powiadomień ]==---
 `/notification add <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
 Po wyborze wydarzenia otwiera okienko tworzenia powiadomień. Podając `event_id` od razu pokazuje okienko tworzenia.
 (WIP) ~~`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.

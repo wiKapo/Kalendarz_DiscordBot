@@ -26,12 +26,10 @@ async def check_admin(interaction: discord.Interaction) -> bool:
 
 
 async def check_manager(interaction: discord.Interaction) -> bool:
-    calendar = Calendar()
-    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-    manager_roles = fetch_manager_roles_for_calendar(interaction, calendar.id)
-    print(manager_roles)
+    manager_roles = fetch_manager_roles_for_guild(interaction.guild)
+    print(f"MANAGER ROLES: {manager_roles}")
     check = len(set(interaction.user.roles).intersection(manager_roles))  # TODO clean up
-    print(check)
+    print(f"CHECK intersection: {check}")
     return check > 0
 
 

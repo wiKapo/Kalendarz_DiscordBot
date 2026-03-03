@@ -1,6 +1,6 @@
 import sqlite3
 
-from discord import Interaction, Role
+from discord import Role, Guild
 
 
 class Db:
@@ -127,8 +127,7 @@ class Calendar:
     def update(self):
         Db().execute(
             "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
-            (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId,
-             self.id))
+            (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
@@ -372,21 +371,19 @@ def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
     return [Message(x) for x in data]
 
 
-def fetch_manager_roles_for_calendar(interaction: Interaction, calendar_id: int) -> list[Role]:
-    role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE CalendarId=?", (calendar_id,))
-    print(role_ids)
-    result = [interaction.guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
-    print(result)
+def fetch_manager_roles_for_guild(guild: Guild) -> list[Role]:
+    role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE GuildId=?", (guild.id,))
+    print(f"Raw data from database {role_ids}")
+    result = [guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
+    print(f"Manager roles ids received: {result}")
     return result
 
 
-def update_manager_roles_for_calendar(calendar_id: int, roles: list[Role]):
+def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
     print("Deleting...")
-    Db().execute("DELETE FROM managerRoles WHERE CalendarId=?", (calendar_id,))
+    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))
     print("Updating...")
-    print(roles)
     if roles:
         for role in roles:
-            print(role)
-            Db().execute("INSERT INTO managerRoles (CalendarId, RoleId) VALUES (?, ?)", (calendar_id, role.id))
+            Db().execute("INSERT INTO managerRoles (GuildId, RoleId) VALUES (?, ?)", (guild_id, role.id))
     print("Done.")
