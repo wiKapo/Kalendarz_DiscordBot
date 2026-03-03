@@ -33,7 +33,6 @@ async def on_ready():
                      'GuildId BIGINT NOT NULL,'
                      'ChannelId BIGINT NOT NULL,'
                      'MessageId BIGINT NOT NULL,'
-                     'UserRoleId BIGINT,'
                      'PingRoleId BIGINT,'
                      'PingMessageId BIGINT'
                      ');')
@@ -137,16 +136,7 @@ Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie moż
 """
     await interaction.response.send_message(message, ephemeral=True)
 
-    message = """~~### ---==[ Polecenia menedżerów ]==---~~ *(w następnej aktualizacji zostanie zastąpione rolami)*
-~~Menedżerowie są dodawani przez administratorów serwera do danego serwera.
-Dodani menedżerowie otrzymują dostęp do tworzenia, edycji, usuwania kalendarza i wydarzeń na danym serwerze.
-Mendżerowie nie mogą dodawać nowych mendżerów.
-
-`/user add [user]` - Dodaje nowego menedżera do tego serwera.
-`/user list` - Wyświetla menedżerów dodanych do tego serwera.
-`/user remove [user]` - Usuwa menedżera z tego serwera. **Tej operacji nie można cofnąć**.~~
-
-### ---==[ Polecenia powiadomień ]==---
+    message = """### ---==[ Polecenia powiadomień ]==---
 `/notification add <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
 Po wyborze wydarzenia otwiera okienko tworzenia powiadomień. Podając `event_id` od razu pokazuje okienko tworzenia.
 (WIP) ~~`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.

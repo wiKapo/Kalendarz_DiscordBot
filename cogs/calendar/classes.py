@@ -25,7 +25,7 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
 class EditCalendarModal(discord.ui.Modal):
     calendar: Calendar
 
-    def __init__(self, calendar: Calendar, ping_role: Role | None, user_role: Role | None) -> None:
+    def __init__(self, calendar: Calendar, ping_role: Role | None, user_role: list[Role]) -> None:
         self.calendar = calendar
         super().__init__(title="Edytuj kalendarz")
 
@@ -42,11 +42,10 @@ class EditCalendarModal(discord.ui.Modal):
                              component=discord.ui.RoleSelect(placeholder="Rola do powiadomień",
                                                              default_values=[ping_role] if ping_role else [])))
         self.add_item(
-            discord.ui.Label(text="Wybierz rolę dla menedżerów kalendarza",
-                             description="Osoby z tą rolą będą mogły edytować kalendarz (Zastępuje wszystko związane z `/user`)",
-                             component=discord.ui.RoleSelect(placeholder="[WIP] Rola menedżerów kalendarza",
-                                                             default_values=[user_role] if user_role else [])))
-        self.add_item(discord.ui.TextDisplay("-# Rola dla menedżerów nic obecnie nie robi :)"))
+            discord.ui.Label(text="Wybierz role menedżerów",
+                             description="Osoby z tymi rolami będą mogły zarządzać kalendarzem (MAX 25)",
+                             component=discord.ui.RoleSelect(placeholder="Role menedżerów kalendarza",
+                                                             default_values=user_role, max_values=25)))
         # TODO dynamic sections
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -58,11 +57,14 @@ class EditCalendarModal(discord.ui.Modal):
                 data.append(child.values[0])
             if type(child) is discord.ui.RoleSelect:
                 if len(child.values) > 0:
-                    data.append(child.values[0].id)
+                    data.append(child.values)
                 else:
                     data.append(None)
-        self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId, self.calendar.userRoleId = data
+
+        self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId = data[:3]
         if self.calendar.title == "": self.calendar.title = None
+
+        update_manager_roles_for_calendar(self.calendar.id, data[3])
 
         try:
             self.calendar.update()

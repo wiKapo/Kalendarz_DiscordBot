@@ -1,5 +1,7 @@
 import sqlite3
 
+from discord import Interaction, Role
+
 
 class Db:
     connection: sqlite3.Connection = None
@@ -68,7 +70,6 @@ class Calendar:
     channelId: int = None
     messageId: int = None
     guildName: str = None
-    userRoleId: int | None = None
     pingRoleId: int | None = None
     pingMessageId: int | None = None
     """
@@ -85,12 +86,12 @@ class Calendar:
         """
         if data is not None:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
-                self.userRoleId, self.pingRoleId, self.pingMessageId = data
+                self.pingRoleId, self.pingMessageId = data
 
     def __repr__(self):
         return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
-                f"userRoleId:{self.userRoleId} (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
+                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
     def prepare_calendar_base(self, data: list):
         """
@@ -110,13 +111,13 @@ class Calendar:
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
-             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
+             self.pingRoleId, self.pingMessageId) = data
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
-             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
+             self.pingRoleId, self.pingMessageId) = data
 
     def insert(self):
         Db().execute(
@@ -125,8 +126,8 @@ class Calendar:
 
     def update(self):
         Db().execute(
-            "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, UserRoleId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
-            (self.title, self.showSections, self.messageId, self.userRoleId, self.pingRoleId, self.pingMessageId,
+            "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
+            (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId,
              self.id))
 
     def delete(self):
@@ -243,10 +244,6 @@ def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:
 def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
     data = Db().fetch_all("SELECT events.* FROM events WHERE CalendarId=? ORDER BY Timestamp", (calendar_id,))
     return [Event(x) for x in data]
-
-
-class User:  # TODO Change to role managers
-    pass
 
 
 class Notification:
@@ -373,3 +370,23 @@ def delete_old_update_messages(calendar_id: int):
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
     data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=?", (calendar_id,))
     return [Message(x) for x in data]
+
+
+def fetch_manager_roles_for_calendar(interaction: Interaction, calendar_id: int) -> list[Role]:
+    role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE CalendarId=?", (calendar_id,))
+    print(role_ids)
+    result = [interaction.guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
+    print(result)
+    return result
+
+
+def update_manager_roles_for_calendar(calendar_id: int, roles: list[Role]):
+    print("Deleting...")
+    Db().execute("DELETE FROM managerRoles WHERE CalendarId=?", (calendar_id,))
+    print("Updating...")
+    print(roles)
+    if roles:
+        for role in roles:
+            print(role)
+            Db().execute("INSERT INTO managerRoles (CalendarId, RoleId) VALUES (?, ?)", (calendar_id, role.id))
+    print("Done.")
