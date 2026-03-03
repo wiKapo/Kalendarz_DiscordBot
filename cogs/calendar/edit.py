@@ -10,8 +10,8 @@ async def calendar_edit(interaction: discord.Interaction):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         await interaction.response.send_modal(
-            EditCalendarModal(calendar, interaction.guild.get_role(calendar.pingRoleId),
-                              interaction.guild.get_role(calendar.userRoleId)))
+            EditCalendarModal(calendar, interaction.guild.get_role(calendar.pingRoleId)))
+
     except Exception as e:
         await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
         print(e)

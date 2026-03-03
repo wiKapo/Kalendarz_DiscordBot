@@ -112,13 +112,14 @@ class UpdateMessageView(discord.ui.View):
                     "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza.\n"
                     "Aby zrezygnować kliknij ponownie.", ephemeral=True)
         except discord.Forbidden:
-            await interaction.response.send_message("**Bot nie posiada uprawnień do zmieniania ról**\n"
-                                                    "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
-                                                    "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
-                                                    ephemeral=True)
+            await interaction.response.send_message(
+                "**Bot nie posiada uprawnień do zmieniania ról**\n"
+                "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
+                "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
+                ephemeral=True)
 
 
-async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
+async def update_calendar(interaction: discord.Interaction, calendar: Calendar, send_ping: bool = True):
     title, message = create_calendar_message(calendar)
 
     print(f"[INFO]\tUpdating calendar {title} in [{interaction.guild.name} - {interaction.guild.id}]"
@@ -129,7 +130,8 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar):
 
     delete_old_update_messages(calendar.id)
 
-    await send_calendar_ping(interaction, calendar)
+    if send_ping:
+        await send_calendar_ping(interaction, calendar)
 
 
 async def send_calendar_ping(interaction: discord.Interaction, calendar: Calendar):

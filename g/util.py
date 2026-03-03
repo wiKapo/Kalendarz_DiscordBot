@@ -6,7 +6,7 @@ import discord
 from g.classes import *
 
 
-async def check_if_calendar_exists(interaction) -> None | int:
+async def check_if_calendar_exists(interaction: discord.Interaction) -> None | int:
     calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                                  (interaction.guild.id, interaction.channel.id))[0]
     if not calendar_id:
@@ -15,7 +15,7 @@ async def check_if_calendar_exists(interaction) -> None | int:
     return calendar_id
 
 
-async def check_admin(interaction) -> bool:
+async def check_admin(interaction: discord.Interaction) -> bool:
     if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
         return True
 
@@ -25,14 +25,15 @@ async def check_admin(interaction) -> bool:
     return False
 
 
-async def check_manager(interaction) -> bool:
-    managers = Db().fetch_all('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
-    allowed_users = map(lambda a: a[0], managers)
+async def check_manager(interaction: discord.Interaction) -> bool:
+    manager_roles = fetch_manager_roles_for_guild(interaction.guild)
+    print(f"MANAGER ROLES: {manager_roles}")
+    check = len(set(interaction.user.roles).intersection(manager_roles))  # TODO clean up
+    print(f"CHECK intersection: {check}")
+    return check > 0
 
-    return interaction.user.id in allowed_users
 
-
-async def check_user(interaction) -> bool:
+async def check_user(interaction: discord.Interaction) -> bool:
     """
     Checks if the user is admin or manager AND if it is called in a guild
     """
@@ -42,11 +43,11 @@ async def check_user(interaction) -> bool:
     return False
 
 
-def check_dm(interaction) -> bool:
+def check_dm(interaction: discord.Interaction) -> bool:
     return isinstance(interaction.channel, discord.channel.DMChannel)
 
 
-async def check_if_event_id_exists(interaction, event_id) -> bool:
+async def check_if_event_id_exists(interaction: discord.Interaction, event_id: int) -> bool:
     amount_of_events = Db().fetch_one("SELECT COUNT(*) FROM events JOIN calendars ON events.CalendarId = calendars.Id "
                                       "WHERE GuildId = ? AND ChannelId = ?",
                                       (interaction.guild.id, interaction.channel.id))[0]

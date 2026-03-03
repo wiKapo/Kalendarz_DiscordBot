@@ -1,5 +1,7 @@
 import sqlite3
 
+from discord import Role, Guild
+
 
 class Db:
     connection: sqlite3.Connection = None
@@ -68,7 +70,6 @@ class Calendar:
     channelId: int = None
     messageId: int = None
     guildName: str = None
-    userRoleId: int | None = None
     pingRoleId: int | None = None
     pingMessageId: int | None = None
     """
@@ -85,12 +86,12 @@ class Calendar:
         """
         if data is not None:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
-                self.userRoleId, self.pingRoleId, self.pingMessageId = data
+                self.pingRoleId, self.pingMessageId = data
 
     def __repr__(self):
         return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
-                f"userRoleId:{self.userRoleId} (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
+                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
     def prepare_calendar_base(self, data: list):
         """
@@ -110,13 +111,13 @@ class Calendar:
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
-             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
+             self.pingRoleId, self.pingMessageId) = data
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
-             self.userRoleId, self.pingRoleId, self.pingMessageId) = data
+             self.pingRoleId, self.pingMessageId) = data
 
     def insert(self):
         Db().execute(
@@ -125,9 +126,8 @@ class Calendar:
 
     def update(self):
         Db().execute(
-            "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, UserRoleId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
-            (self.title, self.showSections, self.messageId, self.userRoleId, self.pingRoleId, self.pingMessageId,
-             self.id))
+            "UPDATE calendars SET Title=?, ShowSections=?, MessageId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
+            (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
@@ -243,10 +243,6 @@ def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:
 def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
     data = Db().fetch_all("SELECT events.* FROM events WHERE CalendarId=? ORDER BY Timestamp", (calendar_id,))
     return [Event(x) for x in data]
-
-
-class User:  # TODO Change to role managers
-    pass
 
 
 class Notification:
@@ -373,3 +369,21 @@ def delete_old_update_messages(calendar_id: int):
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
     data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=?", (calendar_id,))
     return [Message(x) for x in data]
+
+
+def fetch_manager_roles_for_guild(guild: Guild) -> list[Role]:
+    role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE GuildId=?", (guild.id,))
+    print(f"Raw data from database {role_ids}")
+    result = [guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
+    print(f"Manager roles ids received: {result}")
+    return result
+
+
+def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
+    print("Deleting...")
+    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))
+    print("Updating...")
+    if roles:
+        for role in roles:
+            Db().execute("INSERT INTO managerRoles (GuildId, RoleId) VALUES (?, ?)", (guild_id, role.id))
+    print("Done.")

@@ -1,57 +1,46 @@
 import discord
+from discord import Role, Interaction
 from discord.ext import commands
 
-from cogs.user.add import user_add
-from cogs.user.list import user_list
-from cogs.user.remove import user_remove
-from g.util import *
+from g.classes import update_manager_roles_for_guild, fetch_manager_roles_for_guild
+from g.util import check_admin, send_error_message
 
 
 class UserCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    user_group = discord.app_commands.Group(name='user', description='Komendy do zarządzania menedżerami')
+    user_group = discord.app_commands.Group(name="user", description="Polecenia menedżerów")
 
-    @user_group.command(name="add",
-                        description="Dodaj menedżera do kalendarza na tym serwerze. Wybrana osoba dostanie wiadomość o dodaniu")
-    @discord.app_commands.describe(user="Użytkownik do dodania jako menedżer")
+    @user_group.command(name="set", description="Ustaw role menedżerów dla tego serwera")
     @discord.app_commands.check(check_admin)
-    async def add(self, interaction: discord.Interaction, user: discord.User):
-        await user_add(interaction, user)
+    async def set(self, interaction: discord.Interaction):
+        roles = fetch_manager_roles_for_guild(interaction.guild)
+        await interaction.response.send_modal(SetUserRoles(roles))
 
-    @add.error
-    async def add_error(self, interaction: discord.Interaction, error):
-        if await check_manager(interaction) and isinstance(error, discord.app_commands.CheckFailure):
-            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to add users")
-            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
-
-    @user_group.command(name="remove", description="Usuń menedżera z tego serwera. Dostanie wiadomość o usunięciu")
-    @discord.app_commands.describe(user="Użytkownik do usunięcia")
-    @discord.app_commands.check(check_admin)
-    async def remove(self, interaction: discord.Interaction, user: discord.User):
-        await user_remove(interaction, user)
-
-    @remove.error
-    async def remove_error(self, interaction: discord.Interaction, error):
-        if await check_manager(interaction) and isinstance(error, discord.app_commands.CheckFailure):
-            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to delete users")
-            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
-
-    @user_group.command(name="list", description="Pokaż menedżerów dodanych do tego serwera")
-    @discord.app_commands.check(check_admin)
-    async def list(self, interaction: discord.Interaction):
-        await user_list(interaction)
-
-    @list.error
-    async def list_error(self, interaction: discord.Interaction, error):
-        if isinstance(error, discord.app_commands.CheckFailure):
-            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to show the list of users")
-            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
-        else:
-            print("XD")
-            await interaction.response.send_message("Inny błąd", ephemeral=True)
+    @set.error
+    async def set_error(self, interaction: discord.Interaction, error):
+        await send_error_message(interaction, error)
 
 
 async def setup(bot):
     await bot.add_cog(UserCog(bot))
+
+
+class SetUserRoles(discord.ui.Modal, title="Zarządzaj rolami menedżerów"):
+    def __init__(self, user_roles: list[Role]):
+        super().__init__()
+        self.manager_roles = discord.ui.RoleSelect(placeholder="Role menedżerów kalendarza",
+                                                   default_values=user_roles,
+                                                   max_values=25)
+
+        self.add_item(discord.ui.Label(text="Wybierz role menedżerów",
+                                       description="Osoby z tymi rolami będą mogły zarządzać kalendarzem (MAX 25)",
+                                       component=self.manager_roles))
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        update_manager_roles_for_guild(interaction.guild_id, self.manager_roles.values)
+
+        roles_list = [role.name for role in self.manager_roles.values]
+        await interaction.response.send_message("Osoby z tymi rolami będą miały dostęp do komend kalendarza:\n"
+                                                f"{roles_list}", ephemeral=True)

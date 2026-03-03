@@ -1,5 +1,3 @@
-from discord.role import Role
-
 from cogs.calendar.util import *
 
 
@@ -25,7 +23,7 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
 class EditCalendarModal(discord.ui.Modal):
     calendar: Calendar
 
-    def __init__(self, calendar: Calendar, ping_role: Role | None, user_role: Role | None) -> None:
+    def __init__(self, calendar: Calendar, ping_role: Role | None) -> None:
         self.calendar = calendar
         super().__init__(title="Edytuj kalendarz")
 
@@ -41,12 +39,6 @@ class EditCalendarModal(discord.ui.Modal):
                              description="Będzie wysyłana przy zmianie w kalendarzu",
                              component=discord.ui.RoleSelect(placeholder="Rola do powiadomień",
                                                              default_values=[ping_role] if ping_role else [])))
-        self.add_item(
-            discord.ui.Label(text="Wybierz rolę dla menedżerów kalendarza",
-                             description="Osoby z tą rolą będą mogły edytować kalendarz (Zastępuje wszystko związane z `/user`)",
-                             component=discord.ui.RoleSelect(placeholder="[WIP] Rola menedżerów kalendarza",
-                                                             default_values=[user_role] if user_role else [])))
-        self.add_item(discord.ui.TextDisplay("-# Rola dla menedżerów nic obecnie nie robi :)"))
         # TODO dynamic sections
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -61,12 +53,17 @@ class EditCalendarModal(discord.ui.Modal):
                     data.append(child.values[0].id)
                 else:
                     data.append(None)
-        self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId, self.calendar.userRoleId = data
+
+        # TODO Refactor all modals
+        send_ping = self.calendar.pingRoleId != data[2] # Send a ping message only when the ping role is changed
+
+        self.calendar.title, self.calendar.showSections, self.calendar.pingRoleId = data
         if self.calendar.title == "": self.calendar.title = None
 
         try:
+            print(self.calendar)
             self.calendar.update()
-            await update_calendar(interaction, self.calendar)
+            await update_calendar(interaction, self.calendar, send_ping)
         except Exception as e:
             print(e)
         await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
