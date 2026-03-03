@@ -46,10 +46,10 @@ async def on_ready():
                      'Team TEXT,'
                      'Place TEXT'
                      ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS users ('
-                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'UserId BIGINT NOT NULL,'
-                     'GuildId BIGINT NOT NULL'
+        Db().execute('CREATE TABLE IF NOT EXISTS managerRoles ('
+                     'CalendarId INTEGER REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'RoleId BIGINT NOT NULL,'
+                     'PRIMARY KEY (CalendarId, RoleId)'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
