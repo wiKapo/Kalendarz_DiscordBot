@@ -17,7 +17,7 @@ class DeleteNotificationModal(discord.ui.Modal):
         else:
             text = f"Usuwasz {amount_of_notifications} powiadomień"
 
-        self.add_item(discord.ui.TextDisplay(f"{text} z wydarzenia:\n{format_event(event)}\n\n"
+        self.add_item(discord.ui.TextDisplay(f"{text} z wydarzenia:\n{event}\n\n"
                                              "Potwierdź wybierając przycisk `Wyślij`"))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
@@ -38,7 +38,7 @@ class AddNotificationModal(discord.ui.Modal):
     def __init__(self, event: Event, user_id: int):
         self.event = event
         super().__init__(title="Dodaj powiadomienie")
-        self.add_item(discord.ui.TextDisplay(f"Do wydarzenia: {format_event(event)}"))
+        self.add_item(discord.ui.TextDisplay(f"Do wydarzenia: {event}"))
 
         self.notifications = fetch_notifications_by_event(user_id, event.id)
         selected_time_tags = [n.timeTag for n in self.notifications]

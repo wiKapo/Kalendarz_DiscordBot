@@ -3,7 +3,6 @@ import asyncio
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from cogs.calendar.util import admin_update_calendar
 from g.util import *
 
 load_dotenv()
@@ -82,22 +81,26 @@ async def main():
         await load()
         await bot.start(os.getenv("BOT_TOKEN"))
 
-@bot.tree.command(name="update_all", description="[TYLKO DLA ADMINÓW KALENDARZA] Aktualizuje wszystkie wiadomości kalendarza do najnowszej werjsi")
+
+@bot.tree.command(name="update_all",
+                  description="[TYLKO DLA ADMINÓW KALENDARZA] Aktualizuje wszystkie wiadomości kalendarza do najnowszej werjsi")
 async def update_all_calendars(interaction: discord.Interaction):
     admins = map(int, os.getenv("USERS").split(','))
     if interaction.user.id not in admins:
-        await interaction.response.send_message("Brak uprawnień\n**Zarejestrowano próbę użycia komendy** :wink:", ephemeral=True)
+        await interaction.response.send_message("Brak uprawnień\n**Zarejestrowano próbę użycia komendy** :wink:",
+                                                ephemeral=True)
         print(f"[{interaction.user.id} - {interaction.user.name}] tried to use update_all command")
         return
 
-    await interaction.response.send_message("Aktualizowanie wszystkich kalendarzy. Poczekaj na potwierdzenie wykonania akcji.", ephemeral=True)
+    await interaction.response.send_message(
+        "Aktualizowanie wszystkich kalendarzy. Poczekaj na potwierdzenie wykonania akcji.", ephemeral=True)
 
     calendars = fetch_all_calendars()
     for calendar in calendars:
         message = Message()
         message.calendarId = calendar.id
         message.set_time(5)
-        message.message = "**Aktualizacja kalendarza** Dodano kropkę"  # TODO ALWAYS UPDATE ME
+        message.message = "**Aktualizacja kalendarza** Dodano możliwość wyboru ról dla menedżerów kalendarza używając `/user set`"  # TODO ALWAYS UPDATE ME
         message.insert_with_check()
         try:
             await admin_update_calendar(bot, calendar)
@@ -107,6 +110,7 @@ async def update_all_calendars(interaction: discord.Interaction):
         print(f"UPDATED: {calendar}")
 
     await interaction.followup.send(f"Zaktualizowano wszystkie kalendarze w ilości: `{len(calendars)}`", ephemeral=True)
+
 
 @bot.tree.command(name="about")
 async def about(interaction: discord.Interaction):

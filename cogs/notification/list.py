@@ -1,9 +1,6 @@
 from collections.abc import Callable
 from typing import Any
 
-from discord.ext.commands import Bot
-
-from cogs.calendar.util import DEFAULT_TITLE
 from g.util import *
 
 
@@ -47,7 +44,7 @@ def format_notifications(interaction: discord.Interaction, events: list[Event]) 
         calendar.fetch(event.calendarId)
 
         message += f"W kalendarzu: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}"
-        message += f" do wydarzenia: ({format_event(event)})"
+        message += f" do wydarzenia: ({event})"
 
         selected_time_tags = [n.timeTag for n in notifications]
         message += f" masz powiadomienia: {selected_time_tags}"
@@ -87,7 +84,7 @@ class NotificationDMView(discord.ui.View):
 async def send_calendar_select_view(interaction: discord.Interaction, bot: Bot):
     print(f"[INFO]\tShowing calendar select view for [{interaction.user.name} - {interaction.user.id}]")
     calendars = []
-    for c in fetch_all_calendars():  # Showing only those calendars from those guilds where user has access
+    for c in fetch_all_calendars():  # Showing only those calendars from those guilds where the user has access
         try:
             guild = await bot.fetch_guild(c.guildId)
             await guild.fetch_member(interaction.user.id)

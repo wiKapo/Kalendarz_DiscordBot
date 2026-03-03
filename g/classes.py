@@ -1,6 +1,9 @@
 import sqlite3
+from datetime import datetime
 
-from discord import Role, Guild
+from discord import Role, Guild, SelectOption
+
+DEFAULT_TITLE = "Kalendarz by wiKapo"
 
 
 class Db:
@@ -93,6 +96,55 @@ class Calendar:
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
                 f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
+    def __str__(self):
+        events: list[Event] = fetch_events_by_calendar(self.id)
+        message = f":calendar:\t{self.title}\t:calendar:"
+        if len(events) == 0:
+            message += "\nPUSTE"
+        else:
+            current_day_delta = 0
+            for event in events:
+                message += "\n"
+                delta_days = (datetime.fromtimestamp(event.timestamp).date() - datetime.now().date()).days
+
+                if self.showSections == 1:  # TODO make sections dynamic and per calendar
+                    if delta_days >= 0 and delta_days >= current_day_delta != 99:
+                        if delta_days < 1:
+                            message += "\n\t---==[  Dzisiaj  ]==---\n"
+                            current_day_delta = 1
+                        elif delta_days < 2:
+                            message += "\n\t---==[  Jutro  ]==---\n"
+                            current_day_delta = 2
+                        elif delta_days < 7:
+                            message += "\n\t---==[  W tym tygodniu  ]==---\n"
+                            current_day_delta = 7
+                        elif delta_days < 14:
+                            message += "\n\t---==[  Za tydzień  ]==---\n"
+                            current_day_delta = 14
+                        elif delta_days < 30:
+                            message += "\n\t---==[  W tym miesiącu  ]==---\n"
+                            current_day_delta = 30
+                        elif delta_days < 60:
+                            message += "\n\t---==[  Za miesiąc  ]==---\n"
+                            current_day_delta = 60
+                        else:
+                            message += "\n\t---==[  W przyszłości  ]==---\n"
+                            current_day_delta = 99
+
+                # If expired
+                if delta_days < 0:
+                    message += "~~"
+
+                message += str(event)
+
+                # If expired
+                if delta_days < 0:
+                    message += "~~"
+
+        message += "\n\nZarządzaj powiadomieniami przyciskami poniżej"
+
+        return message
+
     def prepare_calendar_base(self, data: list):
         """
         :param data: title, showSections, guildId, channelId, messageId
@@ -158,6 +210,27 @@ class Event:
     def __repr__(self):
         return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
 
+    def __str__(self):
+        message = ""
+
+        # Timestamp
+        message += f"<t:{str(self.timestamp)}"
+        if self.wholeDay:
+            message += ":D"
+        message += "> "
+
+        # Team
+        if self.team:
+            message += f"[{self.team}] "
+        # Name
+        message += f"**{self.name}"
+        # Place
+        if self.place:
+            message += f" @ {self.place}"
+        message += " **"
+
+        return message
+
     def set_and_update(self, data: list):
         """
         :param data: name, date, time, team, place
@@ -180,6 +253,9 @@ class Event:
         self.name, _, _, self.team, self.place = data
 
     def timestamp_to_text(self) -> tuple[str, str]:
+        """
+        :return: time, date
+        """
         from datetime import datetime
         dt = datetime.fromtimestamp(self.timestamp)
 
@@ -243,6 +319,38 @@ def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:
 def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
     data = Db().fetch_all("SELECT events.* FROM events WHERE CalendarId=? ORDER BY Timestamp", (calendar_id,))
     return [Event(x) for x in data]
+
+
+def remove_old_events(events: list[Event]) -> list[Event]:
+    good_events = []
+    for event in events:
+        if event.timestamp > datetime.now().timestamp():
+            good_events.append(event)
+    return good_events
+
+
+def format_event_entries(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
+    options = []
+    for i, event in enumerate(events):
+        time, date = event.timestamp_to_text()
+        if time != "": date = f"{date} {time}"
+
+        description = ""
+        if event.team != "":
+            description += f'[{event.team}] '
+        if event.place != "":
+            description += event.place
+
+        options.append(
+            SelectOption(
+                label=f"{date} {event.name}",
+                description=description,
+                value=f"{i}",
+                default=i == selected_event
+            )
+        )
+
+    return options
 
 
 class Notification:

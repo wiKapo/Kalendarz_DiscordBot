@@ -1,7 +1,7 @@
 import copy
 
-from cogs.calendar.util import update_calendar
 from cogs.event.util import *
+from g.classes import format_event_entries
 
 
 class DeleteEventsModal(discord.ui.Modal):
@@ -65,7 +65,7 @@ class EventEditModal(discord.ui.Modal):
         if event.id is None:
             time = date = ""
         else:
-            time, date = timestamp_to_text(int(event.timestamp), bool(int(event.wholeDay)))
+            time, date = event.timestamp_to_text()
         self.add_item(EventEditLabel("Data", True, date, "Podaj datę (np. 1.12.2025 lub 6.02 [doda obecny rok])"))
         self.add_item(EventEditLabel("Godzina", False, time, "Podaj godzinę (np. 12:35)"))
         self.add_item(EventEditLabel("Grupa", False, event.team, "Podaj grupę (np. 1, 3B)"))
