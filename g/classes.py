@@ -231,27 +231,6 @@ class Event:
 
         return message
 
-    def set_and_update(self, data: list):
-        """
-        :param data: name, date, time, team, place
-        """
-        self.set(data)
-        self.update()
-
-    def set_and_insert(self, data: list):
-        """
-        :param data: name, date, time, team, place
-        """
-        self.set(data)
-        self.insert()
-
-    def set(self, data: list):
-        """
-        :param data: name, date, time, team, place
-        """
-        self.text_to_timestamp(data[2], data[1])
-        self.name, _, _, self.team, self.place = data
-
     def timestamp_to_text(self) -> tuple[str, str]:
         """
         :return: time, date
