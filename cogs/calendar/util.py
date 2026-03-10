@@ -3,7 +3,7 @@ from datetime import timedelta
 from g.util import *
 
 
-def delete_old_events():
+def delete_old_events(): # TODO rework
     # dated 3 weeks ago
     cutoff_timestamp = int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
                             timedelta(weeks=3)).timestamp())

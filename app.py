@@ -106,6 +106,8 @@ async def update_all_calendars(interaction: discord.Interaction):
             await admin_update_calendar(bot, calendar)
         except Exception as e:
             print(e)
+            await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{calendar}\n"
+                                            f"ERROR: {e}", ephemeral=True)
             return
         print(f"UPDATED: {calendar}")
 
@@ -119,7 +121,6 @@ async def about(interaction: discord.Interaction):
 
 @bot.tree.command(name="help")
 async def help(interaction: discord.Interaction):
-    print("HI")
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
 `/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
