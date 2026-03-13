@@ -1,6 +1,6 @@
 import sqlite3
 from datetime import datetime
-import logging
+from enum import Enum
 
 from discord import Role, Guild, SelectOption
 
@@ -477,8 +477,7 @@ def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
     print("Done.")
 
 
-class Log:
-    def __init__(self, calendar_id: int | None = None):
-        logger_name = f"calendar_{calendar_id}" if calendar_id is not None else "default"
-        logger = logging.getLogger(logger_name)
-        logger.addHandler(logging.FileHandler(logger_name + ".log"))
+class LogType(Enum):  # when adding something that will need a new folder add it to init_logger()
+    ALL = ""
+    CALENDAR = "calendar"
+    DM = "dm"

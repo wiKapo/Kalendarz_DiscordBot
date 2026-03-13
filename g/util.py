@@ -22,13 +22,22 @@ async def check_admin(interaction) -> bool:
     if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
         return True
 
+    if await check_calendar_admin(interaction): return True
+    return False
+
+
+async def check_calendar_admin(interaction) -> bool:
     admins = map(int, os.getenv("USERS").split(','))
+    logger = get_logger()
+    logger.error([x for x in admins])
+    logger.error(interaction.user.id)
+    logger.error(interaction.user.id in admins)
     if interaction.user.id in admins:
         return True
     return False
 
 
-async def check_manager(interaction) -> bool:
+async def check_manager(interaction) -> bool:  # TODO FIX MEEEEEEEEEEEEEEEE
     managers = Db().fetch_all('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
     allowed_users = map(lambda a: a[0], managers)
 
@@ -111,7 +120,7 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
         calendar.update()
 
 
-## --------- VVV only for /update_all command VVV ---------
+# --------- VVV only for /update_all command VVV ---------
 
 async def admin_update_calendar(bot: Bot, calendar: Calendar):
     print(f"[INFO - ADMIN]\tAdmin is updating calendar {calendar.title}"
@@ -138,3 +147,27 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
         calendar.pingMessageId = message.id
 
     calendar.update()
+
+
+# --------- logging ---------
+
+def init_logger():
+    if not os.path.exists('logs/calendar'):
+        os.makedirs('logs/calendar')
+    if not os.path.exists('logs/dm'):
+        os.makedirs('logs/dm')
+
+
+def get_logger(log_type: LogType = LogType.ALL, id: int | None = None) -> logging.Logger:
+    logger_name = f"{log_type.value}_{id}" if log_type != LogType.ALL else "default"
+    folder = "" if log_type == LogType.ALL else f"{log_type.value}/"
+
+    logger = logging.getLogger(logger_name)
+    logger.setLevel(logging.DEBUG)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
+    stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logger.addHandler(stream_handler)
+
+    return logger

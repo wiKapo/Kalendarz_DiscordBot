@@ -2,3 +2,4 @@
 /.idea
 calendar_database.db
 /.venv
+/logs
