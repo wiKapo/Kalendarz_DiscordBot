@@ -38,11 +38,12 @@ async def check_calendar_admin(interaction) -> bool:
     return False
 
 
-async def check_manager(interaction) -> bool:  # TODO FIX MEEEEEEEEEEEEEEEE
-    managers = Db().fetch_all('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
-    allowed_users = list(map(lambda a: a[0], managers))
-
-    return interaction.user.id in allowed_users
+async def check_manager(interaction: discord.Interaction) -> bool:
+    manager_roles = fetch_manager_roles_for_guild(interaction.guild)
+    print(f"MANAGER ROLES: {manager_roles}")
+    check = len(set(interaction.user.roles).intersection(manager_roles))  # TODO clean up
+    print(f"CHECK intersection: {check}")
+    return check > 0
 
 
 async def check_user(interaction) -> bool:
