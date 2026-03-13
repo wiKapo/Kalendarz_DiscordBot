@@ -55,17 +55,15 @@ class AdminCog(commands.Cog):
         logger = get_logger()
         logger.info("Hiding admin cog")
         # for command in self.admin_group.walk_commands(): # Saved maybe for later
-        #     print(f"TEST {type(command)}: {command.name}")
-        #     print(f"desc {command.description}\n")
+        #     logger.debug(f"TEST {type(command)}: {command.name} - desc {command.description}\n")
         #     command.description = "[NIEDOSTĘPNE]"
         #
         # self.admin_group.description = "[NIEDOSTĘPNE]"
         #
-        # for cmd in self.admin_group.walk_commands():
-        #     print(f"SECOND {type(cmd)}: {cmd.name}")
-        #     print(f"desc {cmd.description}\n")
+        # for command in self.admin_group.walk_commands(): # Saved maybe for later
+        #     logger.debug(f"TEST {type(command)}: {command.name} - desc {command.description}\n")
         #
-        # print(f"A_G: {self.admin_group.description}")
+        # logger.debug(f"A_G: {self.admin_group.description}")
 
         check = await self.bot.remove_cog(self.qualified_name)
         logger.info(f"Removed cog: {check}")

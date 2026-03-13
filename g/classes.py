@@ -301,6 +301,15 @@ def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
     return [Event(x) for x in data]
 
 
+def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
+    data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
+    return [Event(x) for x in data]
+
+
+def delete_events(events: list[Event]):
+    for event in events: event.delete()
+
+
 def remove_old_events(events: list[Event]) -> list[Event]:
     good_events = []
     for event in events:
@@ -436,6 +445,9 @@ class Message:
         Db().execute("INSERT INTO messages (CalendarId, Timestamp, DeleteBy, Message) VALUES (?, ?, ?, ?)",
                      (self.calendarId, self.timestamp, self.deleteBy, self.message))
 
+    def delete(self):
+        Db().execute("DELETE FROM messages WHERE Id=?", (self.id,))
+
     def check_if_duplicate(self) -> bool:
         data = Db().fetch_one("SELECT * FROM messages WHERE CalendarId=? AND Message=?",
                               (self.calendarId, self.message))
@@ -452,6 +464,9 @@ def delete_old_update_messages(calendar_id: int):
 
     Db().execute("DELETE FROM messages WHERE DeleteBy<? AND CalendarId=?",
                  (datetime.now().timestamp(), calendar_id))
+
+def delete_messages(messages: list[Message]):
+    for message in messages: message.delete()
 
 
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:

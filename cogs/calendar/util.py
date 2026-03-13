@@ -1,17 +1,4 @@
-from datetime import timedelta
-
 from g.util import *
-
-
-def delete_old_events(): # TODO rework
-    # dated 3 weeks ago
-    cutoff_timestamp = int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) -
-                            timedelta(weeks=3)).timestamp())
-    old_events = Db().fetch_all("SELECT * FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
-    print("[INFO]\tDeleting old messages")
-    for old_event in old_events:
-        print(f"\n{old_event}")
-    Db().execute("DELETE FROM events WHERE Timestamp < ?", (cutoff_timestamp,))
 
 
 async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):
@@ -44,11 +31,3 @@ async def send_notification_list(bot: Bot, interaction: discord.Interaction):
 
 async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
     await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
-
-
-async def bot_update_calendar(bot: Bot, calendar: Calendar):
-    print(f"[INFO]\tBot is updating calendar {calendar.title}")
-    calendar_message = await ((await (await bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId))
-                              .fetch_message(calendar.messageId))
-
-    await calendar_message.edit(content=str(calendar))

@@ -25,16 +25,21 @@ class EditCalendarModal(discord.ui.Modal):
                                        component=self.ping_role_select))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        send_ping = self.calendar.pingRoleId != self.ping_role_select.values[0].id  # Send a ping message only when the ping role is changed
+        logger = get_logger(LogType.CALENDAR, self.calendar.id)
+        logger.info(f"Editing calendar {self.calendar.id}")
+        logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value}")
+        logger.debug(f"Show sections: {self.calendar.showSections} -> {self.section_select.values[0] == 1}")
+        logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {self.ping_role_select.values[0].id}")
 
-        self.calendar.title = self.title_input.value
+        self.calendar.title = self.title_input.value if self.title_input.value != "" else None
         self.calendar.showSections = self.section_select.values[0] == "1"
         self.calendar.pingRoleId = self.ping_role_select.values[0].id
-        if self.calendar.title == "": self.calendar.title = None
 
+        send_ping = self.calendar.pingRoleId != self.ping_role_select.values[0].id
+        # Send a ping message only when the ping role is changed
         try:
             self.calendar.update()
             await update_calendar(interaction, self.calendar, send_ping)
         except Exception as e:
-            print(e)
+            logger.debug(e)
         await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)

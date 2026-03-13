@@ -92,11 +92,10 @@ async def send_error_message(interaction: discord.Interaction, error):
 # --------- update message handling ---------
 
 async def update_calendar(interaction: discord.Interaction, calendar: Calendar, send_ping: bool = True):
-    print(f"[INFO]\tUpdating calendar[{calendar.id}] {calendar.title}"
-          f" in [{interaction.guild.name} - {interaction.guild.id}]"
-          f" in [{interaction.channel.name} - {interaction.channel.id}]")
-
-    delete_old_update_messages(calendar.id)
+    logger = get_logger(LogType.CALENDAR, calendar.id)
+    logger.info(f"[INFO]\tUpdating {repr(calendar)}"
+                f" in [{interaction.guild.name} - {interaction.guild.id}]"
+                f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
     delete_old_update_messages(calendar.id)
 
@@ -161,7 +160,7 @@ def init_logger():
 
 
 def get_logger(log_type: LogType = LogType.ALL, id: int | None = None) -> logging.Logger:
-    logger_name = f"{log_type.value}_{id}" if log_type != LogType.ALL else "default"
+    logger_name = f"{log_type.value}_{id if id else "default"}" if log_type != LogType.ALL else "default"
     folder = "" if log_type == LogType.ALL else f"{log_type.value}/"
 
     logger = logging.getLogger(logger_name)
