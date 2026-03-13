@@ -1,3 +1,4 @@
+import logging
 import os
 
 import discord
@@ -27,7 +28,7 @@ async def check_admin(interaction) -> bool:
 
 
 async def check_calendar_admin(interaction) -> bool:
-    admins = map(int, os.getenv("USERS").split(','))
+    admins = list(map(int, os.getenv("USERS").split(',')))
     logger = get_logger()
     logger.error([x for x in admins])
     logger.error(interaction.user.id)
@@ -39,7 +40,7 @@ async def check_calendar_admin(interaction) -> bool:
 
 async def check_manager(interaction) -> bool:  # TODO FIX MEEEEEEEEEEEEEEEE
     managers = Db().fetch_all('SELECT UserId FROM users WHERE GuildId = ?', (interaction.guild.id,))
-    allowed_users = map(lambda a: a[0], managers)
+    allowed_users = list(map(lambda a: a[0], managers))
 
     return interaction.user.id in allowed_users
 

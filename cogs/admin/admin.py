@@ -6,8 +6,8 @@ from g.util import check_calendar_admin, get_logger, admin_update_calendar
 
 
 class AdminCog(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
+    def __init__(self, bot: commands.Bot):
+        self.bot: commands.Bot = bot
 
     admin_group = discord.app_commands.Group(name="admin", description="[TYLKO DLA ADMINÓW KALENDARZA]")
 
@@ -44,25 +44,41 @@ class AdminCog(commands.Cog):
     @update_all_calendars.error
     async def update_all_calendars_error(self, interaction: discord.Interaction, error):
         logger = get_logger()
-        logger.warning(
-            f"{error}\nUser {interaction.user.name} {interaction.user.id} doesn't have permissions to use /update_all")
+        logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
+                       f"doesn't have permissions to use admin commands")
         await interaction.response.send_message("Brak uprawnień", ephemeral=True)
 
-    @admin_group.command(name="hide_admin_cog", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+    @admin_group.command(name="remove_admin_cog", description="[TYLKO DLA ADMINÓW KALENDARZA] "
                                                             "Chowa komendy administratorów")
     @discord.app_commands.check(check_calendar_admin)
-    async def hide_admin_cog(self, interaction: discord.Interaction):
+    async def remove_admin_cog(self, interaction: discord.Interaction):
         logger = get_logger()
         logger.info("Hiding admin cog")
-        self.bot.remove_cog("admin")
-        await interaction.response.send_message("Ukryto komendy administratora", ephemeral=True)
+        # for command in self.admin_group.walk_commands(): # Saved maybe for later
+        #     print(f"TEST {type(command)}: {command.name}")
+        #     print(f"desc {command.description}\n")
+        #     command.description = "[NIEDOSTĘPNE]"
+        #
+        # self.admin_group.description = "[NIEDOSTĘPNE]"
+        #
+        # for cmd in self.admin_group.walk_commands():
+        #     print(f"SECOND {type(cmd)}: {cmd.name}")
+        #     print(f"desc {cmd.description}\n")
+        #
+        # print(f"A_G: {self.admin_group.description}")
+
+        check = await self.bot.remove_cog(self.qualified_name)
+        logger.info(f"Removed cog: {check}")
+        await self.bot.tree.sync()
+
+        await interaction.response.send_message("Usunięto komendy administratora", ephemeral=True)
         logger.info(f"Finished hiding admin cog")
 
-    @hide_admin_cog.error
-    async def hide_admin_cog_error(self, interaction: discord.Interaction, error):
+    @remove_admin_cog.error
+    async def remove_admin_cog_error(self, interaction: discord.Interaction, error):
         logger = get_logger()
-        logger.warning(
-            f"{error}\nUser {interaction.user.name} {interaction.user.id} doesn't have permissions to use /update_all")
+        logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
+                       f"doesn't have permissions to use admin commands")
         await interaction.response.send_message("Brak uprawnień", ephemeral=True)
 
 
