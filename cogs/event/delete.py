@@ -9,10 +9,14 @@ async def event_delete(interaction: discord.Interaction, event_id: int | None):
     logger = get_logger(LogType.CALENDAR, calendar.id)
 
     if event_id is None:
-        logger.info(f"Sending delete events modal in [{interaction.guild.name} - {interaction.guild.id}]"
-                    f" in [{interaction.channel.name} - {interaction.channel.id}]")
         events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
-        await interaction.response.send_modal(DeleteEventsModal(events))
+        if events:
+            logger.info(f"Sending delete events modal in [{interaction.guild.name} - {interaction.guild.id}]"
+                        f" in [{interaction.channel.name} - {interaction.channel.id}]")
+            await interaction.response.send_modal(DeleteEventsModal(events))
+        else:
+            logger.info(f"No available events found in the calendar")
+            await interaction.response.send_message("Brak dostępnych wydarzeń w tym kalendarzu.", ephemeral=True)
     else:
         logger.info(f"Deleting event number {event_id} from [{interaction.guild.name} - {interaction.guild.id}]"
               f" [{interaction.channel.name} - {interaction.channel.id}]")
