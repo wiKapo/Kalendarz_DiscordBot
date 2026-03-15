@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from cogs.notification.classes import DeleteNotificationModal, send_delete_notification_modal
 from g.discord_classes import SelectEventView
 from g.util import *
@@ -10,7 +12,8 @@ async def notification_delete(interaction: discord.Interaction, event_id: int | 
           f"in [{interaction.channel.name} - {interaction.channel.id}] from [{interaction.user.name} - {interaction.user.id}]")
 
     if event_id is None:
-        events = remove_old_events(fetch_events_by_channel(interaction.guild_id, interaction.channel_id))
+        events = remove_old_events(fetch_events_by_channel(interaction.guild_id, interaction.channel_id),
+                                   int(datetime.now().timestamp()))
         await interaction.response.send_message(
             view=SelectEventView(events, "Wybierz wydarzenie", send_delete_notification_modal), ephemeral=True)
     else:

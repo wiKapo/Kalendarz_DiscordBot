@@ -92,33 +92,33 @@ async def send_error_message(interaction: discord.Interaction, error):
 # --------- update message handling ---------
 
 async def update_calendar(interaction: discord.Interaction, calendar: Calendar, send_ping: bool = True):
+    from datetime import datetime
+
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info(f"[INFO]\tUpdating {repr(calendar)}"
-                f" in [{interaction.guild.name} - {interaction.guild.id}]"
+    logger.info(f"Updating {repr(calendar)} in [{interaction.guild.name} - {interaction.guild.id}]"
                 f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
-    delete_old_update_messages(calendar.id)
+    fetch_outdated_update_messages(calendar.id, int(datetime.now().timestamp()))
 
-    await ((await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar)))
+    await (await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
 
     if send_ping:
         if calendar.pingMessageId is not None:
-            print(
-                f"[INFO]\tRemoving old message in [{calendar.messageId}] {interaction.guild.name} - {interaction.guild.id},"
-                f" {interaction.channel.name} - {interaction.channel.id}")
+            logger.info("Removing old ping message")
             await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
             calendar.pingMessageId = None
+            logger.info("Done")
 
         if calendar.pingRoleId is not None:
-            print(
-                f"[INFO]\tSending update message in [{calendar.messageId}] {interaction.guild.name} - {interaction.guild.id},"
-                f" {interaction.channel.name} - {interaction.channel.id}")
+            logger.info("Sending new ping message")
             message = await interaction.channel.send(
                 f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
                 view=UpdateMessageView(calendar.pingRoleId))
             calendar.pingMessageId = message.id
+            logger.info("Done")
 
         calendar.update()
+        logger.info("Calendar updated in the database. Finished updating calendar")
 
 
 # --------- VVV only for /update_all command VVV ---------
@@ -140,6 +140,7 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
     if calendar.pingRoleId is not None:
         print(
             f"[INFO - ADMIN]\tSending update message in [{calendar.messageId}] {calendar.guildId}, {calendar.channelId}")
+        from datetime import datetime
         message = await channel.send(
             f"Kalendarz został zaktualizowany do najnowszej wersji\n"
             f"Więcej o tej aktualizacji tutaj: https://discord.com/channels/1284116042473279509/1474908356538794056\n"

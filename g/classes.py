@@ -1,5 +1,4 @@
 import sqlite3
-from datetime import datetime
 from enum import Enum
 
 from discord import Role, Guild, SelectOption
@@ -98,6 +97,8 @@ class Calendar:
                 f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
     def __str__(self):
+        from datetime import datetime
+
         events: list[Event] = fetch_events_by_calendar(self.id)
         message = f":calendar:\t{self.title}\t:calendar:"
         if len(events) == 0:
@@ -146,20 +147,6 @@ class Calendar:
 
         return message
 
-    def prepare_calendar_base(self, data: list):
-        """
-        :param data: title, showSections, guildId, channelId, messageId
-        """
-        self.set_base(data)
-        self.insert()
-        self.fetch_by_channel(self.guildId, self.channelId)
-
-    def set_base(self, data: list):
-        """
-        :param data: title, showSections, guildId, channelId, messageId
-        """
-        self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
-
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
@@ -183,6 +170,7 @@ class Calendar:
             (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
+        # TODO remove notifications connected with those events
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
 
@@ -310,10 +298,10 @@ def delete_events(events: list[Event]):
     for event in events: event.delete()
 
 
-def remove_old_events(events: list[Event]) -> list[Event]:
+def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]:
     good_events = []
     for event in events:
-        if event.timestamp > datetime.now().timestamp():
+        if event.timestamp > cutoff_timestamp:
             good_events.append(event)
     return good_events
 
@@ -454,16 +442,11 @@ class Message:
         return data is not None
 
 
-def delete_old_update_messages(calendar_id: int):
-    from datetime import datetime
+def fetch_outdated_update_messages(calendar_id: int, cutoff_timestamp: int) -> list[Message]:
+    data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=? AND DeleteBy<?",
+                          (calendar_id, cutoff_timestamp))
+    return [Message(x) for x in data]
 
-    print("[INFO]\tDeleting old update messages")
-    data = Db().fetch_all("SELECT * FROM messages WHERE DeleteBy<? AND CalendarId=?",
-                          (datetime.now().timestamp(), calendar_id))
-    print(data)
-
-    Db().execute("DELETE FROM messages WHERE DeleteBy<? AND CalendarId=?",
-                 (datetime.now().timestamp(), calendar_id))
 
 def delete_messages(messages: list[Message]):
     for message in messages: message.delete()
@@ -492,7 +475,7 @@ def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
     print("Done.")
 
 
-class LogType(Enum):  # when adding something that will need a new folder add it to init_logger()
+class LogType(Enum):  # when adding something that will need a new folder, add it to init_logger()
     ALL = ""
     CALENDAR = "calendar"
     DM = "dm"

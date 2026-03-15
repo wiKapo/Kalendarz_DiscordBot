@@ -17,7 +17,7 @@ class SelectEvent(discord.ui.Select):
         self.events = events
 
     async def callback(self, interaction: discord.Interaction):
-        print(f"Recieved values from select: {self.values}")
+        print(f"Received values from select: {self.values}")
         try:
             await self.action(interaction, self.events, self.values)
         except Exception as e:

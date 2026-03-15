@@ -12,7 +12,7 @@ class AdminCog(commands.Cog):
     admin_group = discord.app_commands.Group(name="admin", description="[TYLKO DLA ADMINÓW KALENDARZA]")
 
     @admin_group.command(name="update_all_calendars", description="[TYLKO DLA ADMINÓW KALENDARZA] "
-                                                                  "Aktualizuje wszystkie wiadomości kalendarza do najnowszej werjsi")
+                                                                  "Aktualizuje wszystkie wiadomości kalendarza do najnowszej wersji")
     @discord.app_commands.check(check_calendar_admin)
     async def update_all_calendars(self, interaction: discord.Interaction):
         logger = get_logger()

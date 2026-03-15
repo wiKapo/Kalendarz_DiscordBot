@@ -101,11 +101,11 @@ async def help(interaction: discord.Interaction):
 `/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
 Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
-W przypaku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
+W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
 `/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu, sekcji kalendarza oraz wybrania roli, 
 która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
-`/calendar delete` - **Permamentnie** usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
+`/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
 `/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
 
 ### ---==[ Polecenia wydarzeń ]==---
@@ -119,8 +119,8 @@ Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie moż
 
     message = """### ---==[ Polecenia menedżerów ]==---
 Role menedżerów są dodawane przez administratorów na danym serwerze.
-Menedżerowie otrzymują dostęp do wszyskich komend `/calendar`, `/event` i `/notification` na danym serwerze.
-Mendżerowie nie mogą dodawać nowych mendżerów.
+Menedżerowie otrzymują dostęp do wszystkich komend `/calendar`, `/event` i `/notification` na danym serwerze.
+Menedżerowie nie mogą dodawać nowych menedżerów.
 
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
     

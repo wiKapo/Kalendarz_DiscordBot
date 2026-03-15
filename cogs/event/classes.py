@@ -26,7 +26,7 @@ class DeleteEventsModal(discord.ui.Modal):
         print(f"[INFO]\tDeleted events {events_to_delete}")
 
         if len(self.event_select.values) > 1:
-            await interaction.response.send_message(f'Wydrzenia zostały usunięte', ephemeral=True)
+            await interaction.response.send_message(f'Wydarzenia zostały usunięte', ephemeral=True)
         else:
             await interaction.response.send_message(f'Wydarzenie zostało usunięte', ephemeral=True)
 
