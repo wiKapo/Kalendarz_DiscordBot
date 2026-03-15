@@ -37,17 +37,20 @@ class EditCalendarModal(discord.ui.Modal):
                                        component=self.ping_role_select))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        selected_ping_role = self.ping_role_select.values[0].id if self.ping_role_select.values else None
+
         logger = get_logger(LogType.CALENDAR, self.calendar.id)
         logger.info(f"Editing calendar number {self.calendar.id}")
         logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value}")
         logger.debug(f"Show sections: {self.calendar.showSections} -> {self.section_select.values[0] == 1}")
-        logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {self.ping_role_select.values[0].id}")
+        logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
+
+        ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value != "" else None
         self.calendar.showSections = self.section_select.values[0] == "1"
-        self.calendar.pingRoleId = self.ping_role_select.values[0].id
+        self.calendar.pingRoleId = selected_ping_role
 
-        ping_role_changed = self.calendar.pingRoleId != self.ping_role_select.values[0].id
         # Send a ping message only when the ping role is changed
         self.calendar.update()
         logger.info("Calendar updated in the database")

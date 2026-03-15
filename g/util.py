@@ -98,7 +98,9 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
     logger.info(f"Updating {repr(calendar)} in [{interaction.guild.name} - {interaction.guild.id}]"
                 f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
-    fetch_outdated_update_messages(calendar.id, int(datetime.now().timestamp()))
+    outdated_update_messages = fetch_outdated_update_messages(calendar.id, int(datetime.now().timestamp()))
+    delete_messages(outdated_update_messages)
+    logger.info(f"Deleted {len(outdated_update_messages)} outdated update messages")
 
     await (await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
 
