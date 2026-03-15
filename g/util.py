@@ -167,9 +167,10 @@ def get_logger(log_type: LogType = LogType.ALL, id: int | None = None) -> loggin
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
 
-    stream_handler = logging.StreamHandler()
-    stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
-    stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-    logger.addHandler(stream_handler)
+    if len(logger.handlers) == 0:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
+        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logger.addHandler(stream_handler)
 
     return logger
