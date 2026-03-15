@@ -17,19 +17,18 @@ class SelectEvent(discord.ui.Select):
         self.events = events
 
     async def callback(self, interaction: discord.Interaction):
-        print(f"Received values from select: {self.values}")
         try:
             await self.action(interaction, self.events, self.values)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            print(e)
+            print(f"ERROR in callback of select event in [{interaction.guild.name} - {interaction.guild.id}]"
+                  f" in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
 
 
 class SelectEventView(discord.ui.View):
     def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
         super().__init__()
         self.add_item(SelectEvent(events, placeholder, action, max_values))
-        print("[INFO]\tSent event selection form")
 
 
 class NotificationButton(discord.ui.Button):
@@ -45,7 +44,9 @@ class NotificationButton(discord.ui.Button):
         try:
             await self.action(self.bot, interaction)
         except Exception as e:
-            print(e)
+            await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
+            print(f"ERROR with notification buttons in [{interaction.guild.name} - {interaction.guild.id}]"
+                f" in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
 
 
 class NotificationButtonsView(discord.ui.View):
