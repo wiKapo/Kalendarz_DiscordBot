@@ -29,12 +29,9 @@ class NotificationCog(commands.Cog):
     async def update_loop(self):
         logger = get_logger(LogType.NOTIFICATION)
 
-        current_time = hour_rounder(datetime.now()).timestamp()
-        logger.info(f"Checking for notifications to send at {current_time}")
-
         notifications = fetch_all_ready_notifications()
-        if len(notifications) == 0:
-            logger.info("No notifications found, skipping")
+        if not notifications:
+            logger.info("No due notifications found, skipping")
             return
         logger.info(f"Found {len(notifications)} notifications to send")
 
