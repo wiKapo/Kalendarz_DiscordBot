@@ -37,7 +37,7 @@ class NotificationCog(commands.Cog):
         print(len(notifications))
         for notification in notifications:
             print(f"Checking notification: {notification} | {notification.timestamp <= current_time} |")
-            if notification[TIMESTAMP] <= current_time:
+            if notification.timestamp <= current_time:
                 user = await self.bot.fetch_user(notification.userId)
                 print(f"Sending notification to [{user} {notification.userId}]")
                 event_name, calendar_id = Db().fetch_one("SELECT Name, CalendarId FROM events WHERE Id = ?",
