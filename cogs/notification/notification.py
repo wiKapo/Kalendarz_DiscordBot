@@ -27,28 +27,29 @@ class NotificationCog(commands.Cog):
 
     @tasks.loop(time=UPDATE_TIMES)
     async def update_loop(self):
+        logger = get_logger(LogType.NOTIFICATION)
 
         current_time = hour_rounder(datetime.now()).timestamp()
-        print(f"[INFO]\tChecking for notifications to send at {current_time}")
+        logger.info(f"Checking for notifications to send at {current_time}")
 
-        notifications = fetch_all_notifications()
+        notifications = fetch_all_ready_notifications()
         if len(notifications) == 0:
+            logger.info("No notifications found, skipping")
             return
-        print(len(notifications))
+        logger.info(f"Found {len(notifications)} notifications to send")
+
         for notification in notifications:
-            print(f"Checking notification: {notification} | {notification.timestamp <= current_time} |")
-            if notification.timestamp <= current_time:
-                user = await self.bot.fetch_user(notification.userId)
-                print(f"Sending notification to [{user} {notification.userId}]")
-                event_name, calendar_id = Db().fetch_one("SELECT Name, CalendarId FROM events WHERE Id = ?",
-                                                         (notification.eventId,))
-                guild_id, channel_id, message_id = Db().fetch_one(
-                    "SELECT GuildId, ChannelId, MessageId FROM calendars WHERE Id = ?", (calendar_id,))
-                await user.send(f"Powiadomienie o wydarzeniu \"{event_name}\"\n"
-                                f"Z kalendarza: https://discord.com/channels/{guild_id}/{channel_id}/{message_id}\n"
-                                f"{notification.description if notification.description else ""}")
-                Db().execute("DELETE FROM notifications WHERE Id = ?", (notification.id,))
-        print("DONE checking notifications")
+            user: discord.User = await self.bot.fetch_user(notification.userId)
+
+            logger.info(f"Sending notification [{notification.id}] to [{user}]")
+            user_logger = get_logger(LogType.USER, user.id)
+            user_logger.info(f"Sending notification {repr(notification)}")
+
+            await user.send(f"{notification}")
+            user_logger.info("Sent notification")
+            notification.delete()
+            logger.info("Deleted notification from the database")
+        logger.info("Finished sending notifications")
 
     notify_group = discord.app_commands.Group(name="notification", description="Polecenia powiadomień")
 
@@ -94,16 +95,19 @@ class NotificationCog(commands.Cog):
     @notify_group.command(name="test", description="DEBUG ONLY")
     @discord.app_commands.check(check_admin)
     async def test(self, interaction: discord.Interaction):
-        print("Testing notification loop")
+        logger = get_logger(LogType.NOTIFICATION)
+        logger.info("Testing notification loop")
+        await interaction.response.send_message("Testing notification loop", ephemeral=True)
         try:
             await self.update_loop()
         except Exception as e:
-            print(e)
-        await interaction.response.send_message("Done", ephemeral=True)
+            logger.debug(e)
+        await interaction.followup.send("Done", ephemeral=True)
 
     @test.error
     async def test_error(self, interaction: discord.Interaction, error):
         await send_error_message(interaction, error)
+
 
 async def setup(bot):
     await bot.add_cog(NotificationCog(bot))

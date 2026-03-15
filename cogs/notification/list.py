@@ -5,15 +5,17 @@ from g.util import *
 
 
 async def notification_list(interaction: discord.Interaction, bot: Bot):
+    logger = get_logger(LogType.USER, interaction.user.id)
+
     if check_dm(interaction):
-        print(f"[INFO]\tShowing notifications in DM channel of [{interaction.user.name} - {interaction.user.id}]")
+        logger.info(f"Showing notifications in DMs")
         await interaction.response.send_message("Wybierz które powiadomienia wyświetlić", view=NotificationDMView(bot),
                                                 ephemeral=True)
     else:
-        print(f"[INFO]\tShowing notifications in [{interaction.guild.name} - {interaction.guild.id}]")
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        print(f"[INFO]\tShowing notifications for calendar no.{calendar.id} {calendar.title}")
+        logger.info(f"Showing notifications in [{interaction.guild.name} - {interaction.guild.id}] "
+                    f"in [{interaction.channel.name} - {interaction.channel.id}] for calendar no.{calendar.id}")
         await interaction.response.send_message("Wybierz które powiadomienia wyświetlić",
                                                 view=NotificationGuildView(calendar.id), ephemeral=True)
 
@@ -29,8 +31,9 @@ async def send_all_calendar_notifications(interaction: discord.Interaction, cale
 
 async def send_notification_list(interaction: discord.Interaction, events: list[Event]):
     message = format_notifications(interaction, events)
-    await interaction.response.send_message(f"### Twoje powiadomienia:\n{message}",
-                                            ephemeral=True)
+    logger = get_logger(LogType.USER, interaction.user.id)
+    logger.info(f"Sending notification list")
+    await interaction.response.send_message(f"### Twoje powiadomienia:\n{message}", ephemeral=True)
 
 
 def format_notifications(interaction: discord.Interaction, events: list[Event]) -> str:
@@ -69,7 +72,8 @@ class ListNotificationButton(discord.ui.Button):
         try:
             await self.action(interaction, self.data)
         except Exception as e:
-            print(f"HMmmm{e}")
+            logger = get_logger(LogType.USER, interaction.user.id)
+            logger.error(f"in callback of NotificationButton {e}")
 
 
 class NotificationDMView(discord.ui.View):
@@ -82,20 +86,23 @@ class NotificationDMView(discord.ui.View):
 
 
 async def send_calendar_select_view(interaction: discord.Interaction, bot: Bot):
-    print(f"[INFO]\tShowing calendar select view for [{interaction.user.name} - {interaction.user.id}]")
+    logger = get_logger(LogType.USER, interaction.user.id)
+
+    logger.info(f"Showing calendar select view for [{interaction.user.name} - {interaction.user.id}]")
     calendars = []
-    for c in fetch_all_calendars():  # Showing only those calendars from those guilds where the user has access
+    for calendar in fetch_all_calendars():  # Showing only those calendars from those guilds where the user has access
+        guild: discord.Guild
         try:
-            guild = await bot.fetch_guild(c.guildId)
+            guild = await bot.fetch_guild(calendar.guildId)
             await guild.fetch_member(interaction.user.id)
+        except (discord.NotFound, discord.Forbidden):
+            continue
 
-            c.guildName = guild.name
-            c.channelName = (await guild.fetch_channel(c.channelId)).name
-            calendars.append(c)
-        except Exception as _:
-            pass
+        calendar.guildName = guild.name
+        calendar.channelName = (await guild.fetch_channel(calendar.channelId)).name
+        calendars.append(calendar)
 
-    print(f"{calendars}")
+    logger.debug(f"Available calendars: {[repr(c) for c in calendars]}")
     await interaction.response.send_message("Wybierz kalendarz", view=SelectCalendarView(calendars),
                                             ephemeral=True)
 
@@ -125,7 +132,8 @@ class SelectCalendar(discord.ui.Select):
         try:
             await self.action(interaction, int(self.values[0]))
         except Exception as e:
-            print(f"HIR{e}")
+            logger = get_logger(LogType.USER, interaction.user.id)
+            logger.error(f"in callback of SelectCalendar {e}")
 
 
 class SelectCalendarView(discord.ui.View):

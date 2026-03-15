@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Callable
 
 import discord
@@ -21,8 +22,9 @@ class SelectEvent(discord.ui.Select):
             await self.action(interaction, self.events, self.values)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            print(f"ERROR in callback of select event in [{interaction.guild.name} - {interaction.guild.id}]"
-                  f" in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
+            logger = logging.getLogger("default")
+            logger.error(f"in callback of SelectEvent in [{interaction.guild.name} - {interaction.guild.id}] "
+                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
 
 
 class SelectEventView(discord.ui.View):
@@ -45,8 +47,9 @@ class NotificationButton(discord.ui.Button):
             await self.action(self.bot, interaction)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            print(f"ERROR with notification buttons in [{interaction.guild.name} - {interaction.guild.id}]"
-                f" in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
+            logger = logging.getLogger("default")
+            logger.error(f"in callback of NotificationButton in [{interaction.guild.name} - {interaction.guild.id}] "
+                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
 
 
 class NotificationButtonsView(discord.ui.View):

@@ -8,15 +8,22 @@ from g.util import *
 async def notification_delete(interaction: discord.Interaction, event_id: int | None):
     if not await check_if_calendar_exists(interaction): return
 
-    print(f"[INFO]\tDeleting notifications in [{interaction.guild.name} - {interaction.guild.id}]"
-          f"in [{interaction.channel.name} - {interaction.channel.id}] from [{interaction.user.name} - {interaction.user.id}]")
+    logger = get_logger(LogType.USER, interaction.user.id)
+    logger.info(f"Deleting notifications in [{interaction.guild.name} - {interaction.guild.id}]"
+                f"in [{interaction.channel.name} - {interaction.channel.id}]")
 
     if event_id is None:
         events = remove_old_events(fetch_events_by_channel(interaction.guild_id, interaction.channel_id),
                                    int(datetime.now().timestamp()))
-        await interaction.response.send_message(
-            view=SelectEventView(events, "Wybierz wydarzenie", send_delete_notification_modal), ephemeral=True)
+        if events:
+            logger.info(f"Showing event select form")
+            await interaction.response.send_message(
+                view=SelectEventView(events, "Wybierz wydarzenie", send_delete_notification_modal), ephemeral=True)
+        else:
+            logger.info(f"No available events found in the calendar")
+            await interaction.response.send_message("Brak dostępnych wydarzeń w tym kalendarzu.", ephemeral=True)
     else:
         event = Event()
         event.fetch_local(event_id, interaction.guild_id, interaction.channel_id)
+        logger.info(f"Showing notification delete modal for event {repr(event)}")
         await interaction.response.send_modal(DeleteNotificationModal(event, interaction.user.id))

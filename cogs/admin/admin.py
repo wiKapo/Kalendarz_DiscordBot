@@ -29,7 +29,7 @@ class AdminCog(commands.Cog):
             message.message = "**Aktualizacja kalendarza** Dodano możliwość wyboru ról dla menedżerów kalendarza używając `/user set`"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** Naprawiono sprawdzanie powiadomień. Z tego powodu, aby uniknąć spamowania wszystkich usunięto wszystkie ustawione powiadomienia."  # TODO DELETE ME
-            message.insert_with_check() # TODO DELETE ME
+            message.insert_with_check()  # TODO DELETE ME
             try:
                 await admin_update_calendar(self.bot, calendar)
             except Exception as e:
@@ -51,7 +51,7 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message("Brak uprawnień", ephemeral=True)
 
     @admin_group.command(name="remove_admin_cog", description="[TYLKO DLA ADMINÓW KALENDARZA] "
-                                                            "Chowa komendy administratorów")
+                                                              "Chowa komendy administratorów")
     @discord.app_commands.check(check_calendar_admin)
     async def remove_admin_cog(self, interaction: discord.Interaction):
         logger = get_logger()

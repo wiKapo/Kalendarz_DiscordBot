@@ -21,8 +21,8 @@ class DeleteNotificationModal(discord.ui.Modal):
                                              "Potwierdź wybierając przycisk `Wyślij`"))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        print(f"[INFO]\tDeleting notifications from user [{interaction.user.name} = {interaction.user.id}] "
-              f"for event id {self.event.id}")
+        logger = get_logger(LogType.USER, interaction.user.id)
+        logger.info(f"Deleting notifications for event id {self.event.id}")
         Db().execute("DELETE FROM notifications WHERE UserId = ? AND EventId = ?", (interaction.user.id, self.event.id))
 
 
@@ -69,42 +69,40 @@ class AddNotificationModal(discord.ui.Modal):
             "-# Np.: `3h`=3 godziny, `3d`=3 dni, `2w`=2 tygodnie, `1d5`=dzień i 5 godzin"))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        print(f"[INFO]\tAdding notifications for event id {self.event.id}"
-              f" at {'time' if len(self.time_select.values) == 1 else 'times'} {self.time_select.values}"
-              f"{f' and text {self.description_input.value}' if self.description_input.value else ''}")
+        logger = get_logger(LogType.USER, interaction.user.id)
+        logger.info(f"Adding notifications for event {repr(self.event)}")
+        logger.debug(f"Selected times: {self.time_select.values} | Description: {self.description_input.value}")
 
-        print(f"Event {self.event.name} @ {self.event.timestamp} ")
         event_time = hour_rounder(datetime.fromtimestamp(self.event.timestamp))
+        logger.debug(f"Event time: {event_time}")
 
-        print(f"Event time: {event_time}")
         if "_" in self.time_select.values:
             self.time_select.values.remove("_")
             if self.custom_input.value != "":
                 self.time_select.values.extend(self.custom_input.value.replace(" ", "").split(','))
             else:
-                print("Did not receive custom times, skipping")
+                logger.info("Did not receive custom times, skipping")
 
-        print(self.time_select.values)
         selected_time_tags = [n.timeTag for n in self.notifications]
         for time_tag in self.time_select.values:
             if time_tag in selected_time_tags:  # do not add duplicates
                 selected_time_tags.remove(time_tag)
                 continue
 
-            notify_time = event_time - timedelta(hours=get_time_from_tag(time_tag))
-            print(f"Notify time: {notify_time}")
+            notify_time = event_time - timedelta(hours=get_hours_from_tag(time_tag))
+            logger.debug(f"Notify time: {notify_time}")
             Db().execute(
                 "INSERT INTO notifications (UserId, EventId, Timestamp, TimeTag, Description) VALUES (?, ?, ?, ?, ?)",
                 (interaction.user.id, self.event.id, notify_time.timestamp(), time_tag,
-                 self.description_input.value if self.description_input.value else None))
+                 self.description_input.value if self.description_input.value else None)) # TODO move to Notification class
 
         if len(selected_time_tags) > 0:  # if there are times left, remove them from the database
-            print(f"Removing {selected_time_tags} from database")
+            logger.info(f"Removing {selected_time_tags} from database")
             for time_tag in selected_time_tags:
                 Db().execute("DELETE FROM notifications WHERE UserId = ? AND EventId = ? AND TimeTag = ?",
                              (interaction.user.id, self.event.id, time_tag))
 
-        print("DONE")
+        logger.info("DONE")
         await interaction.response.send_message(f"Dodano powiadomienia do wydarzenia \"{self.event.name}\"",
                                                 ephemeral=True)
 

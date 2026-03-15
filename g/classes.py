@@ -348,6 +348,17 @@ class Notification:
     def __repr__(self):
         return f"Notification[{self.id}]: user[{self.userId}] event[{self.eventId}] {self.timestamp} {self.timeTag} {self.description}"
 
+    def __str__(self):
+        event = Event()
+        event.fetch(self.eventId)
+        calendar = Calendar()
+        calendar.fetch(event.calendarId)
+
+        return (f"Powiadomienie o wydarzeniu [{event}]\n"
+                f"Odbędzie się <t:{event.timestamp}:R>\n"
+                f"Z kalendarza: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}\n"
+                f"{self.description if self.description else ""}")
+
     def get_guild_and_channel_id(self):
         return Db().fetch_one(
             "SELECT GuildId, ChannelId FROM notifications JOIN events ON notifications.EventId = events.Id "
@@ -368,9 +379,18 @@ class Notification:
         Db().execute("UPDATE notifications SET Timestamp=?, TimeTag=?, Description=? WHERE Id=?",
                      (self.timestamp, self.timeTag, self.description, self.id))
 
+    def delete(self):
+        Db().execute("DELETE FROM notifications WHERE Id=?", (self.id,))
+
 
 def fetch_all_notifications() -> list[Notification]:
     data = Db().fetch_all("SELECT * FROM notifications")
+    return [Notification(x) for x in data]
+
+
+def fetch_all_ready_notifications() -> list[Notification]:
+    from datetime import datetime
+    data = Db().fetch_all("SELECT * FROM notifications WHERE Timestamp<?", (datetime.now().timestamp(),))
     return [Notification(x) for x in data]
 
 
@@ -478,4 +498,5 @@ def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
 class LogType(Enum):  # when adding something that will need a new folder, add it to init_logger()
     ALL = ""
     CALENDAR = "calendar"
-    DM = "dm"
+    USER = "user"
+    NOTIFICATION = "notification"
