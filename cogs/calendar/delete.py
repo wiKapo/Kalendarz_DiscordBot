@@ -4,7 +4,9 @@ from cogs.calendar.util import *
 async def calendar_delete(interaction: discord.Interaction):
     if not await check_if_calendar_exists(interaction): return
 
-    logger = get_logger(LogType.CALENDAR, interaction.guild_id)
+    calendar = Calendar()
+    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+    logger = get_logger(LogType.CALENDAR, calendar.id)
     logger.info(f"Showing delete calendar modal in [{interaction.guild.name} - {interaction.guild.id}]"
                 f" in [{interaction.channel.name} - {interaction.channel.id}]")
     await interaction.response.send_modal(DeleteCalendarModal())

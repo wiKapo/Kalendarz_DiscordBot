@@ -27,7 +27,9 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
             await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
     else:
         logger = get_logger(LogType.CALENDAR)
-        logger.info(f"Creating calendar with {f'title \"{title}\"' if title is not None else 'default title'}")
+        logger.info(f"Creating calendar with {f'title \"{title}\"' if title is not None else 'default title'}"
+                    f" in [{interaction.guild.name} - {interaction.guild.id}]"
+                    f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
         calendar_msg = await interaction.channel.send(f'Kalendarz pojawi się tutaj')
         logger.info(f"Calendar message created: {calendar_msg.id}")
