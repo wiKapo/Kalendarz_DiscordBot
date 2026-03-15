@@ -59,7 +59,7 @@ class DeleteEventsModal(discord.ui.Modal):
         await update_calendar(interaction, calendar)
         logger.info(f"Deleted events")
 
-        if len(self.event_select.values) > 1:
+        if self.event_select.values:
             await interaction.response.send_message(f'Wydarzenia zostały usunięte', ephemeral=True)
         else:
             await interaction.response.send_message(f'Wydarzenie zostało usunięte', ephemeral=True)

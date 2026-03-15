@@ -37,7 +37,7 @@ async def send_notification_list(interaction: discord.Interaction, events: list[
 
 
 def format_notifications(interaction: discord.Interaction, events: list[Event]) -> str:
-    if len(events) == 0:
+    if not events:
         return "Brak powiadomień"
 
     message = ""

@@ -45,7 +45,7 @@ class AddNotificationModal(discord.ui.Modal):
             discord.SelectOption(label="2 godziny wcześniej", value="2", default="2" in selected_time_tags),
             discord.SelectOption(label="1 dzień wcześniej", value="1d", default="1d" in selected_time_tags),
             discord.SelectOption(label="1 tydzień wcześniej", value="1w", default="1w" in selected_time_tags),
-            discord.SelectOption(label="Niestandardowe", value="_", default=len(selected_custom_time_tags) > 0)]
+            discord.SelectOption(label="Niestandardowe", value="_", default=bool(selected_custom_time_tags))]
 
         self.time_select = discord.ui.Select(options=time_options, max_values=len(time_options), required=True)
         self.add_item(discord.ui.Label(
@@ -96,7 +96,7 @@ class AddNotificationModal(discord.ui.Modal):
                 (interaction.user.id, self.event.id, notify_time.timestamp(), time_tag,
                  self.description_input.value if self.description_input.value else None)) # TODO move to Notification class
 
-        if len(selected_time_tags) > 0:  # if there are times left, remove them from the database
+        if selected_time_tags:  # if there are times left, remove them from the database
             logger.info(f"Removing {selected_time_tags} from database")
             for time_tag in selected_time_tags:
                 Db().execute("DELETE FROM notifications WHERE UserId = ? AND EventId = ? AND TimeTag = ?",
@@ -114,7 +114,7 @@ async def send_add_notification_modal(interaction: discord.Interaction, events: 
 async def send_delete_notification_modal(interaction: discord.Interaction, events: list[Event], values: list[str]):
     event = events[int(values[0])]
     notifications = fetch_notifications_by_event(interaction.user.id, event.id)
-    if len(notifications) > 0:
+    if notifications:
         await interaction.response.send_modal(DeleteNotificationModal(events[int(values[0])], interaction.user.id))
     else:
         await interaction.response.send_message("Nie masz żadnych powiadomień dotyczących tego wydarzenia",

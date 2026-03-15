@@ -21,7 +21,7 @@ async def event_edit(interaction: discord.Interaction, event_id: int | None):
         await interaction.response.send_modal(EventEditModal(event))
     else:
         events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
-        if len(events) > 0:
+        if events:
             logger.info("Showing event select form")
             await interaction.response.send_message(
                 view=SelectEventView(events, "Wybierz wydarzenie do edytowania", send_event_edit_modal),
