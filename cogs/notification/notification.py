@@ -89,21 +89,21 @@ class NotificationCog(commands.Cog):
     async def delete_error(self, interaction: discord.Interaction, error):
         await send_error_message(interaction, error)
 
-    @notify_group.command(name="test", description="DEBUG ONLY")
-    @discord.app_commands.check(check_admin)
-    async def test(self, interaction: discord.Interaction):
-        logger = get_logger(LogType.NOTIFICATION)
-        logger.info("Testing notification loop")
-        await interaction.response.send_message("Testing notification loop", ephemeral=True)
-        try:
-            await self.update_loop()
-        except Exception as e:
-            logger.debug(e)
-        await interaction.followup.send("Done", ephemeral=True)
-
-    @test.error
-    async def test_error(self, interaction: discord.Interaction, error):
-        await send_error_message(interaction, error)
+    # @notify_group.command(name="test", description="DEBUG ONLY")
+    # @discord.app_commands.check(check_admin)
+    # async def test(self, interaction: discord.Interaction):
+    #     logger = get_logger(LogType.NOTIFICATION)
+    #     logger.info("Testing notification loop")
+    #     await interaction.response.send_message("Testing notification loop", ephemeral=True)
+    #     try:
+    #         await self.update_loop()
+    #     except Exception as e:
+    #         logger.debug(e)
+    #     await interaction.followup.send("Done", ephemeral=True)
+    #
+    # @test.error
+    # async def test_error(self, interaction: discord.Interaction, error):
+    #     await send_error_message(interaction, error)
 
 
 async def setup(bot):
