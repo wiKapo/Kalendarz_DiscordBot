@@ -74,7 +74,7 @@ class UpdateMessageView(discord.ui.View):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         messages = fetch_messages_for_calendar(calendar.id)
-        if len(messages) == 0:
+        if not messages:
             await interaction.response.send_message("Brak zmian do pokazania", ephemeral=True)
         else:
             result = "### Ostatnie zmiany w kalendarzu:\n"

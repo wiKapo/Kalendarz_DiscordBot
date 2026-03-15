@@ -40,10 +40,7 @@ async def check_calendar_admin(interaction) -> bool:
 
 async def check_manager(interaction: discord.Interaction) -> bool:
     manager_roles = fetch_manager_roles_for_guild(interaction.guild)
-    print(f"MANAGER ROLES: {manager_roles}")
-    check = len(set(interaction.user.roles).intersection(manager_roles))  # TODO clean up
-    print(f"CHECK intersection: {check}")
-    return check > 0
+    return bool(set(interaction.user.roles).intersection(manager_roles))
 
 
 async def check_user(interaction) -> bool:
@@ -74,16 +71,18 @@ async def check_if_event_id_exists(interaction, event_id) -> bool:
 
 async def send_error_message(interaction: discord.Interaction, error):
     command_name = interaction.command.qualified_name
+
+    logger = get_logger()
     if isinstance(error, discord.app_commands.CheckFailure):
         if check_dm(interaction):
-            print(f"[INFO]\tUser {interaction.user.name} tried to use /{command_name} in DM channel. LOL")
+            logger.info(f"User {interaction.user.name} tried to use /{command_name} in DM channel")
             await interaction.response.send_message(f"`/{command_name}` nie jest wspierane w prywatnych wiadomościach",
                                                     ephemeral=True)
         else:
-            print(f"[INFO]\tUser {interaction.user.name} doesn't have permissions to use /{command_name}")
+            logger.info(f"User {interaction.user.name} doesn't have permissions to use /{command_name}")
             await interaction.response.send_message("Brak uprawnień", ephemeral=True)
     else:
-        print(f"[ERROR]\t{error}")
+        logger.error(f"Recieved an error while executing {command_name}: {error}")
         await interaction.response.send_message(
             f"Błąd: {error}\nZgłoś do @wiKapo lub "
             f"w wątku: https://discord.com/channels/1284116042473279509/1474884364520259737", ephemeral=True)
@@ -126,22 +125,22 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
 # --------- VVV only for /update_all command VVV ---------
 
 async def admin_update_calendar(bot: Bot, calendar: Calendar):
-    print(f"[INFO - ADMIN]\tAdmin is updating calendar {calendar.title}"
-          f" in [{calendar.guildId}] in [{calendar.channelId}]")
+    logger = get_logger()
 
     channel = await (await bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId)
+
+    logger.info(f"Admin is updating calendar {calendar.title} in [{channel.guild.name} - {calendar.guildId}] "
+                f"in [{channel.name} - {channel.id}]")
 
     await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
 
     if calendar.pingMessageId is not None:
-        print(
-            f"[INFO - ADMIN]\tRemoving old message in [{calendar.messageId}] {calendar.guildId}, {calendar.channelId}")
+        logger.info("Removing old ping message")
         await (await channel.fetch_message(calendar.pingMessageId)).delete()
         calendar.pingMessageId = None
 
     if calendar.pingRoleId is not None:
-        print(
-            f"[INFO - ADMIN]\tSending update message in [{calendar.messageId}] {calendar.guildId}, {calendar.channelId}")
+        logger.info("Sending update message")
         from datetime import datetime
         message = await channel.send(
             f"Kalendarz został zaktualizowany do najnowszej wersji\n"
@@ -176,7 +175,7 @@ def get_logger(log_type: LogType = LogType.ALL, id: int | None = None) -> loggin
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
 
-    if len(logger.handlers) == 0:
+    if not logger.handlers:
         stream_handler = logging.StreamHandler()
         stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
         stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))

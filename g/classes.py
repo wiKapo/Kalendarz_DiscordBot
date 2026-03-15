@@ -101,7 +101,7 @@ class Calendar:
 
         events: list[Event] = fetch_events_by_calendar(self.id)
         message = f":calendar:\t{self.title}\t:calendar:"
-        if len(events) == 0:
+        if not events:
             message += "\nPUSTE"
         else:
             current_day_delta = 0
@@ -479,20 +479,15 @@ def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
 
 def fetch_manager_roles_for_guild(guild: Guild) -> list[Role]:
     role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE GuildId=?", (guild.id,))
-    print(f"Raw data from database {role_ids}")
-    result = [guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
-    print(f"Manager roles ids received: {result}")
-    return result
+    return [guild.get_role(r[0]) for r in role_ids] if role_ids else []
 
 
 def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
-    print("Deleting...")
-    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))
-    print("Updating...")
-    if roles:
+    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))  # remove all old roles
+
+    if roles:  # if there are any roles, add them
         for role in roles:
             Db().execute("INSERT INTO managerRoles (GuildId, RoleId) VALUES (?, ?)", (guild_id, role.id))
-    print("Done.")
 
 
 class LogType(Enum):  # when adding something that will need a new folder, add it to init_logger()
