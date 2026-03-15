@@ -1,5 +1,5 @@
 import sqlite3
-from datetime import datetime
+from enum import Enum
 
 from discord import Role, Guild, SelectOption
 
@@ -97,9 +97,11 @@ class Calendar:
                 f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
     def __str__(self):
+        from datetime import datetime
+
         events: list[Event] = fetch_events_by_calendar(self.id)
         message = f":calendar:\t{self.title}\t:calendar:"
-        if len(events) == 0:
+        if not events:
             message += "\nPUSTE"
         else:
             current_day_delta = 0
@@ -145,20 +147,6 @@ class Calendar:
 
         return message
 
-    def prepare_calendar_base(self, data: list):
-        """
-        :param data: title, showSections, guildId, channelId, messageId
-        """
-        self.set_base(data)
-        self.insert()
-        self.fetch_by_channel(self.guildId, self.channelId)
-
-    def set_base(self, data: list):
-        """
-        :param data: title, showSections, guildId, channelId, messageId
-        """
-        self.title, self.showSections, self.guildId, self.channelId, self.messageId = data
-
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
         if data is not None:
@@ -182,6 +170,7 @@ class Calendar:
             (self.title, self.showSections, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
+        # TODO remove notifications connected with those events
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
 
@@ -300,10 +289,19 @@ def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
     return [Event(x) for x in data]
 
 
-def remove_old_events(events: list[Event]) -> list[Event]:
+def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
+    data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
+    return [Event(x) for x in data]
+
+
+def delete_events(events: list[Event]):
+    for event in events: event.delete()
+
+
+def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]:
     good_events = []
     for event in events:
-        if event.timestamp > datetime.now().timestamp():
+        if event.timestamp > cutoff_timestamp:
             good_events.append(event)
     return good_events
 
@@ -350,6 +348,17 @@ class Notification:
     def __repr__(self):
         return f"Notification[{self.id}]: user[{self.userId}] event[{self.eventId}] {self.timestamp} {self.timeTag} {self.description}"
 
+    def __str__(self):
+        event = Event()
+        event.fetch(self.eventId)
+        calendar = Calendar()
+        calendar.fetch(event.calendarId)
+
+        return (f"Powiadomienie o wydarzeniu [{event}]\n"
+                f"Odbędzie się <t:{event.timestamp}:R>\n"
+                f"Z kalendarza: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}\n"
+                f"{self.description if self.description else ""}")
+
     def get_guild_and_channel_id(self):
         return Db().fetch_one(
             "SELECT GuildId, ChannelId FROM notifications JOIN events ON notifications.EventId = events.Id "
@@ -370,9 +379,18 @@ class Notification:
         Db().execute("UPDATE notifications SET Timestamp=?, TimeTag=?, Description=? WHERE Id=?",
                      (self.timestamp, self.timeTag, self.description, self.id))
 
+    def delete(self):
+        Db().execute("DELETE FROM notifications WHERE Id=?", (self.id,))
+
 
 def fetch_all_notifications() -> list[Notification]:
     data = Db().fetch_all("SELECT * FROM notifications")
+    return [Notification(x) for x in data]
+
+
+def fetch_all_ready_notifications() -> list[Notification]:
+    from datetime import datetime
+    data = Db().fetch_all("SELECT * FROM notifications WHERE Timestamp<?", (datetime.now().timestamp(),))
     return [Notification(x) for x in data]
 
 
@@ -435,22 +453,23 @@ class Message:
         Db().execute("INSERT INTO messages (CalendarId, Timestamp, DeleteBy, Message) VALUES (?, ?, ?, ?)",
                      (self.calendarId, self.timestamp, self.deleteBy, self.message))
 
+    def delete(self):
+        Db().execute("DELETE FROM messages WHERE Id=?", (self.id,))
+
     def check_if_duplicate(self) -> bool:
         data = Db().fetch_one("SELECT * FROM messages WHERE CalendarId=? AND Message=?",
                               (self.calendarId, self.message))
         return data is not None
 
 
-def delete_old_update_messages(calendar_id: int):
-    from datetime import datetime
+def fetch_outdated_update_messages(calendar_id: int, cutoff_timestamp: int) -> list[Message]:
+    data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=? AND DeleteBy<?",
+                          (calendar_id, cutoff_timestamp))
+    return [Message(x) for x in data]
 
-    print("[INFO]\tDeleting old update messages")
-    data = Db().fetch_all("SELECT * FROM messages WHERE DeleteBy<? AND CalendarId=?",
-                          (datetime.now().timestamp(), calendar_id))
-    print(data)
 
-    Db().execute("DELETE FROM messages WHERE DeleteBy<? AND CalendarId=?",
-                 (datetime.now().timestamp(), calendar_id))
+def delete_messages(messages: list[Message]):
+    for message in messages: message.delete()
 
 
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
@@ -460,17 +479,19 @@ def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
 
 def fetch_manager_roles_for_guild(guild: Guild) -> list[Role]:
     role_ids = Db().fetch_all("SELECT RoleId FROM managerRoles WHERE GuildId=?", (guild.id,))
-    print(f"Raw data from database {role_ids}")
-    result = [guild.get_role(r[0]) for r in role_ids] if len(role_ids) > 0 else []
-    print(f"Manager roles ids received: {result}")
-    return result
+    return [guild.get_role(r[0]) for r in role_ids] if role_ids else []
 
 
 def update_manager_roles_for_guild(guild_id: int, roles: list[Role]):
-    print("Deleting...")
-    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))
-    print("Updating...")
-    if roles:
+    Db().execute("DELETE FROM managerRoles WHERE GuildId=?", (guild_id,))  # remove all old roles
+
+    if roles:  # if there are any roles, add them
         for role in roles:
             Db().execute("INSERT INTO managerRoles (GuildId, RoleId) VALUES (?, ?)", (guild_id, role.id))
-    print("Done.")
+
+
+class LogType(Enum):  # when adding something that will need a new folder, add it to init_logger()
+    ALL = ""
+    CALENDAR = "calendar"
+    USER = "user"
+    NOTIFICATION = "notification"

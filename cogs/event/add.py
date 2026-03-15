@@ -5,14 +5,13 @@ from cogs.event.util import *
 async def event_add(interaction: discord.Interaction):
     if not await check_if_calendar_exists(interaction): return
 
-    print(f"[INFO]\tAdding event in [{interaction.guild.name} - {interaction.guild.id}]"
-          f" in [{interaction.channel.name} - {interaction.channel.id}]")
-    try:
-        calendar = Calendar()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        event = Event()
-        event.calendarId = calendar.id
-        await interaction.response.send_modal(EventEditModal(event))
-    except Exception as e:
-        await interaction.response.send_message('Błąd przy wysyłaniu modala', ephemeral=True)
-        print(f"ERROR {e}")
+    calendar = Calendar()
+    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+
+    logger = get_logger(LogType.CALENDAR, calendar.id)
+    logger.info(f"Sending Add event modal in [{interaction.guild.name} - {interaction.guild.id}]"
+                f" in [{interaction.channel.name} - {interaction.channel.id}]")
+
+    event = Event()
+    event.calendarId = calendar.id
+    await interaction.response.send_modal(EventEditModal(event))

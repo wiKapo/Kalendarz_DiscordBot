@@ -13,16 +13,21 @@ intents.messages = True
 intents.members = True
 bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 
+init_logger()
+logger = get_logger()
 
-# TODO log to file
+
 @bot.event
 async def on_ready():
+    logger.info(f"Logged in as {bot.user}")
     print(f'We have logged in as {bot.user}')
     try:
         synced_commands = await bot.tree.sync()
+        logger.info(f"Synced {len(synced_commands)} commands")
         print(f"Synced {len(synced_commands)} commands")
     except Exception as e:
-        print("Error with syncing bot commands: ", e)
+        logger.error(f"Error with syncing database: {e}")
+        print(f"Error with syncing bot commands: {e}")
 
     try:
         Db().execute('CREATE TABLE IF NOT EXISTS calendars ('
@@ -65,8 +70,10 @@ async def on_ready():
                      'Message TEXT NOT NULL'
                      ');')
 
+        logger.info('Tables are ready')
         print('Tables are ready')
     except Exception as e:
+        logger.error(f"Error with syncing database: {e}", exc_info=True)
         print("Error with syncing database: ", e)
 
 
@@ -82,36 +89,6 @@ async def main():
         await bot.start(os.getenv("BOT_TOKEN"))
 
 
-@bot.tree.command(name="update_all",
-                  description="[TYLKO DLA ADMINÓW KALENDARZA] Aktualizuje wszystkie wiadomości kalendarza do najnowszej werjsi")
-async def update_all_calendars(interaction: discord.Interaction):
-    admins = map(int, os.getenv("USERS").split(','))
-    if interaction.user.id not in admins:
-        await interaction.response.send_message("Brak uprawnień\n**Zarejestrowano próbę użycia komendy** :wink:",
-                                                ephemeral=True)
-        print(f"[{interaction.user.id} - {interaction.user.name}] tried to use update_all command")
-        return
-
-    await interaction.response.send_message(
-        "Aktualizowanie wszystkich kalendarzy. Poczekaj na potwierdzenie wykonania akcji.", ephemeral=True)
-
-    calendars = fetch_all_calendars()
-    for calendar in calendars:
-        message = Message()
-        message.calendarId = calendar.id
-        message.set_time(5)
-        message.message = "**Aktualizacja kalendarza** Dodano możliwość wyboru ról dla menedżerów kalendarza używając `/user set`"  # TODO ALWAYS UPDATE ME
-        message.insert_with_check()
-        try:
-            await admin_update_calendar(bot, calendar)
-        except Exception as e:
-            print(e)
-            return
-        print(f"UPDATED: {calendar}")
-
-    await interaction.followup.send(f"Zaktualizowano wszystkie kalendarze w ilości: `{len(calendars)}`", ephemeral=True)
-
-
 @bot.tree.command(name="about")
 async def about(interaction: discord.Interaction):
     await interaction.response.send_message("Bot stworzony przez wiKapo", ephemeral=True)
@@ -119,16 +96,16 @@ async def about(interaction: discord.Interaction):
 
 @bot.tree.command(name="help")
 async def help(interaction: discord.Interaction):
-    print("HI")
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
 `/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
 Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
-W przypaku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
+W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
-`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu i sekcji kalendarza.
-`/calendar delete` - **Permamentnie** usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
+`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu, sekcji kalendarza oraz wybrania roli, 
+która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
+`/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
 `/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
 
 ### ---==[ Polecenia wydarzeń ]==---
@@ -142,8 +119,8 @@ Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie moż
 
     message = """### ---==[ Polecenia menedżerów ]==---
 Role menedżerów są dodawane przez administratorów na danym serwerze.
-Menedżerowie otrzymują dostęp do wszyskich komend `/calendar`, `/event` i `/notification` na danym serwerze.
-Mendżerowie nie mogą dodawać nowych mendżerów.
+Menedżerowie otrzymują dostęp do wszystkich komend `/calendar`, `/event` i `/notification` na danym serwerze.
+Menedżerowie nie mogą dodawać nowych menedżerów.
 
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
     

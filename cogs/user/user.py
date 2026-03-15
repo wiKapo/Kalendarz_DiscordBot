@@ -37,6 +37,7 @@ class SetUserRoles(discord.ui.Modal, title="Zarządzaj rolami menedżerów"):
         self.add_item(discord.ui.Label(text="Wybierz role menedżerów",
                                        description="Osoby z tymi rolami będą mogły zarządzać kalendarzem (MAX 25)",
                                        component=self.manager_roles))
+        self.add_item(discord.ui.TextDisplay("Użytkownicy posiadający wybrane role powinni mieć możliwość pisania na kanale kalendarza"))
 
     async def on_submit(self, interaction: Interaction) -> None:
         update_manager_roles_for_guild(interaction.guild_id, self.manager_roles.values)

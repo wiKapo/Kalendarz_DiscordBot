@@ -7,7 +7,7 @@ def hour_rounder(t: datetime) -> datetime:
     return t.replace(second=0, microsecond=0, minute=0, hour=t.hour) + timedelta(hours=t.minute // 30)
 
 
-def get_time_from_tag(time_tag: str) -> int:
+def get_hours_from_tag(time_tag: str) -> int:
     times = re.findall(r"\d+\w?", time_tag)
     result = 0
 

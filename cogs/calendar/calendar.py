@@ -1,4 +1,4 @@
-from datetime import time
+from datetime import time, timedelta
 
 from discord.ext import tasks, commands
 
@@ -22,14 +22,25 @@ class CalendarCog(commands.Cog):
     @tasks.loop(time=UPDATE_TIME)
     async def update_loop(self):
         calendars = fetch_all_calendars()
+        logger = get_logger(LogType.CALENDAR)
 
-        print("[INFO]\tRemoving old events")
-        delete_old_events()
+        logger.info("Removing old events")
+        cutoff_timestamp = (
+            int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(weeks=1)).timestamp()))
+        outdated_events = fetch_outdated_events(cutoff_timestamp)
+        logger.debug(f"Deleting {len(outdated_events)} old events")
+        logger.debug(outdated_events)
+        delete_events(outdated_events)
 
-        print("[INFO]\tStart of updating all calendars")
+        logger.info("Start of updating all calendars")
         for calendar in calendars:
-            await bot_update_calendar(self.bot, calendar)
-        print("[INFO]\tEnd of updating all calendars")
+            logger.info(f"Updating calendar {repr(calendar)}")
+            calendar_message: discord.Message = await (
+                (await (await self.bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId))
+                .fetch_message(calendar.messageId))
+
+            await calendar_message.edit(content=str(calendar))
+        logger.info("Updated all calendars")
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
