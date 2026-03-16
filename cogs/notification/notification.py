@@ -5,7 +5,6 @@ from discord.ext import tasks, commands
 from cogs.notification.add import notification_add
 from cogs.notification.delete import notification_delete
 from cogs.notification.list import notification_list
-from cogs.notification.util import *
 from g.util import *
 
 UPDATE_TIMES = [time(hour=i) for i in range(0, 24)]
