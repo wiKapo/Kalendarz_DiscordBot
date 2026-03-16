@@ -84,7 +84,7 @@ async def send_error_message(interaction: discord.Interaction, error):
     else:
         logger.error(f"Received an error while executing {command_name}: {error}")
         await interaction.response.send_message(
-            f"Błąd: {error}\nZgłoś do @wiKapo lub na serwerze https://discord.gg/UWCksPpqhm "
+            f"Błąd: {error}\nZgłoś do @wiKapo lub na serwerze https://discord.gg/ayXkVwVkGA "
             f"na kanale: https://discord.com/channels/1479867817015771136/1479868335297527899", ephemeral=True)
 
 
@@ -144,7 +144,7 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
         from datetime import datetime
         message = await channel.send(
             f"Kalendarz został zaktualizowany do najnowszej wersji\n"
-            f"Więcej o tej aktualizacji tutaj: https://discord.gg/UWCksPpqhm lub pod przyciskiem `Pokaż ostatnie zmiany`\n"
+            f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA lub pod przyciskiem `Pokaż ostatnie zmiany`\n"
             f"-# Czas aktualizacji: <t:{int(datetime.now().timestamp())}>",
             view=UpdateMessageView(calendar.pingRoleId))
         calendar.pingMessageId = message.id
