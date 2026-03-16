@@ -28,7 +28,9 @@ class AdminCog(commands.Cog):
             message.set_time(5)
             message.message = "**Aktualizacja kalendarza** Dodano możliwość wyboru ról dla menedżerów kalendarza używając `/user set`"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
-            message.message = "**Aktualizacja kalendarza** Naprawiono sprawdzanie powiadomień. Z tego powodu, aby uniknąć spamowania wszystkich usunięto wszystkie ustawione powiadomienia."  # TODO DELETE ME
+            message.message = "**Aktualizacja kalendarza** Naprawiono sprawdzanie powiadomień. Z tego powodu, aby uniknąć spamowania wszystkich, usunięto wszystkie ustawione dotychczas powiadomienia"  # TODO DELETE ME
+            message.insert_with_check()  # TODO DELETE ME
+            message.message = "**Aktualizacja kalendarza** Stworzono serwer przeznaczony do wszystkiego związanego z tym botem"  # TODO DELETE ME
             message.insert_with_check()  # TODO DELETE ME
             try:
                 await admin_update_calendar(self.bot, calendar)
