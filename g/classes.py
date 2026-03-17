@@ -1,9 +1,31 @@
 import sqlite3
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from enum import Enum
 
 from discord import Role, Guild, SelectOption
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
+
+DEFAULT_SECTIONS_RULES: dict[str, Callable[[datetime, datetime], bool]] = {
+    "1d": lambda now, check: now.day == check.day,
+    "2d": lambda now, check: now.day + 1 == check.day,
+    "1w": lambda now, check: now.isocalendar()[1] == check.isocalendar()[1],
+    "2w": lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1],
+    "1m": lambda now, check: now.month == check.month,
+    "2m": lambda now, check: now.month + 1 == check.month,
+    "": lambda now, check: True
+}
+
+DEFAULT_SECTIONS_ORDER: dict[str, int] = {
+    "1d": 0,
+    "2d": 1,
+    "1w": 2,
+    "2w": 3,
+    "1m": 4,
+    "2m": 5,
+    "": 6,
+}
 
 
 class Db:
@@ -93,6 +115,42 @@ def delete_all_sections(calendar_id: int):
     Db().execute("DELETE FROM sections WHERE CalendarId = ?", (calendar_id,))
 
 
+def create_default_sections(calendar_id: int) -> list[Section]:
+    return [
+        Section([calendar_id, "1d", None, "Dzisiaj"]),
+        Section([calendar_id, "2d", None, "Jutro"]),
+        Section([calendar_id, "1w", None, "W tym tygodniu"]),
+        Section([calendar_id, "2w", None, "Za tydzień"]),
+        Section([calendar_id, "1m", None, "W tym miesiącu"]),
+        Section([calendar_id, "2m", None, "Za miesiąc"]),
+        Section([calendar_id, "", None, "W przyszłości"])
+    ]
+
+
+def select_section(sections: list[Section], timestamp: int) -> tuple[Section | None, Section | None]:
+    now = datetime.now()
+
+    custom_sections = list(filter(lambda x: x.timeTag == "_", sections))
+    selected_custom_section = None
+    if custom_sections:
+        custom_sections.sort(key=lambda s: s.timestamp)
+        for section in custom_sections:
+            if now.timestamp() >= section.timestamp:
+                selected_custom_section = section
+                break
+
+    sections = list(filter(lambda x: x.timeTag != "_", sections))
+    sections.sort(key=lambda s: DEFAULT_SECTIONS_ORDER.get(s.timeTag, 999))
+    selected_section = None
+    check = datetime.fromtimestamp(timestamp)
+    for section in sections:
+        rule = DEFAULT_SECTIONS_RULES.get(section.timeTag)
+        if rule(now, check):
+            selected_section = section
+            break
+    return selected_section, selected_custom_section
+
+
 class Calendar:
     id: int = None
     title: str | None = None
@@ -127,50 +185,29 @@ class Calendar:
                 f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
 
     def __str__(self):
-        from datetime import datetime
-
         events: list[Event] = fetch_events_by_calendar(self.id)
         message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
         if not events:
             message += "\nPUSTE"
         else:
-            current_day_delta = 0
+            current_section = None
+            current_custom_section = None
             for event in events:
                 message += "\n"
-                delta_days = (datetime.fromtimestamp(event.timestamp).date() - datetime.now().date()).days
+                new_section, new_custom_section = select_section(self.sections, event.timestamp)
+                if new_section != current_section:
+                    current_section = new_section
+                    message += f"\n\t{current_section}\n"
+                if new_custom_section != current_custom_section:
+                    current_custom_section = new_custom_section
+                    message += f"\n\t{current_custom_section}\n"
 
-                if self.showSections == 1:  # TODO make sections dynamic and per calendar
-                    if delta_days >= 0 and delta_days >= current_day_delta != 99:
-                        if delta_days < 1:
-                            message += "\n\t---==[  Dzisiaj  ]==---\n"
-                            current_day_delta = 1
-                        elif delta_days < 2:
-                            message += "\n\t---==[  Jutro  ]==---\n"
-                            current_day_delta = 2
-                        elif delta_days < 7:
-                            message += "\n\t---==[  W tym tygodniu  ]==---\n"
-                            current_day_delta = 7
-                        elif delta_days < 14:
-                            message += "\n\t---==[  Za tydzień  ]==---\n"
-                            current_day_delta = 14
-                        elif delta_days < 30:
-                            message += "\n\t---==[  W tym miesiącu  ]==---\n"
-                            current_day_delta = 30
-                        elif delta_days < 60:
-                            message += "\n\t---==[  Za miesiąc  ]==---\n"
-                            current_day_delta = 60
-                        else:
-                            message += "\n\t---==[  W przyszłości  ]==---\n"
-                            current_day_delta = 99
-
-                # If expired
-                if delta_days < 0:
-                    message += "~~"
+                if not current_section:
+                    message += "-# ~~"
 
                 message += str(event)
 
-                # If expired
-                if delta_days < 0:
+                if not current_section:
                     message += "~~"
 
         message += "\n\nZarządzaj powiadomieniami przyciskami poniżej"
@@ -265,7 +302,6 @@ class Event:
         """
         :return: time, date
         """
-        from datetime import datetime
         dt = datetime.fromtimestamp(self.timestamp)
 
         if self.wholeDay:
@@ -278,7 +314,6 @@ class Event:
         return time, date
 
     def text_to_timestamp(self, time: str, date: str):
-        from datetime import datetime
         if len(date.split(".")) == 2:
             date += f".{datetime.now().year}"
 
@@ -430,7 +465,6 @@ def fetch_all_notifications() -> list[Notification]:
 
 
 def fetch_all_ready_notifications() -> list[Notification]:
-    from datetime import datetime
     data = Db().fetch_all("SELECT * FROM notifications WHERE Timestamp<?", (datetime.now().timestamp(),))
     return [Notification(x) for x in data]
 
@@ -481,7 +515,6 @@ class Message:
         return f"Message [{self.id}]: Event[{self.calendarId}] {self.timestamp} {self.deleteBy} {self.message}"
 
     def set_time(self, delay_in_days: int = 1):
-        from datetime import datetime, timedelta
         current_time = datetime.now()
         self.timestamp = int(current_time.timestamp())
         self.deleteBy = int((current_time + timedelta(days=delay_in_days)).timestamp())
