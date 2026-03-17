@@ -43,6 +43,9 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
 
+        calendar.sections = create_default_sections(calendar.id)
+        calendar.update_sections()
+
         await update_calendar(interaction, calendar)
         await update_notification_buttons(bot, interaction, calendar)
 
