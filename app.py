@@ -69,6 +69,13 @@ async def on_ready():
                      'DeleteBy INT NOT NULL,'
                      'Message TEXT NOT NULL'
                      ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS sections ('
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'TimeTag TEXT NOT NULL,'
+                     'Timestamp INT,'
+                     'Name TEXT NOT NULL,'
+                     'PRIMARY KEY (CalendarId, TimeTag, Timestamp)'
+                     ');')
 
         logger.info('Tables are ready')
         print('Tables are ready')
