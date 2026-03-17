@@ -102,6 +102,7 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
     logger.info(f"Deleted {len(outdated_update_messages)} outdated update messages")
 
     await (await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
+    logger.info("Updated calendar message")
 
     if send_ping:
         if calendar.pingMessageId is not None:

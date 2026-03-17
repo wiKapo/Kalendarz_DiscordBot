@@ -23,11 +23,13 @@ class AdminCog(commands.Cog):
 
         calendars = fetch_all_calendars()
         for calendar in calendars:
+            logger.info(f"Updating calendar id={calendar.id}")
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
             message.message = "**Aktualizacja kalendarza** Naprawiono działanie przycisków powiadomień"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
+            logger.info("Sent update message")
             try:
                 await admin_update_calendar(self.bot, calendar)
             except Exception as e:
