@@ -65,10 +65,39 @@ class Db:
         self.connection.close()
 
 
+class Section:
+    calendarId: int = None
+    timeTag: str = None
+    timestamp: int | None = None
+    name: str = None
+
+    def __init__(self, data: list = None):
+        """
+        :param data: for parsing fields from the database.
+        """
+        if data:
+            self.calendarId, self.timeTag, self.timestamp, self.name = data
+
+    def __repr__(self):
+        return f"Section[{self.calendarId}] TimeTag:{self.timeTag} Timestamp:{self.timestamp} Name:{self.name}"
+
+    def __str__(self):
+        return f"---==[ {self.name} ]==---"
+
+    def insert(self):
+        Db().execute("INSERT INTO sections (CalendarId, TimeTag, Timestamp, Name) VALUES (?, ?, ?, ?)",
+                     (self.id, self.timeTag, self.timestamp, self.name))
+
+
+def delete_all_sections(calendar_id: int):
+    Db().execute("DELETE FROM sections WHERE CalendarId = ?", (calendar_id,))
+
+
 class Calendar:
     id: int = None
     title: str | None = None
     showSections: bool = None
+    sections: list[Section] = []
     guildId: int = None
     channelId: int = None
     messageId: int = None
@@ -87,6 +116,8 @@ class Calendar:
         """
         :param data: for parsing fields from the database.
         """
+        self.fetch_sections()
+
         if data is not None:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.pingMessageId = data
@@ -173,6 +204,15 @@ class Calendar:
         # TODO remove notifications connected with those events
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
+
+    def fetch_sections(self) -> list[Section]:
+        data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", self.id)
+        return [Section(x) for x in data]
+
+    def update_sections(self):
+        delete_all_sections(self.id)
+        for section in self.sections:
+            section.insert()
 
 
 def fetch_all_calendars() -> list[Calendar]:
