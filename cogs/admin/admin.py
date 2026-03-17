@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 
-from g.classes import fetch_all_calendars, Message
+from g.classes import fetch_all_calendars, Message, create_default_sections
 from g.util import check_calendar_admin, get_logger, admin_update_calendar
 
 
@@ -30,6 +30,13 @@ class AdminCog(commands.Cog):
             message.message = "**Aktualizacja kalendarza** Naprawiono działanie przycisków powiadomień"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
+
+            if not calendar.sections:
+                logger.warning(f"No sections for calendar id={calendar.id}. Adding default sections")
+                calendar.sections = create_default_sections(calendar.id)
+                calendar.update_sections()
+                logger.info(f"Added default sections to calendar")
+
             try:
                 await admin_update_calendar(self.bot, calendar)
             except Exception as e:
