@@ -29,15 +29,3 @@ async def update_notification_buttons(bot: Bot, interaction: discord.Interaction
     from g.discord_classes import NotificationButtonsView
     await (await interaction.channel.fetch_message(calendar.messageId)).edit(view=NotificationButtonsView(bot, actions))
     logger.info("Finished updating notification buttons")
-
-
-async def send_notification_add(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("add").callback(bot, interaction)
-
-
-async def send_notification_list(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("list").callback(bot, interaction)
-
-
-async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
