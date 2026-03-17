@@ -140,14 +140,15 @@ def select_section(sections: list[Section], timestamp: int) -> tuple[Section | N
                 break
 
     sections = list(filter(lambda x: x.timeTag != "_", sections))
-    sections.sort(key=lambda s: DEFAULT_SECTIONS_ORDER.get(s.timeTag, 999))
     selected_section = None
     check = datetime.fromtimestamp(timestamp)
-    for section in sections:
-        rule = DEFAULT_SECTIONS_RULES.get(section.timeTag)
-        if rule(now, check):
-            selected_section = section
-            break
+    if check.date() >= now.date():
+        sections.sort(key=lambda s: DEFAULT_SECTIONS_ORDER.get(s.timeTag, 999))
+        for section in sections:
+            rule = DEFAULT_SECTIONS_RULES.get(section.timeTag)
+            if rule(now, check):
+                selected_section = section
+                break
     return selected_section, selected_custom_section
 
 
