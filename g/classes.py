@@ -82,11 +82,11 @@ class Section:
         return f"Section[{self.calendarId}] TimeTag:{self.timeTag} Timestamp:{self.timestamp} Name:{self.name}"
 
     def __str__(self):
-        return f"---==[ {self.name} ]==---"
+        return f"---==[  {self.name}  ]==---"
 
     def insert(self):
         Db().execute("INSERT INTO sections (CalendarId, TimeTag, Timestamp, Name) VALUES (?, ?, ?, ?)",
-                     (self.id, self.timeTag, self.timestamp, self.name))
+                     (self.calendarId, self.timeTag, self.timestamp, self.name))
 
 
 def delete_all_sections(calendar_id: int):
@@ -101,9 +101,9 @@ class Calendar:
     guildId: int = None
     channelId: int = None
     messageId: int = None
-    guildName: str = None
     pingRoleId: int | None = None
     pingMessageId: int | None = None
+    guildName: str = None
     """
     Only for displaying in notifications
     """
@@ -116,11 +116,10 @@ class Calendar:
         """
         :param data: for parsing fields from the database.
         """
-        self.fetch_sections()
-
         if data is not None:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.pingMessageId = data
+            self.fetch_sections()
 
     def __repr__(self):
         return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
@@ -131,7 +130,7 @@ class Calendar:
         from datetime import datetime
 
         events: list[Event] = fetch_events_by_calendar(self.id)
-        message = f":calendar:\t{self.title}\t:calendar:"
+        message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
         if not events:
             message += "\nPUSTE"
         else:
@@ -183,12 +182,14 @@ class Calendar:
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
              self.pingRoleId, self.pingMessageId) = data
+            self.fetch_sections()
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
              self.pingRoleId, self.pingMessageId) = data
+            self.fetch_sections()
 
     def insert(self):
         Db().execute(
@@ -205,9 +206,9 @@ class Calendar:
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
 
-    def fetch_sections(self) -> list[Section]:
-        data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", self.id)
-        return [Section(x) for x in data]
+    def fetch_sections(self):
+        data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
+        self.sections = [Section(x) for x in data]
 
     def update_sections(self):
         delete_all_sections(self.id)
