@@ -23,20 +23,19 @@ class AdminCog(commands.Cog):
 
         calendars = fetch_all_calendars()
         for calendar in calendars:
+            logger.info(f"Updating calendar id={calendar.id}")
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
-            message.message = "**Aktualizacja kalendarza** Dodano możliwość wyboru ról dla menedżerów kalendarza używając `/user set`"  # TODO ALWAYS UPDATE ME
+            message.message = "**Aktualizacja kalendarza** Naprawiono działanie przycisków powiadomień"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
-            message.message = "**Aktualizacja kalendarza** Naprawiono sprawdzanie powiadomień. Z tego powodu, aby uniknąć spamowania wszystkich, usunięto wszystkie ustawione dotychczas powiadomienia"  # TODO DELETE ME
-            message.insert_with_check()  # TODO DELETE ME
-            message.message = "**Aktualizacja kalendarza** Stworzono serwer przeznaczony do wszystkiego związanego z tym botem"  # TODO DELETE ME
-            message.insert_with_check()  # TODO DELETE ME
+            logger.info("Sent update message")
+
             try:
                 await admin_update_calendar(self.bot, calendar)
             except Exception as e:
                 logger.error(f"Error: {e}", exc_info=True)
-                await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{calendar}\n"
+                await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{repr(calendar)}\n"
                                                 f"ERROR: {e}", ephemeral=True)
                 return
             logger.info(f"Updated calendar id={calendar.id}")

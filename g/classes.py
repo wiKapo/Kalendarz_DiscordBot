@@ -1,9 +1,21 @@
 import sqlite3
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from enum import Enum
 
 from discord import Role, Guild, SelectOption
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
+
+DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
+    1: lambda now, check: now.day == check.day,
+    2: lambda now, check: now.day + 1 == check.day,
+    3: lambda now, check: now.isocalendar()[1] == check.isocalendar()[1],
+    4: lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1],
+    5: lambda now, check: now.month == check.month,
+    6: lambda now, check: now.month + 1 == check.month,
+    99: lambda now, check: True
+}
 
 
 class Db:
@@ -65,16 +77,94 @@ class Db:
         self.connection.close()
 
 
+class Section:
+    calendarId: int = None
+    timestamp: int | None = None
+    name: str = None
+
+    def __init__(self, data: list = None):
+        """
+        :param data: for parsing fields from the database.
+        """
+        if data:
+            self.calendarId, self.timestamp, self.name = data
+
+    def __repr__(self):
+        return f"Section[{self.calendarId}] Timestamp:{self.timestamp} Name:{self.name}"
+
+    def __str__(self):
+        return f"---==[  {self.name}  ]==---"
+
+    def double_str(self, other):
+        return f"---==[  {self.name}  ][  {other.name}  ]==---"
+
+    def __eq__(self, other):
+        return (isinstance(other, Section) and self.timestamp == other.timestamp
+                and self.name == other.name and self.calendarId == other.calendarId)
+
+    def timestamp_to_text(self) -> str:
+        return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
+
+    def text_to_timestamp(self, date: str):
+        if len(date.split(".")) == 2:
+            date += f".{datetime.now().year}"
+
+        self.timestamp = int(datetime.strptime(date, "%d.%m.%Y").timestamp())
+
+    def create_modal_text(self):
+        return f"{self.timestamp_to_text()}-{self.name}"
+
+    def insert(self):
+        Db().execute("INSERT INTO sections (CalendarId, Timestamp, Name) VALUES (?, ?, ?)",
+                     (self.calendarId, self.timestamp, self.name))
+
+
+DEFAULT_SECTIONS = [Section([0, 1, "Dzisiaj"]),
+                    Section([0, 2, "Jutro"]),
+                    Section([0, 3, "W tym tygodniu"]),
+                    Section([0, 4, "Za tydzień"]),
+                    Section([0, 5, "W tym miesiącu"]),
+                    Section([0, 6, "Za miesiąc"]),
+                    Section([0, 99, "W przyszłości"])]
+
+
+def delete_all_sections(calendar_id: int):
+    Db().execute("DELETE FROM sections WHERE CalendarId = ?", (calendar_id,))
+
+
+def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Section | None, Section | None]:
+    now = datetime.now()
+    check = datetime.fromtimestamp(timestamp)
+
+    selected_custom_section = selected_section = None
+
+    if check.date() >= now.date():
+        if custom_sections:
+            custom_sections.sort(key=lambda s: s.timestamp, reverse=True)
+            for section in custom_sections:
+                if timestamp >= section.timestamp:
+                    selected_custom_section = section
+                    break
+
+        for section in DEFAULT_SECTIONS:
+            rule = DEFAULT_SECTIONS_RULES.get(section.timestamp)
+            if rule(now, check):
+                selected_section = section
+                break
+    return selected_section, selected_custom_section
+
+
 class Calendar:
     id: int = None
     title: str | None = None
     showSections: bool = None
+    custom_sections: list[Section] = []
     guildId: int = None
     channelId: int = None
     messageId: int = None
-    guildName: str = None
     pingRoleId: int | None = None
     pingMessageId: int | None = None
+    guildName: str = None
     """
     Only for displaying in notifications
     """
@@ -92,55 +182,40 @@ class Calendar:
                 self.pingRoleId, self.pingMessageId = data
 
     def __repr__(self):
-        return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
-                f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
-                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
+        event_amount = Db().fetch_one("SELECT COUNT(*) FROM events WHERE CalendarId=?", (self.id,))[0]
+        event_amount_text = f"{event_amount if event_amount else "No"} event{"s" if event_amount != 1 else ""}"
+        return (f"Calendar[{self.id}] Title:{self.title} ({event_amount_text}) "
+                f"ShowSections:{self.showSections} (GuildId:{self.guildId}, ChannelId:{self.channelId}, "
+                f"MessageId:{self.messageId}) (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
 
     def __str__(self):
-        from datetime import datetime
-
         events: list[Event] = fetch_events_by_calendar(self.id)
-        message = f":calendar:\t{self.title}\t:calendar:"
+        message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
         if not events:
             message += "\nPUSTE"
         else:
-            current_day_delta = 0
+            current_section = None
+            current_custom_section = None
             for event in events:
                 message += "\n"
-                delta_days = (datetime.fromtimestamp(event.timestamp).date() - datetime.now().date()).days
+                new_section, new_custom_section = select_section(self.custom_sections, event.timestamp)
+                if self.showSections:
+                    if new_section != current_section and new_custom_section != current_custom_section:
+                        message += f"\n\t{new_section.double_str(new_custom_section)}\n"
+                    elif new_custom_section != current_custom_section:
+                        message += f"\n\t{new_custom_section}\n"
+                    elif new_section != current_section:
+                        message += f"\n\t{new_section}\n"
 
-                if self.showSections == 1:  # TODO make sections dynamic and per calendar
-                    if delta_days >= 0 and delta_days >= current_day_delta != 99:
-                        if delta_days < 1:
-                            message += "\n\t---==[  Dzisiaj  ]==---\n"
-                            current_day_delta = 1
-                        elif delta_days < 2:
-                            message += "\n\t---==[  Jutro  ]==---\n"
-                            current_day_delta = 2
-                        elif delta_days < 7:
-                            message += "\n\t---==[  W tym tygodniu  ]==---\n"
-                            current_day_delta = 7
-                        elif delta_days < 14:
-                            message += "\n\t---==[  Za tydzień  ]==---\n"
-                            current_day_delta = 14
-                        elif delta_days < 30:
-                            message += "\n\t---==[  W tym miesiącu  ]==---\n"
-                            current_day_delta = 30
-                        elif delta_days < 60:
-                            message += "\n\t---==[  Za miesiąc  ]==---\n"
-                            current_day_delta = 60
-                        else:
-                            message += "\n\t---==[  W przyszłości  ]==---\n"
-                            current_day_delta = 99
+                current_section = new_section
+                current_custom_section = new_custom_section
 
-                # If expired
-                if delta_days < 0:
-                    message += "~~"
+                if not current_section:
+                    message += "-# ~~"
 
                 message += str(event)
 
-                # If expired
-                if delta_days < 0:
+                if not current_section:
                     message += "~~"
 
         message += "\n\nZarządzaj powiadomieniami przyciskami poniżej"
@@ -152,12 +227,14 @@ class Calendar:
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
              self.pingRoleId, self.pingMessageId) = data
+            self.fetch_sections()
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
         if data is not None:
             (self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId,
              self.pingRoleId, self.pingMessageId) = data
+            self.fetch_sections()
 
     def insert(self):
         Db().execute(
@@ -173,6 +250,15 @@ class Calendar:
         # TODO remove notifications connected with those events
         Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
+
+    def fetch_sections(self):
+        data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
+        self.custom_sections = [Section(x) for x in data]
+
+    def update_sections(self):
+        delete_all_sections(self.id)
+        for section in self.custom_sections:
+            section.insert()
 
 
 def fetch_all_calendars() -> list[Calendar]:
@@ -224,7 +310,6 @@ class Event:
         """
         :return: time, date
         """
-        from datetime import datetime
         dt = datetime.fromtimestamp(self.timestamp)
 
         if self.wholeDay:
@@ -237,7 +322,6 @@ class Event:
         return time, date
 
     def text_to_timestamp(self, time: str, date: str):
-        from datetime import datetime
         if len(date.split(".")) == 2:
             date += f".{datetime.now().year}"
 
@@ -389,7 +473,6 @@ def fetch_all_notifications() -> list[Notification]:
 
 
 def fetch_all_ready_notifications() -> list[Notification]:
-    from datetime import datetime
     data = Db().fetch_all("SELECT * FROM notifications WHERE Timestamp<?", (datetime.now().timestamp(),))
     return [Notification(x) for x in data]
 
@@ -440,7 +523,6 @@ class Message:
         return f"Message [{self.id}]: Event[{self.calendarId}] {self.timestamp} {self.deleteBy} {self.message}"
 
     def set_time(self, delay_in_days: int = 1):
-        from datetime import datetime, timedelta
         current_time = datetime.now()
         self.timestamp = int(current_time.timestamp())
         self.deleteBy = int((current_time + timedelta(days=delay_in_days)).timestamp())

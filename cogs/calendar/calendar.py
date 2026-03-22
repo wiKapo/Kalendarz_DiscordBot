@@ -58,9 +58,11 @@ class CalendarCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @cal_group.command(name="update", description="Aktualizuje kalendarz")
+    @discord.app_commands.choices(quiet=[discord.app_commands.Choice(name="Tak", value=True),
+                                                 discord.app_commands.Choice(name="Nie", value=False)])
     @discord.app_commands.check(check_user)
-    async def update(self, interaction: discord.Interaction):
-        await calendar_update(interaction, self.bot)
+    async def update(self, interaction: discord.Interaction, quiet: discord.app_commands.Choice[int] | None = None):
+        await calendar_update(interaction, self.bot, bool(quiet and quiet.value))
 
     @update.error
     async def update_error(self, interaction: discord.Interaction, error):

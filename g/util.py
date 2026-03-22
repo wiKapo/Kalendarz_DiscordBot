@@ -5,7 +5,7 @@ import discord
 from discord.ext.commands import Bot
 
 from g.classes import *
-from g.discord_classes import UpdateMessageView
+from g.discord_classes import UpdateMessageView, NotificationButtonsView
 
 
 # --------- CHECKS ---------
@@ -102,6 +102,7 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
     logger.info(f"Deleted {len(outdated_update_messages)} outdated update messages")
 
     await (await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
+    logger.info("Updated calendar message")
 
     if send_ping:
         if calendar.pingMessageId is not None:
@@ -122,6 +123,20 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
         logger.info("Calendar updated in the database. Finished updating calendar")
 
 
+# --------- For notification button actions ---------
+
+async def send_notification_add(bot: Bot, interaction: discord.Interaction):
+    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("add").callback(bot, interaction)
+
+
+async def send_notification_list(bot: Bot, interaction: discord.Interaction):
+    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("list").callback(bot, interaction)
+
+
+async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
+    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
+
+
 # --------- VVV only for /update_all command VVV ---------
 
 async def admin_update_calendar(bot: Bot, calendar: Calendar):
@@ -132,7 +147,10 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
     logger.info(f"Admin is updating calendar {calendar.title} in [{channel.guild.name} - {calendar.guildId}] "
                 f"in [{channel.name} - {channel.id}]")
 
-    await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
+    actions = [send_notification_add, send_notification_list, send_notification_delete]
+
+    await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar),
+                                                                 view=NotificationButtonsView(bot, actions))
 
     if calendar.pingMessageId is not None:
         logger.info("Removing old ping message")

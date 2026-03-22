@@ -17,6 +17,9 @@ init_logger()
 logger = get_logger()
 
 
+# TODO Fix unnecessary == "" and other similar comparisons
+# TODO Add 'exc_info=True' to every logger.error'
+
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
@@ -68,6 +71,12 @@ async def on_ready():
                      'Timestamp INT NOT NULL,'
                      'DeleteBy INT NOT NULL,'
                      'Message TEXT NOT NULL'
+                     ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS sections ('
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'Timestamp INT,'
+                     'Name TEXT NOT NULL,'
+                     'PRIMARY KEY (CalendarId, Timestamp)'
                      ');')
 
         logger.info('Tables are ready')

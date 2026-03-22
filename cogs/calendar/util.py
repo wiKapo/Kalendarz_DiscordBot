@@ -31,13 +31,15 @@ async def update_notification_buttons(bot: Bot, interaction: discord.Interaction
     logger.info("Finished updating notification buttons")
 
 
-async def send_notification_add(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("add").callback(bot, interaction)
+def format_custom_sections(calendar_id: int, raw_custom_sections: str) -> list[Section]:
+    raw_custom_sections = raw_custom_sections.split(',')
+    custom_sections: list[Section] = []
+    if raw_custom_sections[0]:
+        for raw_section in raw_custom_sections:
+            section = Section()
+            section.calendarId = calendar_id
 
-
-async def send_notification_list(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("list").callback(bot, interaction)
-
-
-async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
+            date, section.name = raw_section.split("-")
+            section.text_to_timestamp(date.replace(" ", ""))
+            custom_sections.append(section)
+    return custom_sections
