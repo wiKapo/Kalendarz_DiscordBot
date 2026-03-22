@@ -181,9 +181,11 @@ class Calendar:
             self.fetch_sections()
 
     def __repr__(self):
-        return (f"Calendar[{self.id}] Title:{self.title} ShowSections:{self.showSections} "
-                f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
-                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId}) ")
+        event_amount = Db().fetch_one("SELECT COUNT(*) FROM events WHERE CalendarId=?", (self.id,))[0]
+        event_amount_text = f"{event_amount if event_amount else "No"} event{"s" if event_amount != 1 else ""}"
+        return (f"Calendar[{self.id}] Title:{self.title} ({event_amount_text}) "
+                f"ShowSections:{self.showSections} (GuildId:{self.guildId}, ChannelId:{self.channelId}, "
+                f"MessageId:{self.messageId}) (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
 
     def __str__(self):
         events: list[Event] = fetch_events_by_calendar(self.id)
