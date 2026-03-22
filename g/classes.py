@@ -200,8 +200,9 @@ class Calendar:
                 new_section, new_custom_section = select_section(self.sections, event.timestamp)
                 if new_section != current_section:
                     current_section = new_section
-                    message += f"\n\t{current_section}\n"
-                if new_custom_section != current_custom_section:
+                    if self.showSections:
+                        message += f"\n\t{current_section}\n"
+                if new_custom_section != current_custom_section and self.showSections:
                     current_custom_section = new_custom_section
                     message += f"\n\t{current_custom_section}\n"
 
