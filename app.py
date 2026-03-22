@@ -16,6 +16,7 @@ bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
 init_logger()
 logger = get_logger()
 
+# TODO Always show last changes button
 
 @bot.event
 async def on_ready():
