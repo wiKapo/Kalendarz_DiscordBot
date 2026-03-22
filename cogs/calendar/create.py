@@ -17,10 +17,10 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
         except discord.NotFound:
             await recreate_calendar(interaction, calendar)
         except discord.HTTPException as e:
-            logger.error(f"HTTP exception: {e}")
+            logger.error(f"HTTP exception: {e}", exc_info=True)
             await interaction.response.send_message('Błąd HTTP Uh Oh', ephemeral=True)
         except Exception as e:
-            logger.error(f"Internal error: {e}")
+            logger.error(f"Internal error: {e}", exc_info=True)
             await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
         else:
             logger.info("Calendar already exists on this channel.")

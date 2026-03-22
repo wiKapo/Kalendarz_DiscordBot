@@ -73,7 +73,7 @@ class ListNotificationButton(discord.ui.Button):
             await self.action(interaction, self.data)
         except Exception as e:
             logger = get_logger(LogType.USER, interaction.user.id)
-            logger.error(f"in callback of NotificationButton {e}")
+            logger.error(f"in callback of NotificationButton {e}", exc_info=True)
 
 
 class NotificationDMView(discord.ui.View):
@@ -133,7 +133,7 @@ class SelectCalendar(discord.ui.Select):
             await self.action(interaction, int(self.values[0]))
         except Exception as e:
             logger = get_logger(LogType.USER, interaction.user.id)
-            logger.error(f"in callback of SelectCalendar {e}")
+            logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
 
 
 class SelectCalendarView(discord.ui.View):

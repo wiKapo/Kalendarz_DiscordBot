@@ -24,7 +24,7 @@ class SelectEvent(discord.ui.Select):
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
             logger = logging.getLogger("default")
             logger.error(f"in callback of SelectEvent in [{interaction.guild.name} - {interaction.guild.id}] "
-                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
+                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
 
 
 class SelectEventView(discord.ui.View):
@@ -49,7 +49,7 @@ class NotificationButton(discord.ui.Button):
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
             logger = logging.getLogger("default")
             logger.error(f"in callback of NotificationButton in [{interaction.guild.name} - {interaction.guild.id}] "
-                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}")
+                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
 
 
 class NotificationButtonsView(discord.ui.View):

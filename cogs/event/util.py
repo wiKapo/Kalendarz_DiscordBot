@@ -23,7 +23,7 @@ def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
         new_time, new_date = new_event.timestamp_to_text()
         old_time, old_date = old_event.timestamp_to_text()
         if new_time != old_time:
-            message += f"| *Godzina*: `{old_time if old_time != "" else "-"}` -> `{new_time if new_time != "" else "-"}` "
+            message += f"| *Godzina*: `{old_time if old_time else "-"}` -> `{new_time if new_time else "-"}` "
         if new_date != old_date:
             message += f"| *Data*: `{old_date}` -> `{new_date}` "
 
