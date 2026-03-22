@@ -7,24 +7,14 @@ from discord import Role, Guild, SelectOption
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
 
-DEFAULT_SECTIONS_RULES: dict[str, Callable[[datetime, datetime], bool]] = {
-    "1d": lambda now, check: now.day == check.day,
-    "2d": lambda now, check: now.day + 1 == check.day,
-    "1w": lambda now, check: now.isocalendar()[1] == check.isocalendar()[1],
-    "2w": lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1],
-    "1m": lambda now, check: now.month == check.month,
-    "2m": lambda now, check: now.month + 1 == check.month,
-    "": lambda now, check: True
-}
-
-DEFAULT_SECTIONS_ORDER: dict[str, int] = {
-    "1d": 0,
-    "2d": 1,
-    "1w": 2,
-    "2w": 3,
-    "1m": 4,
-    "2m": 5,
-    "": 6,
+DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
+    1: lambda now, check: now.day == check.day,
+    2: lambda now, check: now.day + 1 == check.day,
+    3: lambda now, check: now.isocalendar()[1] == check.isocalendar()[1],
+    4: lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1],
+    5: lambda now, check: now.month == check.month,
+    6: lambda now, check: now.month + 1 == check.month,
+    99: lambda now, check: True
 }
 
 
@@ -89,7 +79,6 @@ class Db:
 
 class Section:
     calendarId: int = None
-    timeTag: str = None
     timestamp: int | None = None
     name: str = None
 
@@ -98,54 +87,52 @@ class Section:
         :param data: for parsing fields from the database.
         """
         if data:
-            self.calendarId, self.timeTag, self.timestamp, self.name = data
+            self.calendarId, self.timestamp, self.name = data
 
     def __repr__(self):
-        return f"Section[{self.calendarId}] TimeTag:{self.timeTag} Timestamp:{self.timestamp} Name:{self.name}"
+        return f"Section[{self.calendarId}] Timestamp:{self.timestamp} Name:{self.name}"
 
     def __str__(self):
         return f"---==[  {self.name}  ]==---"
 
+    def __eq__(self, other):
+        return (isinstance(other, Section) and self.timestamp == other.timestamp
+                and self.name == other.name and self.calendarId == other.calendarId)
+
     def insert(self):
-        Db().execute("INSERT INTO sections (CalendarId, TimeTag, Timestamp, Name) VALUES (?, ?, ?, ?)",
-                     (self.calendarId, self.timeTag, self.timestamp, self.name))
+        Db().execute("INSERT INTO sections (CalendarId, Timestamp, Name) VALUES (?, ?, ?)",
+                     (self.calendarId, self.timestamp, self.name))
+
+
+DEFAULT_SECTIONS = [Section([0, 1, "Dzisiaj"]),
+                    Section([0, 2, "Jutro"]),
+                    Section([0, 3, "W tym tygodniu"]),
+                    Section([0, 4, "Za tydzień"]),
+                    Section([0, 5, "W tym miesiącu"]),
+                    Section([0, 6, "Za miesiąc"]),
+                    Section([0, 99, "W przyszłości"])]
 
 
 def delete_all_sections(calendar_id: int):
     Db().execute("DELETE FROM sections WHERE CalendarId = ?", (calendar_id,))
 
 
-def create_default_sections(calendar_id: int) -> list[Section]:
-    return [
-        Section([calendar_id, "1d", None, "Dzisiaj"]),
-        Section([calendar_id, "2d", None, "Jutro"]),
-        Section([calendar_id, "1w", None, "W tym tygodniu"]),
-        Section([calendar_id, "2w", None, "Za tydzień"]),
-        Section([calendar_id, "1m", None, "W tym miesiącu"]),
-        Section([calendar_id, "2m", None, "Za miesiąc"]),
-        Section([calendar_id, "", None, "W przyszłości"])
-    ]
-
-
-def select_section(sections: list[Section], timestamp: int) -> tuple[Section | None, Section | None]:
+def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Section | None, Section | None]:
     now = datetime.now()
 
-    custom_sections = list(filter(lambda x: x.timeTag == "_", sections))
     selected_custom_section = None
-    if custom_sections:
-        custom_sections.sort(key=lambda s: s.timestamp)
-        for section in custom_sections:
-            if now.timestamp() >= section.timestamp:
-                selected_custom_section = section
-                break
+    # if custom_sections:
+    #     custom_sections.sort(key=lambda s: s.timestamp)
+    #     for section in custom_sections:
+    #         if now.timestamp() >= section.timestamp:
+    #             selected_custom_section = section
+    #             break
 
-    sections = list(filter(lambda x: x.timeTag != "_", sections))
     selected_section = None
     check = datetime.fromtimestamp(timestamp)
     if check.date() >= now.date():
-        sections.sort(key=lambda s: DEFAULT_SECTIONS_ORDER.get(s.timeTag, 999))
-        for section in sections:
-            rule = DEFAULT_SECTIONS_RULES.get(section.timeTag)
+        for section in DEFAULT_SECTIONS:
+            rule = DEFAULT_SECTIONS_RULES.get(section.timestamp)
             if rule(now, check):
                 selected_section = section
                 break
@@ -156,7 +143,7 @@ class Calendar:
     id: int = None
     title: str | None = None
     showSections: bool = None
-    sections: list[Section] = []
+    custom_sections: list[Section] = []
     guildId: int = None
     channelId: int = None
     messageId: int = None
@@ -178,7 +165,6 @@ class Calendar:
         if data is not None:
             self.id, self.title, self.showSections, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.pingMessageId = data
-            self.fetch_sections()
 
     def __repr__(self):
         event_amount = Db().fetch_one("SELECT COUNT(*) FROM events WHERE CalendarId=?", (self.id,))[0]
@@ -197,7 +183,7 @@ class Calendar:
             current_custom_section = None
             for event in events:
                 message += "\n"
-                new_section, new_custom_section = select_section(self.sections, event.timestamp)
+                new_section, new_custom_section = select_section(self.custom_sections, event.timestamp)
                 if new_section != current_section:
                     current_section = new_section
                     if self.showSections:
@@ -249,11 +235,11 @@ class Calendar:
 
     def fetch_sections(self):
         data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
-        self.sections = [Section(x) for x in data]
+        self.custom_sections = [Section(x) for x in data]
 
     def update_sections(self):
         delete_all_sections(self.id)
-        for section in self.sections:
+        for section in self.custom_sections:
             section.insert()
 
 
