@@ -25,10 +25,8 @@ class EditCalendarModal(discord.ui.Modal):
                                        description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
                                        component=self.title_input))
 
-        self.section_select = discord.ui.Select(  # TODO dynamic sections
-            options=[discord.SelectOption(label="Nie", value="0", default=calendar.showSections == 0),
-                     discord.SelectOption(label="Tak", value="1", default=calendar.showSections == 1)])
-        self.add_item(discord.ui.Label(text="Pokaż sekcje", component=self.section_select))
+        self.show_section = discord.ui.Checkbox(default=calendar.showSections)
+        self.add_item(discord.ui.Label(text="Pokaż sekcje w wiadomości kalendarza", component=self.show_section))
 
         self.ping_role_select = discord.ui.RoleSelect(placeholder="Rola do powiadomień",
                                                       default_values=[ping_role] if ping_role else [])
@@ -41,16 +39,16 @@ class EditCalendarModal(discord.ui.Modal):
 
         logger = get_logger(LogType.CALENDAR, self.calendar.id)
         logger.info(f"Editing calendar number {self.calendar.id}")
-        logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value}")
-        logger.debug(f"Show sections: {self.calendar.showSections} -> {self.section_select.values[0] == 1}")
+        logger.debug(
+            f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value != '' else None}")
+        logger.debug(f"Show sections: {self.calendar.showSections == 1} -> {self.show_section.value}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
         ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value != "" else None
-        self.calendar.showSections = self.section_select.values[0] == "1"
+        self.calendar.showSections = self.show_section.value
         self.calendar.pingRoleId = selected_ping_role
-
         # Send a ping message only when the ping role is changed
         self.calendar.update()
         logger.info("Calendar updated in the database")
