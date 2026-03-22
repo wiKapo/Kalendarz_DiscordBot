@@ -325,7 +325,7 @@ class Event:
         if len(date.split(".")) == 2:
             date += f".{datetime.now().year}"
 
-        if time == "":
+        if not time:
             dt = datetime.strptime(date, "%d.%m.%Y")
             self.wholeDay = True
         else:
@@ -394,12 +394,12 @@ def format_event_entries(events: list[Event], selected_event: int | None = None)
     options = []
     for i, event in enumerate(events):
         time, date = event.timestamp_to_text()
-        if time != "": date = f"{date} {time}"
+        if time: date = f"{date} {time}"
 
         description = ""
-        if event.team != "":
+        if event.team:
             description += f'[{event.team}] '
-        if event.place != "":
+        if event.place:
             description += event.place
 
         options.append(

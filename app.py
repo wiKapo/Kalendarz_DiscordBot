@@ -17,8 +17,6 @@ init_logger()
 logger = get_logger()
 
 
-# TODO Fix unnecessary == "" and other similar comparisons
-
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")

@@ -78,7 +78,7 @@ class AddNotificationModal(discord.ui.Modal):
 
         if "_" in self.time_select.values:
             self.time_select.values.remove("_")
-            if self.custom_input.value != "":
+            if self.custom_input.value:
                 self.time_select.values.extend(self.custom_input.value.replace(" ", "").split(','))
             else:
                 logger.info("Did not receive custom times, skipping")
