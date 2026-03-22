@@ -27,7 +27,7 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
-            message.message = "**Aktualizacja kalendarza** Naprawiono działanie przycisków powiadomień"  # TODO ALWAYS UPDATE ME
+            message.message = "**Aktualizacja kalendarza** Dodano niestandardowe sekcje"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
