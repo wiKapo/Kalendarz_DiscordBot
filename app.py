@@ -18,7 +18,6 @@ logger = get_logger()
 
 
 # TODO Fix unnecessary == "" and other similar comparisons
-# TODO Add 'exc_info=True' to every logger.error'
 
 @bot.event
 async def on_ready():
@@ -29,7 +28,7 @@ async def on_ready():
         logger.info(f"Synced {len(synced_commands)} commands")
         print(f"Synced {len(synced_commands)} commands")
     except Exception as e:
-        logger.error(f"Error with syncing database: {e}")
+        logger.error(f"Error with syncing database: {e}", exc_info=True)
         print(f"Error with syncing bot commands: {e}")
 
     try:
