@@ -95,9 +95,24 @@ class Section:
     def __str__(self):
         return f"---==[  {self.name}  ]==---"
 
+    def double_str(self, other):
+        return f"---==[  {self.name}  ][  {other.name}  ]==---"
+
     def __eq__(self, other):
         return (isinstance(other, Section) and self.timestamp == other.timestamp
                 and self.name == other.name and self.calendarId == other.calendarId)
+
+    def timestamp_to_text(self) -> str:
+        return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
+
+    def text_to_timestamp(self, date: str):
+        if len(date.split(".")) == 2:
+            date += f".{datetime.now().year}"
+
+        self.timestamp = int(datetime.strptime(date, "%d.%m.%Y").timestamp())
+
+    def create_modal_text(self):
+        return f"{self.timestamp_to_text()}-{self.name}"
 
     def insert(self):
         Db().execute("INSERT INTO sections (CalendarId, Timestamp, Name) VALUES (?, ?, ?)",
@@ -119,18 +134,18 @@ def delete_all_sections(calendar_id: int):
 
 def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Section | None, Section | None]:
     now = datetime.now()
-
-    selected_custom_section = None
-    # if custom_sections:
-    #     custom_sections.sort(key=lambda s: s.timestamp)
-    #     for section in custom_sections:
-    #         if now.timestamp() >= section.timestamp:
-    #             selected_custom_section = section
-    #             break
-
-    selected_section = None
     check = datetime.fromtimestamp(timestamp)
+
+    selected_custom_section = selected_section = None
+
     if check.date() >= now.date():
+        if custom_sections:
+            custom_sections.sort(key=lambda s: s.timestamp, reverse=True)
+            for section in custom_sections:
+                if timestamp >= section.timestamp:
+                    selected_custom_section = section
+                    break
+
         for section in DEFAULT_SECTIONS:
             rule = DEFAULT_SECTIONS_RULES.get(section.timestamp)
             if rule(now, check):
@@ -184,13 +199,16 @@ class Calendar:
             for event in events:
                 message += "\n"
                 new_section, new_custom_section = select_section(self.custom_sections, event.timestamp)
-                if new_section != current_section:
-                    current_section = new_section
-                    if self.showSections:
-                        message += f"\n\t{current_section}\n"
-                if new_custom_section != current_custom_section and self.showSections:
-                    current_custom_section = new_custom_section
-                    message += f"\n\t{current_custom_section}\n"
+                if self.showSections:
+                    if new_section != current_section and new_custom_section != current_custom_section:
+                        message += f"\n\t{new_section.double_str(new_custom_section)}\n"
+                    elif new_custom_section != current_custom_section:
+                        message += f"\n\t{new_custom_section}\n"
+                    elif new_section != current_section:
+                        message += f"\n\t{new_section}\n"
+
+                current_section = new_section
+                current_custom_section = new_custom_section
 
                 if not current_section:
                     message += "-# ~~"

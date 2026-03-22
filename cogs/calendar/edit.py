@@ -28,6 +28,13 @@ class EditCalendarModal(discord.ui.Modal):
         self.show_section = discord.ui.Checkbox(default=calendar.showSections)
         self.add_item(discord.ui.Label(text="Pokaż sekcje w wiadomości kalendarza", component=self.show_section))
 
+        self.add_item(discord.ui.TextDisplay("Format niestandardowych sekcji: `dd.mm(.yyyy)-nazwa`\n"
+                                             "`()`- opcjonalne, wstawi obecny rok. Kolejne sekcje rozdziej `,`"))
+
+        self.custom_sections = discord.ui.TextInput(required=False,
+                                                    default=", ".join([s.create_modal_text() for s in self.calendar.custom_sections]))
+        self.add_item(discord.ui.Label(text="Dodaj niestandardowe sekcje", component=self.custom_sections))
+
         self.ping_role_select = discord.ui.RoleSelect(placeholder="Rola do powiadomień",
                                                       default_values=[ping_role] if ping_role else [])
         self.add_item(discord.ui.Label(text="Wybierz rolę do powiadomień",
@@ -42,12 +49,15 @@ class EditCalendarModal(discord.ui.Modal):
         logger.debug(
             f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value != '' else None}")
         logger.debug(f"Show sections: {self.calendar.showSections == 1} -> {self.show_section.value}")
+        logger.debug(f"Custom sections: {self.calendar.custom_sections} -> {self.custom_sections.value}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
         ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value != "" else None
         self.calendar.showSections = self.show_section.value
+        self.calendar.custom_sections = format_custom_sections(self.calendar.id, self.custom_sections.value)
+        self.calendar.update_sections()
         self.calendar.pingRoleId = selected_ping_role
         # Send a ping message only when the ping role is changed
         self.calendar.update()
