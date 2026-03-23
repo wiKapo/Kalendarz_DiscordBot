@@ -100,23 +100,22 @@ async def update_calendar(interaction: discord.Interaction, calendar: Calendar, 
     await (await interaction.channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
     logger.info("Updated calendar message")
 
-    if send_ping:
-        if calendar.pingMessageId is not None:
-            logger.info("Removing old ping message")
-            await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
-            calendar.pingMessageId = None
-            logger.info("Done")
+    if calendar.pingMessageId:
+        logger.info("Removing old update message")
+        await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
+        calendar.pingMessageId = None
+        logger.info("Done")
 
-        if calendar.pingRoleId is not None:
-            logger.info("Sending new ping message")
-            message = await interaction.channel.send(
-                f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
-                view=UpdateMessageView(calendar.pingRoleId))
-            calendar.pingMessageId = message.id
-            logger.info("Done")
+    logger.info(f"Sending new update message with{"" if send_ping else "out"} ping")
+    ping = f"<@&{calendar.pingRoleId}>\n" if calendar.pingRoleId and send_ping else ""
+    message = await interaction.channel.send(
+        f"{ping}-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
+        view=UpdateMessageView(calendar.pingRoleId))
+    calendar.pingMessageId = message.id
+    logger.info("Done")
 
-        calendar.update()
-        logger.info("Calendar updated in the database. Finished updating calendar")
+    calendar.update()
+    logger.info("Calendar updated in the database. Finished updating calendar")
 
 
 # --------- For notification button actions ---------
