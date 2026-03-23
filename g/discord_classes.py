@@ -63,14 +63,22 @@ class NotificationButtonsView(discord.ui.View):
 
 
 class UpdateMessageView(discord.ui.View):
-    role: int
+    role: int | None = None
+    ping_button: discord.ui.Button
 
-    def __init__(self, role: int):
+    def __init__(self, role: int | None = None):
         super().__init__(timeout=None)
         self.role = role
 
-    @discord.ui.button(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary, custom_id="show_messages")
-    async def show_messages(self, interaction: discord.Interaction, _):
+        if self.role:
+            self.add_item(GetUpdatesButton())
+
+    @discord.ui.button(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
+                       custom_id="show_messages")
+    async def show_messages(self, interaction: discord.Interaction):
+        logger = logging.getLogger(f"user_{interaction.user.id}")
+        logger.info(f"Showing update messages in [{interaction.guild.name} - {interaction.guild.id}] "
+                    f"in [{interaction.channel.name} - {interaction.channel.id}]")
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         messages = fetch_messages_for_calendar(calendar.id)
@@ -82,23 +90,37 @@ class UpdateMessageView(discord.ui.View):
                 result += f"- {message.message}\n"
             await interaction.response.send_message(result, ephemeral=True)
 
-    @discord.ui.button(label="Otrzymuj powiadomienia o aktualizacji kalendarza", style=discord.ButtonStyle.secondary,
-                       custom_id="ping")
-    async def ping(self, interaction: discord.Interaction, _):
+
+class GetUpdatesButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
+                         style=discord.ButtonStyle.secondary, custom_id="ping")
+
+    async def callback(self, interaction: discord.Interaction):
+        # logger = logging.getLogger(f"user_{interaction.user.id}")
         role: discord.role.Role = interaction.guild.get_role(self.role)
-        try:
-            if role in interaction.user.roles:
-                await interaction.user.remove_roles(role)
+        if role:
+            try:
+                # logger.info(f"Modifying ping role in [{interaction.guild.name} - {interaction.guild.id}]")
+                if role in interaction.user.roles:
+                    await interaction.user.remove_roles(role)
+                    await interaction.response.send_message(
+                        "Nie będziesz już otrzymywał powiadomień o aktualizacjach tego kalendarza", ephemeral=True)
+                    # logger.info(f"Removed role {role.name} from {interaction.user.name}")
+                else:
+                    await interaction.user.add_roles(role)
+                    await interaction.response.send_message(
+                        "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza.\n"
+                        "Aby zrezygnować kliknij ponownie.", ephemeral=True)
+                    # logger.info(f"Added role {role.name} to {interaction.user.name}")
+            except discord.Forbidden:
                 await interaction.response.send_message(
-                    "Nie będziesz już otrzymywał powiadomień o aktualizacjach tego kalendarza", ephemeral=True)
-            else:
-                await interaction.user.add_roles(role)
-                await interaction.response.send_message(
-                    "Teraz będziesz otrzymywał powiadomienia o aktualizacjach tego kalendarza.\n"
-                    "Aby zrezygnować kliknij ponownie.", ephemeral=True)
-        except discord.Forbidden:
-            await interaction.response.send_message(
-                "**Bot nie posiada uprawnień do zmieniania ról**\n"
-                "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
-                "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
-                ephemeral=True)
+                    "**Bot nie posiada uprawnień do zmieniania ról**\n"
+                    "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
+                    "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
+                    ephemeral=True)
+                # logger.warning(f"User {interaction.user.name} tried to add a notification role for themselves "
+                #                f"but guild denied")
+        else:
+            await interaction.response.send_message("Nie ustawiono roli do powiadomień", ephemeral=True)
+            # logger.warning(f"Notification role is not set for [{interaction.guild.name} - {interaction.guild.id}]")
