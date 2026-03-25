@@ -147,20 +147,20 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
     await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar),
                                                                  view=NotificationButtonsView(bot, actions))
 
-    if calendar.pingMessageId is not None:
+    if calendar.pingMessageId:
         logger.info("Removing old ping message")
         await (await channel.fetch_message(calendar.pingMessageId)).delete()
         calendar.pingMessageId = None
 
-    if calendar.pingRoleId is not None:
-        logger.info("Sending update message")
-        from datetime import datetime
-        message = await channel.send(
-            f"Kalendarz został zaktualizowany do najnowszej wersji\n"
-            f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA lub pod przyciskiem `Pokaż ostatnie zmiany`\n"
-            f"-# Czas aktualizacji: <t:{int(datetime.now().timestamp())}>",
-            view=UpdateMessageView(calendar.pingRoleId))
-        calendar.pingMessageId = message.id
+    logger.info("Sending update message")
+    from datetime import datetime
+    message = await channel.send(
+        f"Kalendarz został zaktualizowany do najnowszej wersji\n"
+        f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA lub pod przyciskiem `Pokaż ostatnie zmiany`\n"
+        f"-# Czas aktualizacji: <t:{int(datetime.now().timestamp())}>",
+        view=UpdateMessageView(calendar.pingRoleId))
+    calendar.pingMessageId = message.id
+    logger.info("Done")
 
     calendar.update()
 

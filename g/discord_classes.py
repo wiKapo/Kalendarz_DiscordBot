@@ -63,22 +63,24 @@ class NotificationButtonsView(discord.ui.View):
 
 
 class UpdateMessageView(discord.ui.View):
-    role: int | None = None
+    role_id: int | None = None
     ping_button: discord.ui.Button
 
-    def __init__(self, role: int | None = None):
+    def __init__(self, role_id: int | None = None):
         super().__init__(timeout=None)
-        self.role = role
+        self.role_id = role_id
 
-        if self.role:
-            self.add_item(GetUpdatesButton())
+        self.add_item(ShowUpdateMessagesButton())
 
-    @discord.ui.button(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
-                       custom_id="show_messages")
-    async def show_messages(self, interaction: discord.Interaction):
-        logger = logging.getLogger(f"user_{interaction.user.id}")
-        logger.info(f"Showing update messages in [{interaction.guild.name} - {interaction.guild.id}] "
-                    f"in [{interaction.channel.name} - {interaction.channel.id}]")
+        if self.role_id:
+            self.add_item(GetUpdatesButton(self.role_id))
+
+
+class ShowUpdateMessagesButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary, custom_id="show_messages")
+
+    async def callback(self, interaction: discord.Interaction):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         messages = fetch_messages_for_calendar(calendar.id)
@@ -92,13 +94,14 @@ class UpdateMessageView(discord.ui.View):
 
 
 class GetUpdatesButton(discord.ui.Button):
-    def __init__(self):
-        super().__init__(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
-                         style=discord.ButtonStyle.secondary, custom_id="ping")
+    def __init__(self, role_id: int):
+        super().__init__(label="Otrzymuj powiadomienia o aktualizacji kalendarza", style=discord.ButtonStyle.secondary,
+                         custom_id="ping")
+        self.role_id = role_id
 
     async def callback(self, interaction: discord.Interaction):
-        # logger = logging.getLogger(f"user_{interaction.user.id}")
-        role: discord.role.Role = interaction.guild.get_role(self.role)
+        # logger = logging.getLogger(f"user_{interaction.user.id}") TODO
+        role = interaction.guild.get_role(self.role_id)
         if role:
             try:
                 # logger.info(f"Modifying ping role in [{interaction.guild.name} - {interaction.guild.id}]")
