@@ -8,12 +8,12 @@ from discord import Role, Guild, SelectOption
 DEFAULT_TITLE = "Kalendarz by wiKapo"
 
 DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
-    1: lambda now, check: now.day == check.day,
-    2: lambda now, check: now.day + 1 == check.day,
-    3: lambda now, check: now.isocalendar()[1] == check.isocalendar()[1],
-    4: lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1],
-    5: lambda now, check: now.month == check.month,
-    6: lambda now, check: now.month + 1 == check.month,
+    1: lambda now, check: now.day == check.day and now.month == check.month and now.year == check.year,
+    2: lambda now, check: now.day + 1 == check.day and now.month == check.month and now.year == check.year,
+    3: lambda now, check: now.isocalendar()[1] == check.isocalendar()[1] and now.year == check.year,
+    4: lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1] and now.year == check.year,
+    5: lambda now, check: now.month == check.month and now.year == check.year,
+    6: lambda now, check: now.month + 1 == check.month and now.year == check.year,
     99: lambda now, check: True
 }
 
