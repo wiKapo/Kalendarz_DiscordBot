@@ -263,7 +263,10 @@ class Calendar:
 
 def fetch_all_calendars() -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars")
-    return [Calendar(x) for x in data]
+    calendars = [Calendar(x) for x in data]
+    for calendar in calendars:
+        calendar.fetch_sections()
+    return calendars
 
 
 class Event:
