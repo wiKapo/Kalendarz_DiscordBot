@@ -1,6 +1,4 @@
 from g.util import *
-# noinspection PyUnusedImports
-from datetime import datetime
 
 
 async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):

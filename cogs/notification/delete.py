@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from cogs.notification.classes import DeleteNotificationModal, send_delete_notification_modal
 from g.discord_classes import SelectEventView
 from g.util import *
