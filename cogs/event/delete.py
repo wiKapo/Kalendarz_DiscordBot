@@ -30,7 +30,7 @@ async def event_delete(interaction: discord.Interaction, event_id: int | None):
         event.delete()
         logger.info("Deleted this event from the database")
 
-        await update_calendar(interaction, calendar)
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
 
         await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)
 
@@ -39,7 +39,7 @@ class DeleteEventsModal(discord.ui.Modal):
     def __init__(self, events: list[Event]):
         super().__init__(title="Usuń wydarzenia")
 
-        options = format_event_entries(events)
+        options = format_event_options(events)
         self.event_select = discord.ui.Select(options=options, max_values=len(options), required=True)
         self.add_item(discord.ui.Label(text="Wybierz wydarzenia do usunięcia", component=self.event_select))
 
@@ -56,7 +56,7 @@ class DeleteEventsModal(discord.ui.Modal):
             create_event_delete_message(event)
             event.delete()
 
-        await update_calendar(interaction, calendar)
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
         logger.info(f"Deleted events")
 
         if self.event_select.values:

@@ -1,7 +1,7 @@
 from cogs.calendar.util import *
 
 
-async def calendar_create(bot: Bot, interaction, title: str = None, show_sections: bool = None):
+async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str = None, show_sections: bool = None):
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
@@ -11,8 +11,8 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
                     f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
         try:
-            await (await (await bot.fetch_guild(interaction.guild.id))
-                   .fetch_channel(interaction.channel.id)).fetch_message(calendar.messageId)
+            await (await (await bot.fetch_guild(interaction.guild_id))
+                   .fetch_channel(interaction.channel_id)).fetch_message(calendar.messageId)
 
         except discord.NotFound:
             await recreate_calendar(interaction, calendar)
@@ -43,7 +43,7 @@ async def calendar_create(bot: Bot, interaction, title: str = None, show_section
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
 
-        await update_calendar(interaction, calendar)
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
         await update_notification_buttons(bot, interaction, calendar)
 
         await interaction.response.send_message(

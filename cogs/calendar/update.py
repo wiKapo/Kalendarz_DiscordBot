@@ -9,7 +9,7 @@ async def calendar_update(interaction: discord.Interaction, bot: Bot, quiet: boo
     logger = get_logger(LogType.CALENDAR, calendar.id)
     logger.info("Updating calendar using slash command")
 
-    await update_calendar(interaction, calendar, not quiet)
+    await update_calendar(interaction.guild, calendar, interaction.user.name)  # TODO ping -> was 'not quiet'
     await update_notification_buttons(bot, interaction, calendar)
 
     await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)

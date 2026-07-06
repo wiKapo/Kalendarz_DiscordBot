@@ -1,5 +1,6 @@
 from typing import Any
 
+from g.discord_classes import SelectCalendar
 from g.util import *
 
 
@@ -23,9 +24,9 @@ async def send_all_notifications(interaction: discord.Interaction, _):
     await send_notification_list(interaction, fetch_events_with_notifications(interaction.user.id))
 
 
-async def send_all_calendar_notifications(interaction: discord.Interaction, calendar_id: int):
+async def send_all_calendar_notifications(interaction: discord.Interaction, calendar_ids: list[str]):
     await send_notification_list(interaction,
-                                 fetch_events_with_notifications_by_calendar(interaction.user.id, calendar_id))
+                                 fetch_events_with_notifications_by_calendar(interaction.user.id, int(calendar_ids[0])))
 
 
 async def send_notification_list(interaction: discord.Interaction, events: list[Event]):
@@ -87,6 +88,7 @@ class NotificationDMView(discord.ui.View):
 async def send_calendar_select_view(interaction: discord.Interaction, bot: Bot):
     logger = get_logger(LogType.USER, interaction.user.id)
 
+    # TODO move to g/discord_classes.py
     logger.info(f"Showing calendar select view for [{interaction.user.name} - {interaction.user.id}]")
     calendars = []
     for calendar in fetch_all_calendars():  # Showing only those calendars from those guilds where the user has access
@@ -117,22 +119,6 @@ def format_calendars(calendars: list[Calendar]) -> list[discord.SelectOption]:
             )
         )
     return options
-
-
-class SelectCalendar(discord.ui.Select):
-    action: Callable
-
-    def __init__(self, placeholder: str, action: Callable, calendars: list[Calendar]):
-        options = format_calendars(calendars)
-        super().__init__(placeholder=placeholder, options=options)
-        self.action = action
-
-    async def callback(self, interaction: discord.Interaction):
-        try:
-            await self.action(interaction, int(self.values[0]))
-        except Exception as e:
-            logger = get_logger(LogType.USER, interaction.user.id)
-            logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
 
 
 class SelectCalendarView(discord.ui.View):

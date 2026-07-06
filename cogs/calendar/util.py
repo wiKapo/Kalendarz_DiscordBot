@@ -10,7 +10,7 @@ async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar
     calendar.update()
     logger.info("Calendar updated in the database")
 
-    await update_calendar(interaction, calendar)
+    await update_calendar(interaction.guild, calendar, interaction.user.name)
 
     await interaction.response.send_message("Odtworzono kalendarz.", ephemeral=True)
     logger.info("Calendar is recreated")

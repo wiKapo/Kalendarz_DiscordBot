@@ -4,7 +4,7 @@ from collections.abc import Callable
 import discord
 from discord.ext.commands import Bot
 
-from g.classes import Event, Calendar, fetch_messages_for_calendar, format_event_entries
+from g.classes import Event, Calendar, fetch_messages_for_calendar, format_event_options, format_calendar_options
 
 
 class SelectEvent(discord.ui.Select):
@@ -12,7 +12,7 @@ class SelectEvent(discord.ui.Select):
     events: list[Event]
 
     def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
-        options = format_event_entries(events)
+        options = format_event_options(events)
         super().__init__(placeholder=placeholder, options=options, max_values=max_values)
         self.action = action
         self.events = events
@@ -32,6 +32,29 @@ class SelectEventView(discord.ui.View):
         super().__init__()
         self.add_item(SelectEvent(events, placeholder, action, max_values))
 
+
+class SelectCalendar(discord.ui.Select):
+    action: Callable
+
+    def __init__(self, placeholder: str, action: Callable, calendars: list[Calendar]):
+        options = format_calendar_options(calendars)
+        super().__init__(placeholder=placeholder, options=options)
+        self.action = action
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            await self.action(interaction, self.values)
+        except Exception as e:
+            logger = logging.getLogger("default")
+            logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
+
+
+# class SelectCalendarView(discord.ui.View):
+#     def __init__(self, calendars: list[Calendar]):
+#         super().__init__()
+#         self.add_item(
+#             SelectCalendar(placeholder="Wybierz kalendarz", action=send_all_calendar_notifications,
+#                            calendars=calendars))
 
 class NotificationButton(discord.ui.Button):
     action: Callable

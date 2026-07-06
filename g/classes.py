@@ -261,6 +261,29 @@ class Calendar:
             section.insert()
 
 
+def format_calendar_options(calendars: list[Calendar], selected_calendar: int | None = None) -> list[SelectOption]:
+    options = []
+    for calendar in calendars:
+        options.append(
+            SelectOption(
+                label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
+                description=f"{calendar.channelName}",
+                value=f"{calendar.id}"
+            )
+        )
+    return options
+
+
+# TODO fix when there are no calendars
+def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
+    data = Db().fetch_all("SELECT * FROM calendars WHERE GuildId=?", (guild_id,))
+    calendars = [Calendar(x) for x in data]
+    for calendar in calendars:  # TODO fix me
+        calendar.fetch_sections()
+    return calendars
+
+
+# TODO fix when there are no calendars
 def fetch_all_calendars() -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars")
     calendars = [Calendar(x) for x in data]
@@ -393,7 +416,7 @@ def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]
     return good_events
 
 
-def format_event_entries(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
+def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
     options = []
     for i, event in enumerate(events):
         time, date = event.timestamp_to_text()
