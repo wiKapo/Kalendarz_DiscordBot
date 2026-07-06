@@ -50,9 +50,8 @@ class NotificationCog(commands.Cog):
     notify_group = discord.app_commands.Group(name="notification", description="Polecenia powiadomień")
 
     @notify_group.command(name="add", description="Dodaje lub edytuje powiadomienia do wybranego wydarzenia")
-    @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
-    async def add(self, interaction: discord.Interaction, event_id: int | None = None):
-        await notification_add(interaction, event_id)
+    async def add(self, interaction: discord.Interaction):
+        await notification_add(interaction)
 
     @add.error
     async def add_error(self, interaction: discord.Interaction, error):
@@ -80,9 +79,8 @@ class NotificationCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @notify_group.command(name="delete", description="Usuwa wszystkie powiadomienia związane z wybranym wydarzeniem")
-    @discord.app_commands.describe(event_id="Numer wydarzenia (od najstarszego / od góry)")
-    async def delete(self, interaction: discord.Interaction, event_id: int | None = None):
-        await notification_delete(interaction, event_id)
+    async def delete(self, interaction: discord.Interaction):
+        await notification_delete(interaction)
 
     @delete.error
     async def delete_error(self, interaction: discord.Interaction, error):

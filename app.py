@@ -43,12 +43,16 @@ async def on_ready():
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS events ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
                      'Timestamp INT NOT NULL,'
                      'WholeDay BOOLEAN NOT NULL,'
                      'Name TEXT NOT NULL,'
                      'Team TEXT,'
                      'Place TEXT'
+                     ');')
+        Db().execute('CREATE TABLE IF NOT EXISTS eventsInCalendars ('
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'EventId INTEGER NOT NULL REFERENCES events(Id) ON DELETE CASCADE,'
+                     'PRIMARY KEY (CalendarId, EventId)'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS managerRoles ('
                      'GuildId INTEGER,'
@@ -117,10 +121,8 @@ która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 
 ### ---==[ Polecenia wydarzeń ]==---
 `/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
-`/event edit <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
-Podając `event_id` wydarzenia wysyła od razu okienko edycji.
-`/event delete <event_id>` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je.
-Podając `event_id` wydarzenia wysyła od razu je usuwa. **Tej operacji nie można cofnąć**.
+`/event edit` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
+`/event delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**.
 """
     await interaction.response.send_message(message, ephemeral=True)
 
@@ -132,12 +134,12 @@ Menedżerowie nie mogą dodawać nowych menedżerów.
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
     
 ### ---==[ Polecenia powiadomień ]==---
-`/notification add <event_id>` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
-Po wyborze wydarzenia otwiera okienko tworzenia powiadomień. Podając `event_id` od razu pokazuje okienko tworzenia.
-(WIP) ~~`/notification edit <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
+`/notification add` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
+Po wyborze wydarzenia otwiera okienko tworzenia powiadomień.
+(WIP) ~~`/notification edit` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
 Podając `event_id` pokazuje od razu listę powiadomień. Po wyborze powiadomienia otwiera okienko edycji wybranego powiadomienia.~~
-`/notification delete <event_id>` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia otwiera okienko z listą powiadomień przypisanych do tego wydarzenia.
-Podając `event_id` pokazuje od razu to okienko. Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
+`/notification delete` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia otwiera okienko z listą powiadomień przypisanych do tego wydarzenia. 
+Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
 `/notification list` - Wysyła wiadomość z listą powiadomień użytkownika
     
     ### ---==[ Inne polecenia ]==---

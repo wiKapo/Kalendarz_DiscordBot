@@ -33,7 +33,7 @@ class EditCalendarModal(discord.ui.Modal):
 
         self.custom_sections = discord.ui.TextInput(required=False,
                                                     default=", ".join(
-                                                        [s.create_modal_text() for s in self.calendar.custom_sections]))
+                                                        [s.create_modal_text() for s in self.calendar.customSections]))
         self.add_item(discord.ui.Label(text="Dodaj niestandardowe sekcje", component=self.custom_sections))
 
         self.ping_role_select = discord.ui.RoleSelect(placeholder="Rola do powiadomień",
@@ -49,14 +49,14 @@ class EditCalendarModal(discord.ui.Modal):
         logger.info(f"Editing calendar number {self.calendar.id}")
         logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value else None}")
         logger.debug(f"Show sections: {self.calendar.showSections == 1} -> {self.show_section.value}")
-        logger.debug(f"Custom sections: {self.calendar.custom_sections} -> {self.custom_sections.value}")
+        logger.debug(f"Custom sections: {self.calendar.customSections} -> {self.custom_sections.value}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
         ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value else None
         self.calendar.showSections = self.show_section.value
-        self.calendar.custom_sections = format_custom_sections(self.calendar.id, self.custom_sections.value)
+        self.calendar.customSections = format_custom_sections(self.calendar.id, self.custom_sections.value)
         self.calendar.update_sections()
         self.calendar.pingRoleId = selected_ping_role
         # Send a ping message only when the ping role is changed

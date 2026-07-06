@@ -22,20 +22,18 @@ class EventCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @event_group.command(name="edit", description="Zmienia wydarzenie")
-    @discord.app_commands.describe(event_id="Numer wydarzenia do edycji (od najstarszego / od góry)")
     @discord.app_commands.check(check_user)
-    async def edit(self, interaction: discord.Interaction, event_id: int | None):
-        await event_edit(interaction, event_id)
+    async def edit(self, interaction: discord.Interaction):
+        await event_edit(interaction)
 
     @edit.error
     async def edit_error(self, interaction: discord.Interaction, error):
         await send_error_message(interaction, error)
 
     @event_group.command(name="delete", description="Usuwa wydarzenia")
-    @discord.app_commands.describe(event_id="Numer wydarzenia do usunięcia (od najstarszego / od góry)")
     @discord.app_commands.check(check_user)
-    async def delete(self, interaction: discord.Interaction, event_id: int | None):
-        await event_delete(interaction, event_id)
+    async def delete(self, interaction: discord.Interaction):
+        await event_delete(interaction)
 
     @delete.error
     async def delete_error(self, interaction: discord.Interaction, error):

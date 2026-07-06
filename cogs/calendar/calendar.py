@@ -30,7 +30,9 @@ class CalendarCog(commands.Cog):
         outdated_events = fetch_outdated_events(cutoff_timestamp)
         logger.debug(f"Deleting {len(outdated_events)} old events")
         logger.debug(outdated_events)
-        delete_events(outdated_events)
+        for event in outdated_events:
+            event.delete()
+
 
         logger.info("Start of updating all calendars")
         for calendar in calendars:

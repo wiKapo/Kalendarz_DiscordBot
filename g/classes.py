@@ -158,7 +158,7 @@ class Calendar:
     id: int = None
     title: str | None = None
     showSections: bool = None
-    custom_sections: list[Section] = []
+    customSections: list[Section] = []
     guildId: int = None
     channelId: int = None
     messageId: int = None
@@ -189,7 +189,7 @@ class Calendar:
                 f"MessageId:{self.messageId}) (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
 
     def __str__(self):
-        events: list[Event] = fetch_events_by_calendar(self.id)
+        events: list[Event] = fetch_events_from_calendar(self.id)
         message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
         if not events:
             message += "\nPUSTE"
@@ -198,7 +198,7 @@ class Calendar:
             current_custom_section = None
             for event in events:
                 message += "\n"
-                new_section, new_custom_section = select_section(self.custom_sections, event.timestamp)
+                new_section, new_custom_section = select_section(self.customSections, event.timestamp)
                 if self.showSections:
                     if new_section != current_section and new_custom_section != current_custom_section:
                         message += f"\n\t{new_section.double_str(new_custom_section)}\n"
@@ -253,11 +253,11 @@ class Calendar:
 
     def fetch_sections(self):
         data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
-        self.custom_sections = [Section(x) for x in data]
+        self.customSections = [Section(x) for x in data]
 
     def update_sections(self):
         delete_all_sections(self.id)
-        for section in self.custom_sections:
+        for section in self.customSections:
             section.insert()
 
 
@@ -294,7 +294,6 @@ def fetch_all_calendars() -> list[Calendar]:
 
 class Event:
     id: int = None
-    calendarId: int = None
     timestamp: int = None
     wholeDay: bool = None
     name: str = None
@@ -306,10 +305,10 @@ class Event:
         :param data: for parsing fields from the database.
         """
         if data is not None:
-            self.id, self.calendarId, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
+            self.id, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
 
     def __repr__(self):
-        return f"Event[{self.id}]: calendar[{self.calendarId}] {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
+        return f"Event[{self.id}]: {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
 
     def __str__(self):
         message = ""
@@ -361,20 +360,12 @@ class Event:
 
     def fetch(self, event_id: int):
         data = Db().fetch_one("SELECT * FROM events WHERE Id=?", (event_id,))
-        if data is not None:
-            self.id, self.calendarId, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
-
-    def fetch_local(self, event_local_id: int, guild_id: int, channel_id: int):
-        data = Db().fetch_one(
-            "SELECT events.Id FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-            "WHERE GuildId = ? AND ChannelId = ? ORDER BY Timestamp LIMIT 1 OFFSET ?",
-            (guild_id, channel_id, event_local_id - 1))
-        self.fetch(data[0])
+        self.__init__(data)
 
     def insert(self):
         Db().execute(
-            "INSERT INTO events (CalendarId, Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?, ?)",
-            (self.calendarId, self.timestamp, self.wholeDay, self.name, self.team, self.place))
+            "INSERT INTO events (Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?)",
+            (self.timestamp, self.wholeDay, self.name, self.team, self.place))
 
     def update(self):
         Db().execute("UPDATE events SET Timestamp=?, WholeDay=?, Name=?, Team=?, Place=? WHERE Id=?",
@@ -383,29 +374,29 @@ class Event:
     def delete(self):
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
 
-    def get_guild_and_channel_id(self):
-        return Db().fetch_one("SELECT GuildId, ChannelId FROM events "
-                              "JOIN calendars ON events.CalendarId = calendars.Id WHERE events.Id=?", (self.id,))
+
+def fetch_events_from_guild(guild_id: int) -> list[Event]: # TODO move this to list of events in calendar class
+    data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
+                          "ON events.Id = eic.EventId INNER JOIN calendars ON eic.CalendarId = calendars.Id "
+                          "WHERE guildId=? ORDER BY Timestamp", (guild_id,))
+    return [Event(x) for x in data]
 
 
-def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:
+def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:  # TODO remove
     data = Db().fetch_all("SELECT events.* FROM events INNER JOIN calendars ON events.CalendarId = calendars.Id "
                           "WHERE guildId=? AND channelId=? ORDER BY Timestamp", (guild_id, channel_id))
     return [Event(x) for x in data]
 
 
-def fetch_events_by_calendar(calendar_id: int) -> list[Event]:
-    data = Db().fetch_all("SELECT events.* FROM events WHERE CalendarId=? ORDER BY Timestamp", (calendar_id,))
+def fetch_events_from_calendar(calendar_id: int) -> list[Event]:
+    data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
+                          "ON events.Id = eic.EventId WHERE eic.CalendarId=? ORDER BY Timestamp", (calendar_id,))
     return [Event(x) for x in data]
 
 
 def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
     data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
     return [Event(x) for x in data]
-
-
-def delete_events(events: list[Event]):
-    for event in events: event.delete()
 
 
 def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]:
