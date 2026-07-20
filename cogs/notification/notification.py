@@ -1,11 +1,15 @@
 from datetime import time
 
+import discord
 from discord.ext import tasks, commands
+from discord.ext.commands import Bot
 
 from cogs.notification.add import notification_add
 from cogs.notification.delete import notification_delete
 from cogs.notification.list import notification_list
-from g.util import *
+from g.classes.logger import get_logger, LogType
+from g.classes.notification import fetch_all_ready_notifications
+from g.util import send_error_message
 
 UPDATE_TIMES = [time(hour=i) for i in range(0, 24)]
 

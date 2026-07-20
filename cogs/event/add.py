@@ -1,5 +1,8 @@
+import discord
+
 from cogs.event.classes import EventAddModal
-from cogs.event.util import *
+from g.classes.calendar import fetch_calendars_in_guild
+from g.classes.event import Event
 
 
 async def event_add(interaction: discord.Interaction):

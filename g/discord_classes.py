@@ -4,7 +4,13 @@ from collections.abc import Callable
 import discord
 from discord.ext.commands import Bot
 
-from g.classes import Event, Calendar, fetch_messages_for_calendar, format_event_options, format_calendar_options
+from g.classes.event import Event, format_event_options
+from g.classes.calendar import Calendar, format_calendar_options
+from g.classes.message import fetch_messages_for_calendar
+
+
+# from g.classes.OLDCLASSES_logtype import Event, Calendar, format_event_options, format_calendar_options
+# from g.classes.OLDCLASSES_logtype import fetch_messages_for_calendar
 
 
 class SelectEvent(discord.ui.Select):

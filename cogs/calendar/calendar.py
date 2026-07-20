@@ -1,12 +1,16 @@
-from datetime import time
+from datetime import time, datetime, timedelta
 
+import discord
 from discord.ext import tasks, commands
 
 from cogs.calendar.create import calendar_create
 from cogs.calendar.delete import calendar_delete
 from cogs.calendar.edit import calendar_edit
 from cogs.calendar.update import calendar_update
-from cogs.calendar.util import *
+from g.classes.calendar import fetch_all_calendars
+from g.classes.event import fetch_outdated_events
+from g.classes.logger import get_logger, LogType
+from g.util import check_user, send_error_message
 
 UPDATE_TIME = time()
 

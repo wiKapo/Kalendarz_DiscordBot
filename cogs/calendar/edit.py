@@ -1,4 +1,10 @@
-from cogs.calendar.util import *
+import discord
+from discord import Role
+
+from cogs.calendar.util import format_custom_sections
+from g.classes.calendar import DEFAULT_TITLE, Calendar
+from g.classes.logger import get_logger, LogType
+from g.util import check_if_calendar_exists, update_calendar
 
 
 async def calendar_edit(interaction: discord.Interaction):

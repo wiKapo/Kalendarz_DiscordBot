@@ -1,8 +1,10 @@
 import discord
 from discord.ext import commands
 
-from g.classes import fetch_all_calendars, Message
-from g.util import check_calendar_admin, get_logger, admin_update_calendar
+from g.classes.calendar import fetch_all_calendars
+from g.classes.message import Message
+from g.util import check_calendar_admin, admin_update_calendar
+from g.classes.logger import get_logger
 
 
 class AdminCog(commands.Cog):

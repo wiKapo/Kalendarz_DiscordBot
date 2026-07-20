@@ -1,4 +1,8 @@
-from cogs.calendar.util import *
+import discord
+
+from g.classes.calendar import Calendar
+from g.classes.logger import get_logger, LogType
+from g.util import check_if_calendar_exists
 
 
 async def calendar_delete(interaction: discord.Interaction):

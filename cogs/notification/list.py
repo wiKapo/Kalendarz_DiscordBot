@@ -1,10 +1,20 @@
+from collections.abc import Callable
 from typing import Any
 
+import discord
+from discord import Interaction
+from discord.ext.commands import Bot
+
+from g.classes.logger import LogType, get_logger
+from g.classes.calendar import Calendar, DEFAULT_TITLE, fetch_all_calendars
+from g.classes.event import Event
+from g.classes.notification import fetch_events_with_notifications, fetch_events_with_notifications_by_calendar, \
+    fetch_notifications_by_event
 from g.discord_classes import SelectCalendar
-from g.util import *
+from g.util import check_dm
 
 
-async def notification_list(interaction: discord.Interaction, bot: Bot):
+async def notification_list(interaction: Interaction, bot: Bot):
     logger = get_logger(LogType.USER, interaction.user.id)
 
     if check_dm(interaction):
@@ -20,23 +30,23 @@ async def notification_list(interaction: discord.Interaction, bot: Bot):
                                                 view=NotificationGuildView(calendar.id), ephemeral=True)
 
 
-async def send_all_notifications(interaction: discord.Interaction, _):
+async def send_all_notifications(interaction: Interaction, _):
     await send_notification_list(interaction, fetch_events_with_notifications(interaction.user.id))
 
 
-async def send_all_calendar_notifications(interaction: discord.Interaction, calendar_ids: list[str]):
+async def send_all_calendar_notifications(interaction: Interaction, calendar_ids: list[str]):
     await send_notification_list(interaction,
                                  fetch_events_with_notifications_by_calendar(interaction.user.id, int(calendar_ids[0])))
 
 
-async def send_notification_list(interaction: discord.Interaction, events: list[Event]):
+async def send_notification_list(interaction: Interaction, events: list[Event]):
     message = format_notifications(interaction, events)
     logger = get_logger(LogType.USER, interaction.user.id)
     logger.info(f"Sending notification list")
     await interaction.response.send_message(f"### Twoje powiadomienia:\n{message}", ephemeral=True)
 
 
-def format_notifications(interaction: discord.Interaction, events: list[Event]) -> str:
+def format_notifications(interaction: Interaction, events: list[Event]) -> str:
     if not events:
         return "Brak powiadomień"
 
@@ -68,7 +78,7 @@ class ListNotificationButton(discord.ui.Button):
         self.action = action
         self.data = data
 
-    async def callback(self, interaction: discord.Interaction):
+    async def callback(self, interaction: Interaction):
         try:
             await self.action(interaction, self.data)
         except Exception as e:
@@ -85,7 +95,7 @@ class NotificationDMView(discord.ui.View):
                                              action=send_calendar_select_view, data=bot))
 
 
-async def send_calendar_select_view(interaction: discord.Interaction, bot: Bot):
+async def send_calendar_select_view(interaction: Interaction, bot: Bot):
     logger = get_logger(LogType.USER, interaction.user.id)
 
     # TODO move to g/discord_classes.py

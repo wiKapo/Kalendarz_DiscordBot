@@ -2,7 +2,7 @@ import discord
 from discord import Role, Interaction
 from discord.ext import commands
 
-from g.classes import update_manager_roles_for_guild, fetch_manager_roles_for_guild
+from g.classes.message import fetch_manager_roles_for_guild, update_manager_roles_for_guild
 from g.util import check_admin, send_error_message
 
 

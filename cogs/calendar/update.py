@@ -1,4 +1,10 @@
-from cogs.calendar.util import *
+import discord
+from discord.ext.commands import Bot
+
+from cogs.calendar.util import update_notification_buttons
+from g.classes.calendar import Calendar
+from g.classes.logger import get_logger, LogType
+from g.util import check_if_calendar_exists, update_calendar
 
 
 async def calendar_update(interaction: discord.Interaction, bot: Bot, quiet: bool):

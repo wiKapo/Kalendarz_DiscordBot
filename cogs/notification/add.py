@@ -1,6 +1,12 @@
+from datetime import datetime
+
+import discord
+
 from cogs.notification.classes import AddNotificationModal, send_add_notification_modal
+from g.classes.logger import LogType, get_logger
+from g.classes.event import remove_old_events, fetch_events_by_channel
 from g.discord_classes import SelectEventView
-from g.util import *
+from g.util import check_if_calendar_exists
 
 
 async def notification_add(interaction: discord.Interaction):

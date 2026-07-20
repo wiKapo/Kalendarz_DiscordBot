@@ -1,4 +1,6 @@
-from g.util import *
+from g.classes.event import Event
+from g.classes.message import Message
+
 
 def create_event_update_message(new_event: Event, old_event: Event | None = None):
     message = Message()

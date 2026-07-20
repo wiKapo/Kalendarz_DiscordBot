@@ -1,6 +1,12 @@
 import copy
 
-from cogs.event.util import *
+import discord
+
+from cogs.event.util import create_event_update_message
+from g.classes.logger import LogType, get_logger
+from g.classes.calendar import Calendar, format_calendar_options
+from g.classes.event import Event
+from g.util import update_calendar
 
 
 class EventEditLabel(discord.ui.Label):
@@ -52,12 +58,12 @@ class EventAddModal(discord.ui.Modal):
 
             self.event.calendarId = calendar.id
 
-            # Adding new event
-            logger.info(f"Adding new event {repr(self.event)} to calendar {repr(calendar)}")
+            # Adding new event.py
+            logger.info(f"Adding new event.py {repr(self.event)} to calendar {repr(calendar)}")
 
             self.event.insert()
             create_event_update_message(self.event)
-            logger.info("Added this event to the database")
+            logger.info("Added this event.py to the database")
 
         await interaction.response.send_message(
             f'Dodano wydarzenie *{self.event.name}* do kalendarzy {self.calendar_select.values}.\n'
@@ -105,14 +111,14 @@ class EventEditModal(discord.ui.Modal):
         self.event.team = self.team_input.value
         self.event.place = self.place_input.value
         logger = get_logger(LogType.CALENDAR, self.event.calendarId)
-        logger.debug(f"Old event: {repr(old_event)}")
-        logger.debug(f"New event: {repr(self.event)}")
+        logger.debug(f"Old event.py: {repr(old_event)}")
+        logger.debug(f"New event.py: {repr(self.event)}")
 
         # Event exists already
-        logger.info(f"Editing event {repr(self.event)}")
+        logger.info(f"Editing event.py {repr(self.event)}")
         self.event.update()
         create_event_update_message(self.event, old_event)
-        logger.info("Edited this event in the database")
+        logger.info("Edited this event.py in the database")
         await interaction.response.send_message(f'Wydarzenie *{self.event.name}* zostało zmienione', ephemeral=True)
 
         calendar = Calendar()

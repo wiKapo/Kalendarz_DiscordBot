@@ -1,10 +1,13 @@
-import logging
 import os
 
 import discord
+from discord import Guild
 from discord.ext.commands import Bot
 
-from g.classes import *
+from g.classes.logger import LogType, get_logger
+from g.classes.calendar import Calendar
+from g.classes.db import Db
+from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages, delete_messages
 from g.discord_classes import UpdateMessageView, NotificationButtonsView
 
 
@@ -166,35 +169,3 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
         calendar.pingMessageId = message.id
 
     calendar.update()
-
-
-# --------- logging ---------
-
-def init_logger():
-    if not os.path.exists('logs/calendar'):
-        os.makedirs('logs/calendar')
-    if not os.path.exists('logs/user'):
-        os.makedirs('logs/user')
-
-
-def get_logger(log_type: LogType = LogType.ALL, id: int | None = None) -> logging.Logger:
-    match log_type:
-        case LogType.CALENDAR | LogType.USER:
-            logger_name = f"{log_type.value}_{id if id else "default"}"
-        case LogType.NOTIFICATION:
-            logger_name = log_type.value
-        case LogType.ALL | _:
-            logger_name = "default"
-
-    folder = "" if log_type in (LogType.ALL, LogType.NOTIFICATION) else f"{log_type.value}/"
-
-    logger = logging.getLogger(logger_name)
-    logger.setLevel(logging.DEBUG)
-
-    if not logger.handlers:
-        stream_handler = logging.StreamHandler()
-        stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
-        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        logger.addHandler(stream_handler)
-
-    return logger
