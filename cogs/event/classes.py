@@ -81,6 +81,9 @@ class EventEditModal(discord.ui.Modal):
         self.event = event
         super().__init__(title="Edytuj wydarzenie")
 
+        # selected_calendars = list(filter(lambda x: x in self.event.calendarIds, calendars))
+        # print(selected_calendars) # TODO REWORK THIS MODAL
+
         self.name_input = discord.ui.TextInput(default=event.name, placeholder="Podaj nazwę wydarzenia")
         self.add_item(discord.ui.Label(text="Nazwa", component=self.name_input))
 
