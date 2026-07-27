@@ -37,7 +37,6 @@ class CalendarCog(commands.Cog):
         for event in outdated_events:
             event.delete()
 
-
         logger.info("Start of updating all calendars")
         for calendar in calendars:
             logger.info(f"Updating calendar {repr(calendar)}")
@@ -65,7 +64,7 @@ class CalendarCog(commands.Cog):
 
     @cal_group.command(name="update", description="Aktualizuje kalendarz")
     @discord.app_commands.choices(quiet=[discord.app_commands.Choice(name="Tak", value=True),
-                                                 discord.app_commands.Choice(name="Nie", value=False)])
+                                         discord.app_commands.Choice(name="Nie", value=False)])
     @discord.app_commands.check(check_user)
     async def update(self, interaction: discord.Interaction, quiet: discord.app_commands.Choice[int] | None = None):
         await calendar_update(interaction, self.bot, bool(quiet and quiet.value))

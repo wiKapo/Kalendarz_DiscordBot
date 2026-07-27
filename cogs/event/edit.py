@@ -1,14 +1,15 @@
 from discord import Interaction
 
 from cogs.event.classes import send_event_edit_modal
-from g.classes.logger import LogType, get_logger
 from g.classes.calendar import Calendar
+from g.classes.logger import LogType, get_logger
 from g.discord_classes import SelectEventView
 from g.util import check_if_calendar_exists
 
 
 async def event_edit(interaction: Interaction):
-    if not await check_if_calendar_exists(interaction): return
+    if not await check_if_calendar_exists(interaction):
+        return
 
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)

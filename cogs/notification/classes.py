@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 import discord
 
 from cogs.notification.util import hour_rounder, get_hours_from_tag
-from g.classes.logger import LogType, get_logger
 from g.classes.db import Db
 from g.classes.event import Event
+from g.classes.logger import LogType, get_logger
 from g.classes.notification import Notification, fetch_notifications_by_event
 
 
@@ -101,7 +101,7 @@ class AddNotificationModal(discord.ui.Modal):
             Db().execute(
                 "INSERT INTO notifications (UserId, EventId, Timestamp, TimeTag, Description) VALUES (?, ?, ?, ?, ?)",
                 (interaction.user.id, self.event.id, notify_time.timestamp(), time_tag,
-                 self.description_input.value if self.description_input.value else None)) # TODO move to Notification class
+                 self.description_input.value if self.description_input.value else None))  # TODO move to Notification class
 
         if selected_time_tags:  # if there are times left, remove them from the database
             logger.info(f"Removing {selected_time_tags} from database")

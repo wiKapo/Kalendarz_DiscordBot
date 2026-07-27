@@ -8,7 +8,8 @@ from g.util import check_if_calendar_exists, update_calendar
 
 
 async def calendar_edit(interaction: discord.Interaction):
-    if not await check_if_calendar_exists(interaction): return
+    if not await check_if_calendar_exists(interaction):
+        return
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
@@ -68,7 +69,8 @@ class EditCalendarModal(discord.ui.Modal):
         # Send a ping message only when the ping role is changed
         self.calendar.update()
         logger.info("Calendar updated in the database")
-        await update_calendar(interaction.guild, self.calendar, interaction.user.name)  # TODO ping message -> was 'ping_role_changed'
+        await update_calendar(interaction.guild, self.calendar,
+                              interaction.user.name)  # TODO ping message -> was 'ping_role_changed'
 
         await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
         logger.info("Finished editing calendar")

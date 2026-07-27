@@ -1,14 +1,15 @@
 import discord
 
 from cogs.event.util import create_event_delete_message
-from g.classes.logger import LogType, get_logger
 from g.classes.calendar import Calendar
 from g.classes.event import Event, format_event_options
+from g.classes.logger import LogType, get_logger
 from g.util import check_if_calendar_exists, update_calendar
 
 
 async def event_delete(interaction: discord.Interaction):
-    if not await check_if_calendar_exists(interaction): return
+    if not await check_if_calendar_exists(interaction):
+        return
 
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)

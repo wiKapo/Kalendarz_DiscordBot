@@ -6,7 +6,8 @@ from g.util import check_if_calendar_exists
 
 
 async def calendar_delete(interaction: discord.Interaction):
-    if not await check_if_calendar_exists(interaction): return
+    if not await check_if_calendar_exists(interaction):
+        return
 
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)

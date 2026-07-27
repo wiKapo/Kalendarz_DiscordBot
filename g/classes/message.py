@@ -51,7 +51,8 @@ def fetch_outdated_update_messages(calendar_id: int, cutoff_timestamp: int) -> l
 
 
 def delete_messages(messages: list[Message]):
-    for message in messages: message.delete()
+    for message in messages:
+        message.delete()
 
 
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:

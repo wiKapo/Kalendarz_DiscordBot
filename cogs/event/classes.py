@@ -84,10 +84,7 @@ class EventEditModal(discord.ui.Modal):
         self.name_input = discord.ui.TextInput(default=event.name, placeholder="Podaj nazwę wydarzenia")
         self.add_item(discord.ui.Label(text="Nazwa", component=self.name_input))
 
-        if event.id is None:
-            time = date = ""
-        else:
-            time, date = event.timestamp_to_text()
+        time, date = event.timestamp_to_text()
         self.date_input = discord.ui.TextInput(default=date,
                                                placeholder="Podaj datę (np. 1.12.2025 lub 6.02 [doda obecny rok])")
         self.add_item(discord.ui.Label(text="Data", component=self.date_input))

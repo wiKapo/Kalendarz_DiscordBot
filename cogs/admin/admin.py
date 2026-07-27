@@ -102,7 +102,8 @@ class AdminCog(commands.Cog):
             for c_id in calendar_ids:
                 c_id = c_id[0]
                 event_ids = Db().fetch_all("SELECT Id FROM events WHERE CalendarId=?", (c_id,))
-                logger.info(f"Found {len(event_ids)} events in calendar {c_id}.{"" if len(event_ids) == 0 else "Populating eventsInCalendars table..."}")
+                logger.info(
+                    f"Found {len(event_ids)} events in calendar {c_id}.{"" if len(event_ids) == 0 else "Populating eventsInCalendars table..."}")
 
                 for e_id in event_ids:
                     e_id = e_id[0]
@@ -122,11 +123,12 @@ class AdminCog(commands.Cog):
             logger.info("Updating events table")
             Db().execute("ALTER TABLE events DROP COLUMN CalendarId")
             logger.info(f"Finished")
-            await interaction.followup.send("Zaktualizowano tabelę `events` i stworzono tabelę `eventsInCalendars` aktualizację bazy danych", ephemeral=True)
+            await interaction.followup.send(
+                "Zaktualizowano tabelę `events` i stworzono tabelę `eventsInCalendars` aktualizację bazy danych",
+                ephemeral=True)
         except Exception as e:
             logger.error(f"Database is already updated. Error: {e}")
             await interaction.followup.send(f"Tabela `events` została już zaktualizowana", ephemeral=True)
-
 
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):

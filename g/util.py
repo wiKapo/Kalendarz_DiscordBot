@@ -26,7 +26,8 @@ async def check_admin(interaction) -> bool:
     if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
         return True
 
-    if await check_calendar_admin(interaction): return True
+    if await check_calendar_admin(interaction):
+        return True
     return False
 
 
@@ -47,8 +48,10 @@ async def check_user(interaction) -> bool:
     Checks if the user is admin or manager AND if it is called in a guild
     """
     if not check_dm(interaction):
-        if await check_admin(interaction): return True
-        if await check_manager(interaction): return True
+        if await check_admin(interaction):
+            return True
+        if await check_manager(interaction):
+            return True
     return False
 
 

@@ -35,7 +35,7 @@ class Section:
     def double_str(self, other):
         return f"---==[  {self.name}  ][  {other.name}  ]==---"
 
-    def __eq__(self, other):
+    def __eq__(self, other: object):
         return (isinstance(other, Section) and self.timestamp == other.timestamp
                 and self.name == other.name and self.calendarId == other.calendarId)
 
