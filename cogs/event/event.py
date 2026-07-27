@@ -11,7 +11,7 @@ class EventCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    event_group = discord.app_commands.Group(name="event.py", description="Komendy do zarządzania wydarzeniami")
+    event_group = discord.app_commands.Group(name="event", description="Komendy do zarządzania wydarzeniami")
 
     @event_group.command(name="add", description="Dodaje nowe wydarzenie")
     @discord.app_commands.check(check_user)

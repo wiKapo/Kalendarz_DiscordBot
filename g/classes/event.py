@@ -12,6 +12,7 @@ class Event:
     name: str = None
     team: str | None = None
     place: str | None = None
+    calendarIds: list[int] = []
 
     def __init__(self, data: list = None):
         """
@@ -20,8 +21,13 @@ class Event:
         if data is not None:
             self.id, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
 
+            calendar_ids = Db().fetch_all("SELECT CalendarId FROM main.eventsInCalendars WHERE EventId=?", (self.id,))
+            for calendar_id in calendar_ids:
+                self.calendarIds.append(calendar_id)
+
     def __repr__(self):
-        return f"Event[{self.id}]: {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay}"
+        return (f"Event[{self.id}]: {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay} "
+                f"in calendars {self.calendarIds}")
 
     def __str__(self):
         message = ""
@@ -86,24 +92,21 @@ class Event:
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
+        Db().execute("DELETE FROM eventsInCalendars WHERE EventId=?", (self.id,))
+        Db().execute("DELETE FROM notifications WHERE EventId=?", (self.id,))
+
+    def remove_calendar(self, calendar_id: int):
+        if calendar_id in self.calendarIds:
+            self.calendarIds.remove(calendar_id)
+            Db().execute("DELETE FROM eventsInCalendars WHERE CalendarId=? AND EventId=?", (calendar_id, self.id))
+            if not len(self.calendarIds):
+                self.delete()
 
 
 def fetch_events_from_guild(guild_id: int) -> list[Event]:  # TODO move this to list of events in calendar class
     data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
                           "ON events.Id = eic.EventId INNER JOIN calendars ON eic.CalendarId = calendars.Id "
                           "WHERE guildId=? ORDER BY Timestamp", (guild_id,))
-    return [Event(x) for x in data]
-
-
-def fetch_events_by_channel(guild_id: int, channel_id: int) -> list[Event]:  # TODO remove
-    data = Db().fetch_all("SELECT events.* FROM events INNER JOIN calendars ON events.CalendarId = calendars.Id "
-                          "WHERE guildId=? AND channelId=? ORDER BY Timestamp", (guild_id, channel_id))
-    return [Event(x) for x in data]
-
-
-def fetch_events_from_calendar(calendar_id: int) -> list[Event]:
-    data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
-                          "ON events.Id = eic.EventId WHERE eic.CalendarId=? ORDER BY Timestamp", (calendar_id,))
     return [Event(x) for x in data]
 
 

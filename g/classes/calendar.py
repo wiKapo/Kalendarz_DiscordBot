@@ -1,7 +1,7 @@
 from discord import SelectOption
 
 from g.classes.db import Db
-from g.classes.event import Event, fetch_events_from_calendar
+from g.classes.event import Event
 from g.classes.section import Section, select_section, delete_all_sections
 
 DEFAULT_TITLE = "Kalendarz by wiKapo"
@@ -11,6 +11,7 @@ class Calendar:
     id: int = None
     title: str | None = None
     customSections: list[Section] = []
+    events: list[Event] = []
     guildId: int = None
     channelId: int = None
     messageId: int = None
@@ -32,23 +33,23 @@ class Calendar:
         if data is not None:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.pingMessageId = data
+            self.fetch_events()
 
     def __repr__(self):
-        event_amount = Db().fetch_one("SELECT COUNT(*) FROM events WHERE CalendarId=?", (self.id,))[0]
+        event_amount = Db().fetch_one("SELECT COUNT(*) FROM eventsInCalendars WHERE CalendarId=?", (self.id,))[0]
         event_amount_text = f"{event_amount if event_amount else "No"} event{"s" if event_amount != 1 else ""}"
         return (f"Calendar[{self.id}] Title:{self.title} ({event_amount_text}) "
-                f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, "
-                f"MessageId:{self.messageId}) (PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
+                f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
+                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
 
     def __str__(self):
-        events: list[Event] = fetch_events_from_calendar(self.id)
         message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
-        if not events:
+        if not self.events:
             message += "\nPUSTE"
         else:
             current_section = None
             current_custom_section = None
-            for event in events:
+            for event in self.events:
                 message += "\n"
                 new_section, new_custom_section = select_section(self.customSections, event.timestamp)
                 if new_section != current_section and new_custom_section != current_custom_section:
@@ -79,6 +80,7 @@ class Calendar:
             (self.id, self.title, self.guildId, self.channelId, self.messageId, self.pingRoleId,
              self.pingMessageId) = data
             self.fetch_sections()
+            self.fetch_events()
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
@@ -86,6 +88,7 @@ class Calendar:
             (self.id, self.title, self.guildId, self.channelId, self.messageId, self.pingRoleId,
              self.pingMessageId) = data
             self.fetch_sections()
+            self.fetch_events()
 
     def insert(self):
         Db().execute(
@@ -98,9 +101,16 @@ class Calendar:
             (self.title, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
-        # TODO remove notifications connected with those events
-        Db().execute("DELETE FROM events WHERE CalendarId = ?", (self.id,))
+        for event in self.events:
+            event.remove_calendar(self.id)
+
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
+
+    def fetch_events(self):
+        raw_events = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
+                                    "ON events.Id = eic.EventId WHERE CalendarId=? ORDER BY Timestamp", (self.id,))
+        for raw_event in raw_events:
+            self.events.append(Event(raw_event))
 
     def fetch_sections(self):
         data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
@@ -119,7 +129,8 @@ def format_calendar_options(calendars: list[Calendar], selected_calendar: int | 
             SelectOption(
                 label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
                 description=f"{calendar.channelName}",
-                value=f"{calendar.id}"
+                value=f"{calendar.id}",
+                default=True if len(calendars) == 1 else False
             )
         )
     return options

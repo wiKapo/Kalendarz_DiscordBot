@@ -123,15 +123,15 @@ która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 `/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
 
 ### ---==[ Polecenia wydarzeń ]==---
-`/event.py add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
-`/event.py edit` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
-`/event.py delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**.
+`/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
+`/event edit` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
+`/event delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**.
 """
     await interaction.response.send_message(message, ephemeral=True)
 
     message = """### ---==[ Polecenia menedżerów ]==---
 Role menedżerów są dodawane przez administratorów na danym serwerze.
-Menedżerowie otrzymują dostęp do wszystkich komend `/calendar`, `/event.py` i `/notification` na danym serwerze.
+Menedżerowie otrzymują dostęp do wszystkich komend `/calendar`, `/event` i `/notification` na danym serwerze.
 Menedżerowie nie mogą dodawać nowych menedżerów.
 
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
@@ -148,7 +148,6 @@ Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
     ### ---==[ Inne polecenia ]==---
     `/about` - informacja o autorze
     `/help` - pokazuje tą wiadomość"""
-
     await interaction.followup.send(message, ephemeral=True)
 
 

@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 
 from g.classes.calendar import fetch_all_calendars
+from g.classes.db import Db
+from g.classes.logger import get_logger
 from g.classes.message import Message
 from g.util import check_calendar_admin, admin_update_calendar
-from g.classes.logger import get_logger
 
 
 class AdminCog(commands.Cog):
@@ -48,10 +49,7 @@ class AdminCog(commands.Cog):
 
     @update_all_calendars.error
     async def update_all_calendars_error(self, interaction: discord.Interaction, error):
-        logger = get_logger()
-        logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
-                       f"doesn't have permissions to use admin commands")
-        await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+        await no_permissions_message(interaction, error)
 
     @admin_group.command(name="remove_admin_cog", description="[TYLKO DLA ADMINÓW KALENDARZA] "
                                                               "Chowa komendy administratorów")
@@ -79,11 +77,68 @@ class AdminCog(commands.Cog):
 
     @remove_admin_cog.error
     async def remove_admin_cog_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    @admin_group.command(name="update_db", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                       "Aktualizuje strukturę bazy danych")
+    @discord.app_commands.check(check_calendar_admin)
+    async def update_db(self, interaction: discord.Interaction):
         logger = get_logger()
-        logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
-                       f"doesn't have permissions to use admin commands")
-        await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+        logger.info(f"Updating database for guild: {interaction.guild.name}")
+
+        await interaction.response.send_message("Aktualizowanie bazy danych", ephemeral=True)
+
+        try:
+            logger.info("Updating calendar table")
+            Db().execute("ALTER TABLE calendars DROP COLUMN ShowSections")
+            await interaction.followup.send("Zaktualizowano tabelę `calendar`", ephemeral=True)
+            logger.info("Success")
+        except Exception as e:
+            logger.error(f"Failed. Error: {e}")
+            await interaction.followup.send("Tabela `calendar` jest już zaktualizowana", ephemeral=True)
+
+        try:
+            calendar_ids = Db().fetch_all("SELECT Id FROM calendars")
+            for c_id in calendar_ids:
+                c_id = c_id[0]
+                event_ids = Db().fetch_all("SELECT Id FROM events WHERE CalendarId=?", (c_id,))
+                logger.info(f"Found {len(event_ids)} events in calendar {c_id}.{"" if len(event_ids) == 0 else "Populating eventsInCalendars table..."}")
+
+                for e_id in event_ids:
+                    e_id = e_id[0]
+                    try:
+                        Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (c_id, e_id))
+                    except Exception as e:
+                        logger.error(f"(C{c_id}, E{e_id}) Pair already exists in database. Error: {e}")
+
+            logger.info(f"Finished")
+            await interaction.followup.send("Uzupełniono tabelę `eventsInCalendars`", ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Failed. Error: {e}")
+            await interaction.followup.send(f"Tabela `eventsInCalendars` została już uzupełniona", ephemeral=True)
+
+        try:
+            logger.info("Updating events table")
+            Db().execute("ALTER TABLE events DROP COLUMN CalendarId")
+            logger.info(f"Finished")
+            await interaction.followup.send("Zaktualizowano tabelę `events` i stworzono tabelę `eventsInCalendars` aktualizację bazy danych", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Database is already updated. Error: {e}")
+            await interaction.followup.send(f"Tabela `events` została już zaktualizowana", ephemeral=True)
+
+
+    @update_db.error
+    async def update_db_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
 
 
 async def setup(bot):
     await bot.add_cog(AdminCog(bot))
+
+
+async def no_permissions_message(interaction: discord.Interaction, error):
+    logger = get_logger()
+    logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
+                   f"doesn't have permissions to use admin commands")
+    await interaction.response.send_message("Brak uprawnień", ephemeral=True)
