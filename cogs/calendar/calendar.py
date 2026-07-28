@@ -50,13 +50,10 @@ class CalendarCog(commands.Cog):
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
     @cal_group.command(name="create", description="Tworzy nowy kalendarz")
-    @discord.app_commands.describe(title="Tytuł kalendarza", show_sections="Czy wydzielić sekcje w kalendarzu?")
-    @discord.app_commands.choices(show_sections=[discord.app_commands.Choice(name="Tak", value=True),
-                                                 discord.app_commands.Choice(name="Nie", value=False)])
+    @discord.app_commands.describe(title="Tytuł kalendarza")
     @discord.app_commands.check(check_user)
-    async def create(self, interaction: discord.Interaction, title: str | None,
-                     show_sections: discord.app_commands.Choice[int] | None):
-        await calendar_create(self.bot, interaction, title, show_sections)
+    async def create(self, interaction: discord.Interaction, title: str | None):
+        await calendar_create(self.bot, interaction, title)
 
     @create.error
     async def create_error(self, interaction: discord.Interaction, error):

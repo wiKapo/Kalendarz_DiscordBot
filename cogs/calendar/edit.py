@@ -32,9 +32,6 @@ class EditCalendarModal(discord.ui.Modal):
                                        description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
                                        component=self.title_input))
 
-        self.show_section = discord.ui.Checkbox(default=calendar.showSections)
-        self.add_item(discord.ui.Label(text="Pokaż sekcje w wiadomości kalendarza", component=self.show_section))
-
         self.add_item(discord.ui.TextDisplay("Format niestandardowych sekcji: `dd.mm(.yyyy)-nazwa`\n"
                                              "`()`- opcjonalne, wstawi obecny rok. Kolejne sekcje rozdziej `,`"))
 
@@ -55,14 +52,12 @@ class EditCalendarModal(discord.ui.Modal):
         logger = get_logger(LogType.CALENDAR, self.calendar.id)
         logger.info(f"Editing calendar number {self.calendar.id}")
         logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value else None}")
-        logger.debug(f"Show sections: {self.calendar.showSections == 1} -> {self.show_section.value}")
         logger.debug(f"Custom sections: {self.calendar.customSections} -> {self.custom_sections.value}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
         ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value else None
-        self.calendar.showSections = self.show_section.value
         self.calendar.customSections = format_custom_sections(self.calendar.id, self.custom_sections.value)
         self.calendar.update_sections()
         self.calendar.pingRoleId = selected_ping_role

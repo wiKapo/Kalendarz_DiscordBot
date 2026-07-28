@@ -7,7 +7,7 @@ from g.classes.logger import get_logger, LogType
 from g.util import update_calendar
 
 
-async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str = None, show_sections: bool = None):
+async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str = None):
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
@@ -41,7 +41,6 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
         logger.info(f"Calendar message created: {calendar_msg.id}")
 
         calendar.title = title
-        calendar.showSections = show_sections if show_sections is not None else False
         calendar.guildId = interaction.guild_id
         calendar.channelId = interaction.channel_id
         calendar.messageId = calendar_msg.id

@@ -113,8 +113,8 @@ async def about(interaction: discord.Interaction):
 async def help(interaction: discord.Interaction):
     message = """## Kalendarz by wiKapo
 ### ---==[ Polecenia kalendarza ]==---
-`/calendar create <title|show_sections>` - Tworzy nowy kalendarz.
-Można opcjonalnie podać nazwę kalendarza oraz zdecydować, czy kalendarz ma dzielić wydarzenia na sekcje.
+`/calendar create <title>` - Tworzy nowy kalendarz.
+Można opcjonalnie podać nazwę kalendarza.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
 W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
