@@ -138,19 +138,15 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
     return options
 
 
-# TODO fix when there are no calendars
 def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars WHERE GuildId=?", (guild_id,))
-    calendars = [Calendar(x) for x in data]
-    for calendar in calendars:  # TODO fix me
-        calendar.fetch_sections()
-    return calendars
+    if data:
+        return [Calendar(x) for x in data]
+    return []
 
 
-# TODO fix when there are no calendars
 def fetch_all_calendars() -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars")
-    calendars = [Calendar(x) for x in data]
-    for calendar in calendars:
-        calendar.fetch_sections()
-    return calendars
+    if data:
+        return [Calendar(x) for x in data]
+    return []

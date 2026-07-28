@@ -39,7 +39,6 @@ async def on_ready():
         Db().execute('CREATE TABLE IF NOT EXISTS calendars ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
                      'Title TEXT,'
-                     'ShowSections BOOLEAN NOT NULL DEFAULT FALSE,'
                      'GuildId BIGINT NOT NULL,'
                      'ChannelId BIGINT NOT NULL,'
                      'MessageId BIGINT NOT NULL,'
