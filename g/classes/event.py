@@ -12,7 +12,7 @@ class Event:
     name: str = None
     team: str | None = None
     place: str | None = None
-    calendarIds: list[int] = []
+    calendarIds: set[int] = set()
 
     def __init__(self, data: list = None):
         """
@@ -20,10 +20,9 @@ class Event:
         """
         if data is not None:
             self.id, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
-
-            calendar_ids = Db().fetch_all("SELECT CalendarId FROM main.eventsInCalendars WHERE EventId=?", (self.id,))
+            calendar_ids = Db().fetch_all("SELECT CalendarId FROM eventsInCalendars WHERE EventId=?", (self.id,))
             for calendar_id in calendar_ids:
-                self.calendarIds.append(calendar_id)
+                self.calendarIds.add(calendar_id[0])
 
     def __repr__(self):
         return (f"Event[{self.id}]: {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay} "
@@ -65,14 +64,18 @@ class Event:
 
         return time, date
 
-    def text_to_timestamp(self, time: str, date: str):
+    def text_to_timestamp(self, datetime_string: str):
+        datetime_list = datetime_string.split(" ")
+
+        date = datetime_list[0]
         if len(date.split(".")) == 2:
             date += f".{datetime.now().year}"
 
-        if not time:
+        if len(datetime_list) == 1:  # if time was not given
             dt = datetime.strptime(date, "%d.%m.%Y")
             self.wholeDay = True
         else:
+            time = datetime_list[1]
             dt = datetime.strptime(f"{date} {time.replace(".", ":")}", "%d.%m.%Y %H:%M")
             self.wholeDay = False
         self.timestamp = int(dt.timestamp())
@@ -81,14 +84,28 @@ class Event:
         data = Db().fetch_one("SELECT * FROM events WHERE Id=?", (event_id,))
         self.__init__(data)
 
+    def fetch_id_using_raw(self):  # I don't like this, but I have no idea how to do it differently
+        db_id = Db().fetch_one("SELECT Id FROM events WHERE Timestamp=? AND WholeDay=? "
+                               "AND Name=? AND Team=? AND Place=? ORDER BY Id DESC LIMIT 1",
+                               (self.timestamp, self.wholeDay, self.name, self.team, self.place))[0]
+        self.id = db_id
+
     def insert(self):
         Db().execute(
             "INSERT INTO events (Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?)",
             (self.timestamp, self.wholeDay, self.name, self.team, self.place))
 
+    def connect_to_calendar(self, calendar_id: int):
+        Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (calendar_id, self.id))
+
     def update(self):
         Db().execute("UPDATE events SET Timestamp=?, WholeDay=?, Name=?, Team=?, Place=? WHERE Id=?",
                      (self.timestamp, self.wholeDay, self.name, self.team, self.place, self.id))
+
+    def update_calendar_connections(self):
+        Db().execute("DELETE FROM eventsInCalendars WHERE EventId=?", (self.id,))
+        for calendar_id in self.calendarIds:
+            self.connect_to_calendar(calendar_id)
 
     def delete(self):
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
@@ -102,8 +119,14 @@ class Event:
             if not len(self.calendarIds):
                 self.delete()
 
+    def get_guild_id(self) -> int:
+        guild_id = Db().fetch_one("SELECT GuildId FROM calendars INNER JOIN eventsInCalendars eic "
+                                  "ON calendars.Id = eic.CalendarId INNER JOIN events ON events.Id = eic.EventId "
+                                  "WHERE events.Id = ?", (self.id,))[0]
+        return guild_id
 
-def fetch_events_from_guild(guild_id: int) -> list[Event]:  # TODO move this to list of events in calendar class
+
+def fetch_events_from_guild(guild_id: int) -> list[Event]:
     data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
                           "ON events.Id = eic.EventId INNER JOIN calendars ON eic.CalendarId = calendars.Id "
                           "WHERE guildId=? ORDER BY Timestamp", (guild_id,))

@@ -21,6 +21,7 @@ logger = get_logger()
 
 
 # TODO Always show last changes button
+# TODO Add cog for sections
 
 @bot.event
 async def on_ready():

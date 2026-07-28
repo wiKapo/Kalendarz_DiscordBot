@@ -11,7 +11,7 @@ class Calendar:
     id: int = None
     title: str | None = None
     customSections: list[Section] = []
-    events: list[Event] = []
+    eventIds: set[int] = set()
     guildId: int = None
     channelId: int = None
     messageId: int = None
@@ -33,7 +33,8 @@ class Calendar:
         if data is not None:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.pingMessageId = data
-            self.fetch_events()
+            self.get_events()
+            self.fetch_sections()
 
     def __repr__(self):
         event_amount = Db().fetch_one("SELECT COUNT(*) FROM eventsInCalendars WHERE CalendarId=?", (self.id,))[0]
@@ -44,12 +45,13 @@ class Calendar:
 
     def __str__(self):
         message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
-        if not self.events:
+        events = self.fetch_events()
+        if not events:
             message += "\nPUSTE"
         else:
             current_section = None
             current_custom_section = None
-            for event in self.events:
+            for event in events:
                 message += "\n"
                 new_section, new_custom_section = select_section(self.customSections, event.timestamp)
                 if new_section != current_section and new_custom_section != current_custom_section:
@@ -76,19 +78,13 @@ class Calendar:
 
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
-        if data is not None:
-            (self.id, self.title, self.guildId, self.channelId, self.messageId, self.pingRoleId,
-             self.pingMessageId) = data
-            self.fetch_sections()
-            self.fetch_events()
+        if data:
+            self.__init__(data)
 
     def fetch_by_channel(self, guild_id: int, channel_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE GuildId=? AND ChannelId=?", (guild_id, channel_id))
-        if data is not None:
-            (self.id, self.title, self.guildId, self.channelId, self.messageId, self.pingRoleId,
-             self.pingMessageId) = data
-            self.fetch_sections()
-            self.fetch_events()
+        if data:
+            self.__init__(data)
 
     def insert(self):
         Db().execute(
@@ -101,16 +97,20 @@ class Calendar:
             (self.title, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
 
     def delete(self):
-        for event in self.events:
+        for event in self.fetch_events():
             event.remove_calendar(self.id)
 
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
 
-    def fetch_events(self):
-        raw_events = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
-                                    "ON events.Id = eic.EventId WHERE CalendarId=? ORDER BY Timestamp", (self.id,))
-        for raw_event in raw_events:
-            self.events.append(Event(raw_event))
+    def get_events(self):
+        event_ids = Db().fetch_all("SELECT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))
+        for event_id in event_ids:
+            self.eventIds.add(event_id)
+
+    def fetch_events(self) -> list[Event]:
+        data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars eic on events.Id = eic.EventId "
+                              "WHERE CalendarId=? ORDER BY Timestamp", (self.id,))
+        return [Event(e) for e in data]
 
     def fetch_sections(self):
         data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
@@ -122,7 +122,8 @@ class Calendar:
             section.insert()
 
 
-def format_calendar_options(calendars: list[Calendar], selected_calendar: int | None = None) -> list[SelectOption]:
+def format_calendar_options(calendars: list[Calendar], selected_calendars: set[int] | None = None) \
+        -> list[SelectOption]:
     options = []
     for calendar in calendars:
         options.append(
@@ -130,7 +131,8 @@ def format_calendar_options(calendars: list[Calendar], selected_calendar: int | 
                 label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
                 description=f"{calendar.channelName}",
                 value=f"{calendar.id}",
-                default=True if len(calendars) == 1 else False
+                default=True if len(calendars) == 1 or (
+                        selected_calendars and calendar.id in selected_calendars) else False
             )
         )
     return options

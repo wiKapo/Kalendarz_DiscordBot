@@ -21,7 +21,7 @@ async def notification_delete(interaction: Interaction):
     logger.info(f"Deleting notifications in [{interaction.guild.name} - {interaction.guild_idid}]"
                 f"in [{interaction.channel.name} - {interaction.channel_id}]")
 
-    events = remove_old_events(calendar.events, int(datetime.now().timestamp()))
+    events = remove_old_events(calendar.fetch_events(), int(datetime.now().timestamp()))
     if events:
         logger.info(f"Showing event select form")
         await interaction.response.send_message(

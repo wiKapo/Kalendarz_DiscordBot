@@ -5,12 +5,27 @@ from g.classes.message import Message
 def create_event_update_message(new_event: Event, old_event: Event | None = None):
     message = Message()
     message.set_time()
-    message.calendarId = new_event.calendarId
+
     if old_event:
-        message.message = compare_event_changes(new_event, old_event)
+        for calendar_id in new_event.calendarIds.intersection(old_event.calendarIds):
+            message.calendarId = calendar_id
+            message.message = compare_event_changes(new_event, old_event)
+            message.insert()
+
+        for calendar_id in old_event.calendarIds.difference(new_event.calendarIds):
+            message.calendarId = calendar_id
+            message.message = f"Wydarzenie {old_event} zostało usunięte z tego kalendarza"
+            message.insert()
+
+        for calendar_id in new_event.calendarIds.difference(old_event.calendarIds):
+            message.calendarId = calendar_id
+            message.message = f"Wydarzenie {new_event} zostało dodane do tego kalendarza"
+            message.insert()
     else:
-        message.message = f"Utworzono nowe wydarzenie: {new_event}"
-    message.insert()
+        for calendar_id in new_event.calendarIds:
+            message.calendarId = calendar_id
+            message.message = f"Utworzono nowe wydarzenie: {new_event}"
+            message.insert()
 
 
 def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
