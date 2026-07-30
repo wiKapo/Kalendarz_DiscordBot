@@ -112,7 +112,7 @@ class AdminCog(commands.Cog):
                     except Exception as e:
                         logger.error(f"(C{c_id}, E{e_id}) Pair already exists in database. Error: {e}")
 
-            logger.info(f"Finished")
+            logger.info("Finished")
             await interaction.followup.send("Uzupełniono tabelę `eventsInCalendars`", ephemeral=True)
 
         except Exception as e:
@@ -122,13 +122,30 @@ class AdminCog(commands.Cog):
         try:
             logger.info("Updating events table")
             Db().execute("ALTER TABLE events DROP COLUMN CalendarId")
-            logger.info(f"Finished")
+            logger.info("Finished")
             await interaction.followup.send(
                 "Zaktualizowano tabelę `events` i stworzono tabelę `eventsInCalendars` aktualizację bazy danych",
                 ephemeral=True)
         except Exception as e:
-            logger.error(f"Database is already updated. Error: {e}")
+            logger.error(f"Failed. Error: {e}")
             await interaction.followup.send(f"Tabela `events` została już zaktualizowana", ephemeral=True)
+
+        try:
+            logger.info("Updating sections table")
+            Db().execute("DROP TABLE IF EXISTS sections")
+            Db().execute("CREATE TABLE IF NOT EXISTS sections ("
+                         "CalendarId INT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE, "
+                         "BeginTimestamp INT NOT NULL,"
+                         "EndTimestamp INT,"
+                         "Name TEXT NOT NULL,"
+                         "PRIMARY KEY (CalendarId, BeginTimestamp)"
+                         ");")
+            logger.info("Finished")
+            await interaction.followup.send("Zmieniono tabelę `sections`", ephemeral=True)
+
+        except Exception as e:
+            logger.error(f"Failed. Error: {e}")
+            await interaction.followup.send(f"Tabela `sections` została już zaktualizowana", ephemeral=True)
 
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):

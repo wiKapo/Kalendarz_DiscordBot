@@ -79,10 +79,11 @@ async def on_ready():
                      'Message TEXT NOT NULL'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS sections ('
-                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
-                     'Timestamp INT,'
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE, '
+                     'BeginTimestamp INT NOT NULL,'
+                     'EndTimestamp INT,'
                      'Name TEXT NOT NULL,'
-                     'PRIMARY KEY (CalendarId, Timestamp)'
+                     'PRIMARY KEY (CalendarId, BeginTimestamp)'
                      ');')
 
         logger.info('Tables are ready')
@@ -95,6 +96,8 @@ async def on_ready():
 async def load():
     for filename in os.listdir("./cogs"):
         if not filename.endswith("__"):
+            logger.debug(f"Loading {filename} cog...")
+            print(f"Loading {filename} cog...")
             await bot.load_extension(f"cogs.{filename}.{filename}")
 
 
@@ -118,10 +121,15 @@ Można opcjonalnie podać nazwę kalendarza.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
 W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
-`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu, sekcji kalendarza oraz wybrania roli, 
+`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, 
 która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 `/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
 `/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
+
+### ---==[ Polecenia niestandardowych sekcji ]==---
+`/section add <calendar_id>` - Dodaje sekcję do wybranego kalendarza. Można opcjonalnie podać id kalendarza do którego ma być dodana.
+`/section edit <calendar_id>` - Edytuje wybraną sekcję. Można opcjonalnie podać id kalendarza, z którego będzie edytowana sekcja.
+`/section delete <calendar_id>` - Usuwa wybrane sekcje. Można opcjonalnie podać id kalendarza, z którego będą usuwane sekcje.
 
 ### ---==[ Polecenia wydarzeń ]==---
 `/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.

@@ -4,9 +4,10 @@ from collections.abc import Callable
 import discord
 from discord.ext.commands import Bot
 
-from g.classes.event import Event, format_event_options
 from g.classes.calendar import Calendar, format_calendar_options
+from g.classes.event import Event, format_event_options
 from g.classes.message import fetch_messages_for_calendar
+from g.classes.section import Section, format_section_options
 
 
 class SelectEvent(discord.ui.Select):
@@ -51,12 +52,34 @@ class SelectCalendar(discord.ui.Select):
             logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
 
 
-# class SelectCalendarView(discord.ui.View):
-#     def __init__(self, calendars: list[Calendar]):
-#         super().__init__()
-#         self.add_item(
-#             SelectCalendar(placeholder="Wybierz kalendarz", action=send_all_calendar_notifications,
-#                            calendars=calendars))
+class SelectCalendarView(discord.ui.View):
+    def __init__(self, calendars: list[Calendar], action: Callable):
+        super().__init__()
+        self.add_item(SelectCalendar(placeholder="Wybierz kalendarz", action=action, calendars=calendars))
+
+
+class SelectSection(discord.ui.Select):
+    action: Callable
+
+    def __init__(self, placeholder: str, action: Callable | None, sections: list[Section], max_values: int = 1):
+        options = format_section_options(sections)
+        super().__init__(placeholder=placeholder, options=options, max_values=max_values)
+        self.action: Callable | None = action
+
+    async def callback(self, interaction: discord.Interaction):
+        if self.action:
+            try:
+                await self.action(interaction, self.values)
+            except Exception as e:
+                logger = logging.getLogger("default")
+                logger.error(f"in callback of SelectSection {e}", exc_info=True)
+
+
+class SelectSectionView(discord.ui.View):
+    def __init__(self, sections: list[Section], action: Callable):
+        super().__init__()
+        self.add_item(SelectSection(placeholder="Wybierz sekcję", action=action, sections=sections))
+
 
 class NotificationButton(discord.ui.Button):
     action: Callable

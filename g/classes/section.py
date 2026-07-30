@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from datetime import datetime
 
+from discord import SelectOption
+
 from g.classes.db import Db
 
 DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
@@ -13,56 +15,84 @@ DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
     99: lambda now, check: True
 }
 
+DATE_FORMAT = "%d.%m.%Y"
+
 
 class Section:
-    calendarId: int = None
-    timestamp: int | None = None
-    name: str = None
+    calendarId: int
+    beginTimestamp: int
+    endTimestamp: int | None = None
+    name: str
 
     def __init__(self, data: list = None):
         """
         :param data: for parsing fields from the database.
         """
         if data:
-            self.calendarId, self.timestamp, self.name = data
+            self.calendarId, self.beginTimestamp, self.endTimestamp, self.name = data
 
     def __repr__(self):
-        return f"Section[{self.calendarId}] Timestamp:{self.timestamp} Name:{self.name}"
+        return f"Section[{self.calendarId}] BeginTimestamp:{self.beginTimestamp} EndTimestamp:{self.endTimestamp} Name:{self.name}"
 
     def __str__(self):
         return f"---==[  {self.name}  ]==---"
 
     def double_str(self, other):
-        return f"---==[  {self.name}  ][  {other.name}  ]==---"
+        return f"---==[  {self.name}  ]=[  {other.name}  ]==---"
 
     def __eq__(self, other: object):
-        return (isinstance(other, Section) and self.timestamp == other.timestamp
-                and self.name == other.name and self.calendarId == other.calendarId)
+        return (isinstance(other, Section) and self.beginTimestamp == other.beginTimestamp
+                and self.endTimestamp == other.endTimestamp and self.name == other.name
+                and self.calendarId == other.calendarId)
 
-    def timestamp_to_text(self) -> str:
-        return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
-
-    def text_to_timestamp(self, date: str):
+    @staticmethod
+    def _parse_date(date: str) -> int:
         if len(date.split(".")) == 2:
             date += f".{datetime.now().year}"
 
-        self.timestamp = int(datetime.strptime(date, "%d.%m.%Y").timestamp())
+        return int(datetime.strptime(date, DATE_FORMAT).timestamp())
 
-    def create_modal_text(self):
-        return f"{self.timestamp_to_text()}-{self.name}"
+    @property
+    def begin_date(self) -> str:
+        return datetime.fromtimestamp(self.beginTimestamp).strftime(DATE_FORMAT)
+
+    @begin_date.setter
+    def begin_date(self, date: str):
+        self.beginTimestamp = self._parse_date(date)
+
+    @property
+    def end_date(self) -> str | None:
+        if self.endTimestamp:
+            return datetime.fromtimestamp(self.endTimestamp).strftime(DATE_FORMAT)
+        return None
+
+    @end_date.setter
+    def end_date(self, date: str | None):
+        if date:
+            self.endTimestamp = self._parse_date(date)
+        else:
+            self.endTimestamp = None
 
     def insert(self):
-        Db().execute("INSERT INTO sections (CalendarId, Timestamp, Name) VALUES (?, ?, ?)",
-                     (self.calendarId, self.timestamp, self.name))
+        Db().execute("INSERT INTO sections (CalendarId, BeginTimestamp, EndTimestamp, Name) VALUES (?, ?, ?, ?)",
+                     (self.calendarId, self.beginTimestamp, self.endTimestamp, self.name))
+
+    def fetch(self, calendar_id: int, begin_timestamp: int):
+        self.__init__(Db().fetch_all("SELECT * FROM sections WHERE CalendarId = ? AND BeginTimestamp = ?",
+                                     (calendar_id, begin_timestamp)))
+
+    def delete(self):
+        Db().execute("DELETE FROM sections WHERE CalendarId = ? AND BeginTimestamp = ?",
+                     (self.calendarId, self.beginTimestamp))
 
 
-DEFAULT_SECTIONS = [Section([0, 1, "Dzisiaj"]),
-                    Section([0, 2, "Jutro"]),
-                    Section([0, 3, "W tym tygodniu"]),
-                    Section([0, 4, "Za tydzień"]),
-                    Section([0, 5, "W tym miesiącu"]),
-                    Section([0, 6, "Za miesiąc"]),
-                    Section([0, 99, "W przyszłości"])]
+DEFAULT_SECTIONS = [Section([0, 1, None, "Dzisiaj"]),
+                    Section([0, 2, None, "Jutro"]),
+                    Section([0, 3, None, "W tym tygodniu"]),
+                    Section([0, 4, None, "Za tydzień"]),
+                    Section([0, 5, None, "W tym miesiącu"]),
+                    Section([0, 6, None, "Za miesiąc"]),
+                    Section([0, 99, None, "W przyszłości"])]
 
 
 def delete_all_sections(calendar_id: int):
@@ -78,14 +108,26 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
     if check.date() >= now.date():
         if custom_sections:
             custom_sections.sort(key=lambda s: s.timestamp, reverse=True)
-            for section in custom_sections:
-                if timestamp >= section.timestamp:
-                    selected_custom_section = section
+            for custom_section in custom_sections:
+                if custom_section.beginTimestamp <= timestamp <= custom_section.endTimestamp:
+                    selected_custom_section = custom_section
                     break
 
         for section in DEFAULT_SECTIONS:
-            rule = DEFAULT_SECTIONS_RULES.get(section.timestamp)
+            rule = DEFAULT_SECTIONS_RULES.get(section.beginTimestamp)
             if rule(now, check):
                 selected_section = section
                 break
     return selected_section, selected_custom_section
+
+
+def format_section_options(sections: list[Section]) -> list[SelectOption]:
+    options = []
+    for section in sections:
+        options.append(SelectOption(
+            label=section.name,
+            description=f"Zaczyna się {section.begin_date}"
+                        f"{f', a kończy {section.end_date}' if section.end_date else ''}",
+            value=f"{section.calendarId}.{section.beginTimestamp}"
+        ))
+    return options

@@ -5,12 +5,12 @@ import discord
 from discord import Interaction
 from discord.ext.commands import Bot
 
-from g.classes.logger import LogType, get_logger
-from g.classes.calendar import Calendar, DEFAULT_TITLE, fetch_all_calendars
+from g.classes.calendar import Calendar, fetch_all_calendars
 from g.classes.event import Event
+from g.classes.logger import LogType, get_logger
 from g.classes.notification import fetch_events_with_notifications, fetch_events_with_notifications_by_calendar, \
     fetch_notifications_by_event
-from g.discord_classes import SelectCalendar
+from g.discord_classes import SelectCalendarView
 from g.util import check_dm
 
 
@@ -114,29 +114,9 @@ async def send_calendar_select_view(interaction: Interaction, bot: Bot):
         calendars.append(calendar)
 
     logger.debug(f"Available calendars: {[repr(c) for c in calendars]}")
-    await interaction.response.send_message("Wybierz kalendarz", view=SelectCalendarView(calendars),
+    await interaction.response.send_message("Wybierz kalendarz",
+                                            view=SelectCalendarView(calendars, send_all_calendar_notifications),
                                             ephemeral=True)
-
-
-def format_calendars(calendars: list[Calendar]) -> list[discord.SelectOption]:
-    options = []
-    for calendar in calendars:
-        options.append(
-            discord.SelectOption(
-                label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
-                description=f"{calendar.guildName} - {calendar.channelName}",
-                value=f"{calendar.id}"
-            )
-        )
-    return options
-
-
-class SelectCalendarView(discord.ui.View):
-    def __init__(self, calendars: list[Calendar]):
-        super().__init__()
-        self.add_item(
-            SelectCalendar(placeholder="Wybierz kalendarz", action=send_all_calendar_notifications,
-                           calendars=calendars))
 
 
 class NotificationGuildView(discord.ui.View):

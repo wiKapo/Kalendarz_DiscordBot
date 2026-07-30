@@ -1,7 +1,6 @@
 import discord
 from discord import Role
 
-from cogs.calendar.util import format_custom_sections
 from g.classes.calendar import DEFAULT_TITLE, Calendar
 from g.classes.logger import get_logger, LogType
 from g.util import check_if_calendar_exists, update_calendar
@@ -32,14 +31,6 @@ class EditCalendarModal(discord.ui.Modal):
                                        description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
                                        component=self.title_input))
 
-        self.add_item(discord.ui.TextDisplay("Format niestandardowych sekcji: `dd.mm(.yyyy)-nazwa`\n"
-                                             "`()`- opcjonalne, wstawi obecny rok. Kolejne sekcje rozdziej `,`"))
-
-        self.custom_sections = discord.ui.TextInput(required=False,
-                                                    default=", ".join(
-                                                        [s.create_modal_text() for s in self.calendar.customSections]))
-        self.add_item(discord.ui.Label(text="Dodaj niestandardowe sekcje", component=self.custom_sections))
-
         self.ping_role_select = discord.ui.RoleSelect(placeholder="Rola do powiadomień",
                                                       default_values=[ping_role] if ping_role else [])
         self.add_item(discord.ui.Label(text="Wybierz rolę do powiadomień",
@@ -52,20 +43,17 @@ class EditCalendarModal(discord.ui.Modal):
         logger = get_logger(LogType.CALENDAR, self.calendar.id)
         logger.info(f"Editing calendar number {self.calendar.id}")
         logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value else None}")
-        logger.debug(f"Custom sections: {self.calendar.customSections} -> {self.custom_sections.value}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
         ping_role_changed = self.calendar.pingRoleId != selected_ping_role
 
         self.calendar.title = self.title_input.value if self.title_input.value else None
-        self.calendar.customSections = format_custom_sections(self.calendar.id, self.custom_sections.value)
-        self.calendar.update_sections()
         self.calendar.pingRoleId = selected_ping_role
         # Send a ping message only when the ping role is changed
         self.calendar.update()
         logger.info("Calendar updated in the database")
-        await update_calendar(interaction.guild, self.calendar,
-                              interaction.user.name)  # TODO ping message -> was 'ping_role_changed'
+        await update_calendar(interaction.guild, self.calendar, interaction.user.name)
+        # TODO ping message -> was 'ping_role_changed'
 
         await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
         logger.info("Finished editing calendar")

@@ -126,15 +126,13 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
         -> list[SelectOption]:
     options = []
     for calendar in calendars:
-        options.append(
-            SelectOption(
-                label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
-                description=f"{calendar.channelName}",
-                value=f"{calendar.id}",
-                default=True if len(calendars) == 1 or (
-                        selected_calendars and calendar.id in selected_calendars) else False
-            )
-        )
+        options.append(SelectOption(
+            label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
+            description=f"{calendar.channelName}",  # TODO fix me
+            value=f"{calendar.id}",
+            default=True if len(calendars) == 1 or (
+                    selected_calendars and calendar.id in selected_calendars) else False
+        ))
     return options
 
 
