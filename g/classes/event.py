@@ -49,22 +49,15 @@ class Event:
 
         return message
 
-    def timestamp_to_text(self) -> tuple[str, str]:
-        """
-        :return: time, date
-        """
-        dt = datetime.fromtimestamp(self.timestamp)
+    def date(self) -> str:
+        return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
 
+    def time(self) -> str:
         if self.wholeDay:
-            time = ""
-        else:
-            time = dt.strftime("%H:%M")
+            return ""
+        return datetime.fromtimestamp(self.timestamp).strftime("%H:%M")
 
-        date = dt.strftime("%d.%m.%Y")
-
-        return time, date
-
-    def text_to_timestamp(self, datetime_string: str):
+    def set_datetime(self, datetime_string: str):
         datetime_list = datetime_string.split(" ")
 
         date = datetime_list[0]
@@ -149,10 +142,6 @@ def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]
 def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
     options = []
     for i, event in enumerate(events):
-        time, date = event.timestamp_to_text()
-        if time:
-            date = f"{date} {time}"
-
         description = ""
         if event.team:
             description += f'[{event.team}] '
@@ -161,7 +150,7 @@ def format_event_options(events: list[Event], selected_event: int | None = None)
 
         options.append(
             SelectOption(
-                label=f"{date} {event.name}",
+                label=f"{event.date}{" " + event.time if event.time else ""} {event.name}",
                 description=description,
                 value=f"{i}",
                 default=i == selected_event

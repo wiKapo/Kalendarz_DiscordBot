@@ -36,13 +36,15 @@ def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
     if new_event.name != old_event.name:
         message += f"| *Nazwa*: `{old_event.name}` -> `{new_event.name}` "
 
-    if new_event.timestamp != old_event.timestamp:
-        new_time, new_date = new_event.timestamp_to_text()
-        old_time, old_date = old_event.timestamp_to_text()
-        if new_time != old_time:
-            message += f"| *Godzina*: `{old_time if old_time else "-"}` -> `{new_time if new_time else "-"}` "
-        if new_date != old_date:
-            message += f"| *Data*: `{old_date}` -> `{new_date}` "
+    new_time = new_event.time
+    old_time = old_event.time
+    if new_time != old_time:
+        message += f"| *Godzina*: `{old_time if old_time else "-"}` -> `{new_time if new_time else "-"}` "
+
+    new_date = new_event.date
+    old_date = old_event.date
+    if new_date != old_date:
+        message += f"| *Data*: `{old_date}` -> `{new_date}` "
 
     if new_event.team != old_event.team:
         message += f"| *Grupa*: `{old_event.team if old_event.team else "-"}` -> `{new_event.team if new_event.team else "-"}` "
