@@ -117,7 +117,7 @@ class CalendarDescriptionButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         try:
-            self.action(interaction)
+            await self.action(interaction)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
             logger = logging.getLogger("default")
