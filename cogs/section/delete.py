@@ -36,7 +36,7 @@ class SectionDeleteModal(discord.ui.Modal):
         self.add_item(discord.ui.Label(text="Wybierz sekcje do usunięcia", component=self.section_select))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        sections_to_delete = [self._fetch_section(x) for x in self.section_select.values]
+        sections_to_delete: list[Section] = [self._fetch_section(x) for x in self.section_select.values]
         for section in sections_to_delete:
             section.delete()
         self.calendar.update_sections()

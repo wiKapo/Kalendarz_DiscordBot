@@ -100,19 +100,24 @@ class AddNotificationModal(discord.ui.Modal):
             if time_tag in selected_time_tags:  # do not add duplicates
                 selected_time_tags.remove(time_tag)
                 continue
+            notification = Notification()
+            notification.userId = interaction.user.id
+            notification.eventId = self.event.id
 
             notify_time = event_time - timedelta(hours=get_hours_from_tag(time_tag))
             logger.debug(f"Notify time: {notify_time}")
-            Db().execute(
-                "INSERT INTO notifications (UserId, EventId, Timestamp, TimeTag, Description) VALUES (?, ?, ?, ?, ?)",
-                (interaction.user.id, self.event.id, notify_time.timestamp(), time_tag,
-                 self.description_input.value if self.description_input.value else None))  # TODO move to Notification class
+            notification.timestamp = int(notify_time.timestamp())
+            notification.timeTag = time_tag
+            notification.description = self.description_input.value if self.description_input.value else None
 
-        if selected_time_tags:  # if there are times left, remove them from the database
+        if selected_time_tags:  # if there are time tags left, remove them from the database
             logger.info(f"Removing {selected_time_tags} from database")
             for time_tag in selected_time_tags:
-                Db().execute("DELETE FROM notifications WHERE UserId = ? AND EventId = ? AND TimeTag = ?",
-                             (interaction.user.id, self.event.id, time_tag))
+                notification = Notification()
+                notification.userId = interaction.user.id
+                notification.eventId = self.event.id
+                notification.timeTag = time_tag
+                notification.delete()
 
         logger.info("DONE")
         await interaction.response.send_message(f"Dodano powiadomienia do wydarzenia \"{self.event.name}\"",

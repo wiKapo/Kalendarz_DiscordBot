@@ -6,12 +6,12 @@ from g.classes.event import Event
 
 
 class Notification:
-    id: int = None
-    userId: int = None
-    eventId: int = None
-    timestamp: int = None
-    timeTag: str = None
-    description: str = None
+    id: int
+    userId: int
+    eventId: int
+    timestamp: int
+    timeTag: str
+    description: str | None = None
 
     def __init__(self, data: list = None):
         """
@@ -55,7 +55,8 @@ class Notification:
                      (self.timestamp, self.timeTag, self.description, self.id))
 
     def delete(self):
-        Db().execute("DELETE FROM notifications WHERE Id=?", (self.id,))
+        Db().execute("DELETE FROM notifications WHERE UserId=? AND EventId=? AND Timestamp=?",
+                     (self.userId, self.eventId, self.timestamp))
 
 
 def fetch_all_notifications() -> list[Notification]:
