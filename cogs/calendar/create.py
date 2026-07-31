@@ -46,6 +46,7 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
         calendar.messageId = calendar_msg.id
         calendar.insert()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+        await calendar.get_additional_data(interaction.guild)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
 
         await update_calendar(interaction.guild, calendar, interaction.user.name)
@@ -54,6 +55,7 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
         await interaction.response.send_message(
             "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC\n"
             "Dodaj rolę do powiadomień przez wykonanie `/calendar edit`\n"
+            "Dodaj niestandardowe sekcje przez wykonanie `/section add`\n"
             "Dodaj role dla menedżerów przez wykonanie `/user set`\n"
             "Wszystkie komendy są opisane w `/help`",
             ephemeral=True)

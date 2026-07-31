@@ -109,8 +109,6 @@ async def send_calendar_select_view(interaction: Interaction, bot: Bot):
         except (discord.NotFound, discord.Forbidden):
             continue
 
-        calendar.guildName = guild.name
-        calendar.channelName = (await guild.fetch_channel(calendar.channelId)).name
         calendars.append(calendar)
 
     logger.debug(f"Available calendars: {[repr(c) for c in calendars]}")

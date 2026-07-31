@@ -1,4 +1,4 @@
-from discord import SelectOption
+from discord import SelectOption, Guild
 
 from g.classes.db import Db
 from g.classes.event import Event
@@ -121,14 +121,18 @@ class Calendar:
         for section in self.customSections:
             section.insert()
 
+    async def get_additional_data(self, guild: Guild):
+        self.guildName = guild.name
+        self.channelName = (await guild.fetch_channel(self.channelId)).name
+
 
 def format_calendar_options(calendars: list[Calendar], selected_calendars: set[int] | None = None) \
         -> list[SelectOption]:
     options = []
     for calendar in calendars:
         options.append(SelectOption(
-            label=f"{calendar.title if calendar.title else DEFAULT_TITLE}",
-            description=f"{calendar.channelName}",  # TODO fix me
+            label=f"[{calendar.id}] {calendar.title if calendar.title else DEFAULT_TITLE}",
+            description=f"{calendar.channelName}",
             value=f"{calendar.id}",
             default=True if len(calendars) == 1 or (
                     selected_calendars and calendar.id in selected_calendars) else False
