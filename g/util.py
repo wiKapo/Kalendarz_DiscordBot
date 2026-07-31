@@ -4,9 +4,9 @@ import discord
 from discord import Guild
 from discord.ext.commands import Bot
 
-from g.classes.logger import LogType, get_logger
 from g.classes.calendar import Calendar
 from g.classes.db import Db
+from g.classes.logger import LogType, get_logger
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
 from g.discord_classes import UpdateMessageView, NotificationButtonsView
 
@@ -59,16 +59,6 @@ async def check_user(interaction) -> bool:
 
 def check_dm(interaction) -> bool:
     return isinstance(interaction.channel, discord.channel.DMChannel)
-
-
-async def check_if_event_id_exists(interaction, event_id) -> bool:
-    amount_of_events = Db().fetch_one("SELECT COUNT(*) FROM events JOIN calendars ON events.CalendarId = calendars.Id "
-                                      "WHERE GuildId = ? AND ChannelId = ?",
-                                      (interaction.guild.id, interaction.channel.id))[0]
-    if amount_of_events >= event_id:
-        return True
-    await interaction.response.send_message(f"Wydarzenie o id {event_id} nie istnieje", ephemeral=True)
-    return False
 
 
 # --------- Error handling ---------

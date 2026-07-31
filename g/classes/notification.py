@@ -1,6 +1,5 @@
 from datetime import datetime
 
-from g.classes.calendar import Calendar
 from g.classes.db import Db
 from g.classes.event import Event
 
@@ -26,19 +25,11 @@ class Notification:
     def __str__(self):
         event = Event()
         event.fetch(self.eventId)
-        calendar = Calendar()
-        calendar.fetch(event.calendarId)
 
         return (f"Powiadomienie o wydarzeniu [{event}]\n"
                 f"Odbędzie się <t:{event.timestamp}:R>\n"
-                f"Z kalendarza: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}\n"
+                f"-# Z kalendarza znajdującego się na serwerze: https://discord.com/channels/{event.get_guild_id()}\n"
                 f"{self.description if self.description else ""}")
-
-    def get_guild_and_channel_id(self):
-        return Db().fetch_one(
-            "SELECT GuildId, ChannelId FROM notifications JOIN events ON notifications.EventId = events.Id "
-            "JOIN calendars ON events.CalendarId = calendars.Id WHERE notifications.Id=?",
-            (self.eventId,))
 
     def fetch(self, notification_id: int):
         data = Db().fetch_one("SELECT * FROM notifications WHERE Id=?", (notification_id,))
@@ -80,7 +71,9 @@ def fetch_notifications_by_event(user_id: int, event_id: int) -> list[Notificati
 
 
 def fetch_notifications_by_calendar(user_id: int, calendar_id: int) -> list[Notification]:
-    data = Db().fetch_all("SELECT notifications.* FROM notifications JOIN events ON notifications.EventId = events.Id "
+    data = Db().fetch_all("SELECT notifications.* FROM notifications "
+                          "INNER JOIN events ON notifications.EventId = events.Id "
+                          "INNER JOIN eventsInCalendars ON events.Id = eventsInCalendars.EventId "
                           "WHERE UserId=? AND CalendarId=?", (user_id, calendar_id))
     return [Notification(x) for x in data]
 
@@ -92,6 +85,7 @@ def fetch_events_with_notifications(user_id: int) -> list[Event]:
 
 
 def fetch_events_with_notifications_by_calendar(user_id: int, calendar_id: int) -> list[Event]:
-    return [Event(x) for x in Db().fetch_all(
-        "SELECT DISTINCT events.* FROM events JOIN notifications ON events.Id = notifications.EventId WHERE UserId=? AND CalendarId=?",
-        (user_id, calendar_id))]
+    return [Event(x) for x in Db().fetch_all("SELECT DISTINCT events.* FROM events "
+                                             "INNER JOIN notifications ON events.Id = notifications.EventId "
+                                             "INNER JOIN eventsInCalendars ON events.Id = eventsInCalendars.EventId"
+                                             " WHERE UserId=? AND CalendarId=?", (user_id, calendar_id))]

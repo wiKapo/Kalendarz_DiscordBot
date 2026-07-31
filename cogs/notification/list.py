@@ -53,10 +53,9 @@ def format_notifications(interaction: Interaction, events: list[Event]) -> str:
     message = ""
     for event in events:
         notifications = fetch_notifications_by_event(interaction.user.id, event.id)
-        calendar = Calendar()
-        calendar.fetch(event.calendarId)
 
-        message += f"W kalendarzu: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}"
+        # message += f"W kalendarzu: https://discord.com/channels/{calendar.guildId}/{calendar.channelId}/{calendar.messageId}"
+        message += f"Na serwerze: https://discord.com/channels/{event.get_guild_id()}"
         message += f" do wydarzenia: ({event})"
 
         selected_time_tags = [n.timeTag for n in notifications]

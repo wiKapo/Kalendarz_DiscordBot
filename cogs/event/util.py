@@ -60,6 +60,7 @@ def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
 def create_event_delete_message(event: Event):
     message = Message()
     message.set_time()
-    message.calendarId = event.calendarId
-    message.message = f"Usunięto wydarzenie: {event}"
-    message.insert()
+    for calendar_id in event.calendarIds:
+        message.calendarId = calendar_id
+        message.message = f"Usunięto wydarzenie: {event}"
+        message.insert()
