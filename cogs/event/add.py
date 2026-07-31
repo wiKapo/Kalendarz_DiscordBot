@@ -73,8 +73,14 @@ class EventAddModal(discord.ui.Modal):
             self.event.connect_to_calendar(calendar.id)
             logger.info("Added this event to this calendar")
 
+        update_message: str
+        if len(calendars_to_update) == 1:
+            update_message = f"kalendarza o numerze {calendars_to_update[0].id}"
+        else:
+            update_message = f"kalendarzy o numerach: {', '.join(map(lambda x: str(x.id), calendars_to_update))}"
+
         await interaction.response.send_message(
-            f'Dodano wydarzenie *{self.event.name}* do kalendarzy {self.calendar_select.values}.\n'
+            f'Dodano wydarzenie *{self.event.name}* do {update_message}.\n'
             f'Wydarzenia będą automatycznie usuwane po upłynięciu 3 tygodni od dnia wydarzenia',
             ephemeral=True)
 
