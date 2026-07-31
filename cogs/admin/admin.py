@@ -110,7 +110,8 @@ class AdminCog(commands.Cog):
                     for e_id in event_ids:
                         e_id = e_id[0]
                         try:
-                            Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (c_id, e_id))
+                            Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)",
+                                         (c_id, e_id))
                         except Exception as e:
                             logger.error(f"(C{c_id}, E{e_id}) Pair already exists in database. Error: {e}")
 
@@ -148,6 +149,16 @@ class AdminCog(commands.Cog):
         except Exception as e:
             logger.error(f"Failed. Error: {e}")
             await interaction.followup.send(f"Tabela `sections` została już zaktualizowana", ephemeral=True)
+
+        try:
+            logger.info("Changing the name of field PingMessageId in calendars table")
+            Db().execute('ALTER TABLE calendars RENAME PingMessageId TO DescriptionMessageId')
+            logger.info("Finished")
+            await interaction.followup.send(f"Zaktualizowano tabelę `calendars`")
+
+        except Exception as e:
+            logger.error(f"Failed. Error: {e}")
+            await interaction.followup.send(f"Tabela `calendars` została już zaktualizowana", ephemeral=True)
 
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):

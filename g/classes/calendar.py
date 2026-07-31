@@ -16,7 +16,7 @@ class Calendar:
     channelId: int = None
     messageId: int = None
     pingRoleId: int | None = None
-    pingMessageId: int | None = None
+    descriptionMessageId: int | None = None
     guildName: str = None
     """
     Only for displaying in notifications
@@ -32,7 +32,7 @@ class Calendar:
         """
         if data is not None:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
-                self.pingRoleId, self.pingMessageId = data
+                self.pingRoleId, self.descriptionMessageId = data
             self.get_events()
             self.fetch_sections()
 
@@ -41,7 +41,7 @@ class Calendar:
         event_amount_text = f"{event_amount if event_amount else "No"} event{"s" if event_amount != 1 else ""}"
         return (f"Calendar[{self.id}] Title:{self.title} ({event_amount_text}) "
                 f"(GuildId:{self.guildId}, ChannelId:{self.channelId}, MessageId:{self.messageId}) "
-                f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
+                f"(PingRoleId:{self.pingRoleId} DescriptionMessageId:{self.descriptionMessageId})")
 
     def __str__(self):
         message = f"## \t{self.title if self.title else DEFAULT_TITLE}\t"
@@ -93,8 +93,8 @@ class Calendar:
 
     def update(self):
         Db().execute(
-            "UPDATE calendars SET Title=?, MessageId=?, PingRoleId=?, PingMessageId=? WHERE id=?",
-            (self.title, self.messageId, self.pingRoleId, self.pingMessageId, self.id))
+            "UPDATE calendars SET Title=?, MessageId=?, PingRoleId=?, DescriptionMessageId=? WHERE id=?",
+            (self.title, self.messageId, self.pingRoleId, self.descriptionMessageId, self.id))
 
     def delete(self):
         for event in self.fetch_events():

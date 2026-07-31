@@ -10,6 +10,8 @@ from g.classes.db import Db
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
 from g.discord_classes import UpdateMessageView, NotificationButtonsView
 
+BOT_VERSION = "v0.12"  # TODO ALWAYS UPDATE ME
+
 
 # --------- CHECKS ---------
 
@@ -106,7 +108,7 @@ async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
 
 # --------- update message handling ---------
 
-async def update_calendar(guild: Guild, calendar: Calendar, caller: str):
+async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: bool = False):
     from datetime import datetime
 
     logger = get_logger(LogType.CALENDAR, calendar.id)
@@ -122,41 +124,10 @@ async def update_calendar(guild: Guild, calendar: Calendar, caller: str):
     await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
     logger.info("Updated calendar message")
 
-    # TODO move to separate function
-    # if send_ping:
-    #     if calendar.pingMessageId is not None:
-    #         logger.info("Removing old ping message")
-    #         await (await interaction.channel.fetch_message(calendar.pingMessageId)).delete()
-    #         calendar.pingMessageId = None
-    #         logger.info("Done")
-    #
-    #     if calendar.pingRoleId is not None:
-    #         logger.info("Sending new ping message")
-    #         message = await interaction.channel.send(
-    #             f"<@&{calendar.pingRoleId}>\n-# Ostatnia aktualizacja: <t:{int(datetime.now().timestamp())}>",
-    #             view=UpdateMessageView(calendar.pingRoleId))
-    #         calendar.pingMessageId = message.id
-    #         logger.info("Done")
-    #
-    #    calendar.update()
-    #    logger.info("Calendar updated in the database. Finished updating calendar")
+    await create_calendar_description(channel, calendar, quiet=quiet)
 
 
-# --------- For notification button actions ---------
-
-async def send_notification_add(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("add").callback(bot, interaction)
-
-
-async def send_notification_list(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("list").callback(bot, interaction)
-
-
-async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
-
-
-# --------- VVV only for /update_all command VVV ---------
+# --------- only for /update_all command ---------
 
 async def admin_update_calendar(bot: Bot, calendar: Calendar):
     logger = get_logger(LogType.CALENDAR, calendar.id)
@@ -172,19 +143,31 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
     await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar),
                                                                  view=NotificationButtonsView(bot, actions))
 
-    if calendar.pingMessageId is not None:  # TODO need to rethink this
-        logger.info("Removing old ping message")
-        await (await channel.fetch_message(calendar.pingMessageId)).delete()
-        calendar.pingMessageId = None
+    await create_calendar_description(channel, calendar,
+                                      f"Kalendarz został zaktualizowany do najnowszej wersji\n"
+                                      f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
+                                      f"lub pod przyciskiem `Pokaż ostatnie zmiany`\n")
 
-    if calendar.pingRoleId is not None:
-        logger.info("Sending update message")
-        from datetime import datetime
-        message = await channel.send(
-            f"Kalendarz został zaktualizowany do najnowszej wersji\n"
-            f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA lub pod przyciskiem `Pokaż ostatnie zmiany`\n"
-            f"-# Czas aktualizacji: <t:{int(datetime.now().timestamp())}>",
-            view=UpdateMessageView(calendar.pingRoleId))
-        calendar.pingMessageId = message.id
 
+# --------- Create calendar description ---------
+
+async def create_calendar_description(channel, calendar: Calendar, update_text: str | None = None, quiet: bool = False):
+    logger = get_logger(LogType.CALENDAR, calendar.id)
+
+    if calendar.descriptionMessageId is not None:
+        logger.info("Removing old calendar description")
+        await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
+        calendar.descriptionMessageId = None
+        logger.info("Done")
+
+    ping_text: str = ""
+    if calendar.pingRoleId and not quiet:
+        ping_text += f"<@&{calendar.pingRoleId}>\n\n"
+
+    logger.info("Sending new calendar description")
+    message = await channel.send(ping_text + (update_text if update_text else "") +
+                                 f"-# Wersja kalendarza: {BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
+                                 view=UpdateMessageView(calendar.pingRoleId))
+    calendar.descriptionMessageId = message.id
     calendar.update()
+    logger.info("Done")

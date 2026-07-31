@@ -45,15 +45,16 @@ class EditCalendarModal(discord.ui.Modal):
         logger.debug(f"Title: {self.calendar.title} -> {self.title_input.value if self.title_input.value else None}")
         logger.debug(f"Ping role: {self.calendar.pingRoleId} -> {selected_ping_role}")
 
-        ping_role_changed = self.calendar.pingRoleId != selected_ping_role
+        if self.calendar.pingRoleId != selected_ping_role or self.calendar.title != self.title_input.value:
+            self.calendar.title = self.title_input.value if self.title_input.value else None
+            self.calendar.pingRoleId = selected_ping_role
+            self.calendar.update()
+            logger.info("Calendar updated in the database")
 
-        self.calendar.title = self.title_input.value if self.title_input.value else None
-        self.calendar.pingRoleId = selected_ping_role
-        # Send a ping message only when the ping role is changed
-        self.calendar.update()
-        logger.info("Calendar updated in the database")
-        await update_calendar(interaction.guild, self.calendar, interaction.user.name)
-        # TODO ping message -> was 'ping_role_changed'
+            await update_calendar(interaction.guild, self.calendar, interaction.user.name)
 
-        await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
-        logger.info("Finished editing calendar")
+            await interaction.response.send_message("Kalendarz został zmieniony", ephemeral=True)
+            logger.info("Finished editing calendar")
+        else:
+            await interaction.response.send_message("Nie wprowadzono żadnych zmian", ephemeral=True)
+            logger.info("Calendar was not edited")

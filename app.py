@@ -20,9 +20,6 @@ init_logger()
 logger = get_logger()
 
 
-# TODO Always show last changes button
-# TODO Add cog for sections
-
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
@@ -43,7 +40,7 @@ async def on_ready():
                      'ChannelId BIGINT NOT NULL,'
                      'MessageId BIGINT NOT NULL,'
                      'PingRoleId BIGINT,'
-                     'PingMessageId BIGINT'
+                     'DescriptionMessageId BIGINT'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS events ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'

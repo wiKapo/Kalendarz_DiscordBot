@@ -110,15 +110,38 @@ class NotificationButtonsView(discord.ui.View):
         self.add_item(NotificationButton(label="Usuń", style=discord.ButtonStyle.danger, bot=bot, action=actions[2]))
 
 
+class CalendarDescriptionButton(discord.ui.Button):
+    def __init__(self, label: str, style: discord.ButtonStyle, action: Callable):
+        self.action = action
+        super().__init__(label=label, style=style)
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            self.action(interaction)
+        except Exception as e:
+            await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
+            logger = logging.getLogger("default")
+            logger.error(
+                f"in callback of CalendarDescriptionButton in [{interaction.guild.name} - {interaction.guild.id}] "
+                f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
+
+
 class UpdateMessageView(discord.ui.View):
     role: int
 
-    def __init__(self, role: int):
+    def __init__(self, role: int | None):
         super().__init__(timeout=None)
-        self.role = role
+        self.role: int | None = role
 
-    @discord.ui.button(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary, custom_id="show_messages")
-    async def show_messages(self, interaction: discord.Interaction, _):
+        self.add_item(CalendarDescriptionButton(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
+                                                action=self.show_messages))
+
+        if self.role:
+            self.add_item(CalendarDescriptionButton(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
+                                                    style=discord.ButtonStyle.secondary,
+                                                    action=self.get_ping_role))
+
+    async def show_messages(self, interaction: discord.Interaction):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         messages = fetch_messages_for_calendar(calendar.id)
@@ -130,9 +153,7 @@ class UpdateMessageView(discord.ui.View):
                 result += f"- {message.message}\n"
             await interaction.response.send_message(result, ephemeral=True)
 
-    @discord.ui.button(label="Otrzymuj powiadomienia o aktualizacji kalendarza", style=discord.ButtonStyle.secondary,
-                       custom_id="ping")
-    async def ping(self, interaction: discord.Interaction, _):
+    async def get_ping_role(self, interaction: discord.Interaction):
         role: discord.role.Role = interaction.guild.get_role(self.role)
         try:
             if role in interaction.user.roles:
