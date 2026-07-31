@@ -25,12 +25,17 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger = get_logger(LogType.CALENDAR, calendar.id)
-
         logger.info("Deleting this calendar")
-        calendar_message = await (await interaction.guild.fetch_channel(calendar.channelId)).fetch_message(
-            calendar.messageId)
+
+        channel = await interaction.guild.fetch_channel(calendar.channelId)
+        calendar_message = await channel.fetch_message(calendar.messageId)
         await calendar_message.delete()
         logger.info("Removed the calendar message.")
+
+        if calendar.descriptionMessageId:
+            await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
+            logger.info("Removed the calendar description message.")
+
         calendar.delete()
         logger.info("The calendar and its events have been removed from the database.")
 
