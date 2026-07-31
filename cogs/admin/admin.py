@@ -1,3 +1,5 @@
+import sqlite3
+
 import discord
 from discord.ext import commands
 
@@ -89,15 +91,20 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message("Aktualizowanie bazy danych", ephemeral=True)
 
         try:
-            logger.info("Updating calendar table")
+            logger.info("Updating calendars table. Removing ShowSections column")
             Db().execute("ALTER TABLE calendars DROP COLUMN ShowSections")
-            await interaction.followup.send("Zaktualizowano tabelę `calendar`", ephemeral=True)
+            await interaction.followup.send("Zaktualizowano tabelę `calendars`. Usunięto kolumnę `ShowSections", ephemeral=True)
             logger.info("Success")
-        except Exception as e:
-            logger.error(f"Failed. Error: {e}")
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send("Tabela `calendar` jest już zaktualizowana", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
 
         try:
+            logger.info("Updating events")
             calendar_ids = Db().fetch_all("SELECT Id FROM calendars")
             for c_id in calendar_ids:
                 c_id = c_id[0]
@@ -118,9 +125,13 @@ class AdminCog(commands.Cog):
             logger.info("Finished")
             await interaction.followup.send("Uzupełniono tabelę `eventsInCalendars`", ephemeral=True)
 
-        except Exception as e:
-            logger.error(f"Failed. Error: {e}")
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send(f"Tabela `eventsInCalendars` została już uzupełniona", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
 
         try:
             logger.info("Updating events table")
@@ -129,9 +140,13 @@ class AdminCog(commands.Cog):
             await interaction.followup.send(
                 "Zaktualizowano tabelę `events` i stworzono tabelę `eventsInCalendars` aktualizację bazy danych",
                 ephemeral=True)
-        except Exception as e:
-            logger.error(f"Failed. Error: {e}")
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send(f"Tabela `events` została już zaktualizowana", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
 
         try:
             logger.info("Updating sections table")
@@ -146,19 +161,27 @@ class AdminCog(commands.Cog):
             logger.info("Finished")
             await interaction.followup.send("Zmieniono tabelę `sections`", ephemeral=True)
 
-        except Exception as e:
-            logger.error(f"Failed. Error: {e}")
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send(f"Tabela `sections` została już zaktualizowana", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
 
         try:
             logger.info("Changing the name of field PingMessageId in calendars table")
             Db().execute('ALTER TABLE calendars RENAME PingMessageId TO DescriptionMessageId')
             logger.info("Finished")
-            await interaction.followup.send(f"Zaktualizowano tabelę `calendars`")
+            await interaction.followup.send(f"Zaktualizowano tabelę `calendars`. Zmieniono pole `PingMessageId` na `DescriptionMessageId`", ephemeral=True)
 
-        except Exception as e:
-            logger.error(f"Failed. Error: {e}")
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send(f"Tabela `calendars` została już zaktualizowana", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
 
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):
