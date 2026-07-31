@@ -4,7 +4,8 @@ from g.classes.db import Db
 from g.classes.event import Event
 from g.classes.section import Section, select_section, delete_all_sections
 
-DEFAULT_TITLE = "Kalendarz by wiKapo"
+DEFAULT_TITLE = ":calendar:\tKalendarz by wiKapo\t:calendar:"
+DEFAULT_TITLE_RAW = "Kalendarz by wiKapo"
 
 
 class Calendar:

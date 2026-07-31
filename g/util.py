@@ -144,7 +144,7 @@ async def admin_update_calendar(bot: Bot, calendar: Calendar):
                                                                  view=NotificationButtonsView(bot, actions))
 
     await create_calendar_description(channel, calendar,
-                                      f"Kalendarz został zaktualizowany do najnowszej wersji\n"
+                                      f"**Kalendarz został zaktualizowany do najnowszej wersji**\n"
                                       f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
                                       f"lub pod przyciskiem `Pokaż ostatnie zmiany`\n")
 

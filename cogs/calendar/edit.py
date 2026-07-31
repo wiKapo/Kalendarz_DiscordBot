@@ -1,7 +1,7 @@
 import discord
 from discord import Role
 
-from g.classes.calendar import DEFAULT_TITLE, Calendar
+from g.classes.calendar import DEFAULT_TITLE_RAW, Calendar
 from g.classes.logger import get_logger, LogType
 from g.util import check_if_calendar_exists, update_calendar
 
@@ -26,7 +26,7 @@ class EditCalendarModal(discord.ui.Modal):
         self.calendar = calendar
         super().__init__(title="Edytuj kalendarz")
 
-        self.title_input = discord.ui.TextInput(required=False, default=calendar.title, placeholder=DEFAULT_TITLE)
+        self.title_input = discord.ui.TextInput(required=False, default=calendar.title, placeholder=DEFAULT_TITLE_RAW)
         self.add_item(discord.ui.Label(text="Tytuł",
                                        description="Podaj tytuł kalendarza lub zostaw puste, aby ustawić wartość domyślną",
                                        component=self.title_input))

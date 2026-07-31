@@ -53,11 +53,13 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
         await update_notification_buttons(bot, interaction, calendar)
 
         await interaction.response.send_message(
-            "Stworzono kalendarz. Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC\n"
-            "Dodaj rolę do powiadomień przez wykonanie `/calendar edit`\n"
-            "Dodaj niestandardowe sekcje przez wykonanie `/section add`\n"
-            "Dodaj role dla menedżerów przez wykonanie `/user set`\n"
-            "Wszystkie komendy są opisane w `/help`",
+            "## Stworzono kalendarz\n"
+            "Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC\n"
+            "- Dodaj wydarzenia przez wykonanie `/event add`\n"
+            "- Dodaj rolę do powiadomień przez wykonanie `/calendar edit`\n"
+            "- Dodaj niestandardowe sekcje przez wykonanie `/section add`\n"
+            "- Dodaj role dla menedżerów przez wykonanie `/user set` Domyślnie dostęp do kalendarza mają tylko administratorzy serwera\n"
+            "- Wszystkie komendy są opisane w `/help`",
             ephemeral=True)
         logger.info("Calendar created")
 
