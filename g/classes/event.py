@@ -131,14 +131,6 @@ def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
     return [Event(x) for x in data]
 
 
-def remove_old_events(events: list[Event], cutoff_timestamp: int) -> list[Event]:
-    good_events = []
-    for event in events:
-        if event.timestamp > cutoff_timestamp:
-            good_events.append(event)
-    return good_events
-
-
 def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
     options = []
     for i, event in enumerate(events):
