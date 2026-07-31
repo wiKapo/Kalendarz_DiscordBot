@@ -13,7 +13,7 @@ class Notification:
     timeTag: str
     description: str | None = None
 
-    def __init__(self, data: list = None):
+    def __init__(self, data: list | None = None):
         """
         :param data: for parsing fields from the database.
         """

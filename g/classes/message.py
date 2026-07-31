@@ -6,13 +6,13 @@ from g.classes.db import Db
 
 
 class Message:
-    id: int = None
-    calendarId: int = None
-    timestamp: int = None
-    deleteBy: int = None
-    message: str = None
+    id: int
+    calendarId: int
+    timestamp: int
+    deleteBy: int
+    message: str
 
-    def __init__(self, data: list = None):
+    def __init__(self, data: list | None = None):
         """
         :param data: for parsing fields from the database.
         """

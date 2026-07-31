@@ -6,15 +6,15 @@ from g.classes.db import Db
 
 
 class Event:
-    id: int = None
-    timestamp: int = None
-    wholeDay: bool = None
-    name: str = None
+    id: int
+    timestamp: int
+    wholeDay: bool
+    name: str
     team: str | None = None
     place: str | None = None
     calendarIds: set[int] = set()
 
-    def __init__(self, data: list = None):
+    def __init__(self, data: list | None = None):
         """
         :param data: for parsing fields from the database.
         """

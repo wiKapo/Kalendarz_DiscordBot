@@ -9,25 +9,25 @@ DEFAULT_TITLE_RAW = "Kalendarz by wiKapo"
 
 
 class Calendar:
-    id: int = None
+    id: int
     title: str | None = None
     customSections: list[Section] = []
     eventIds: set[int] = set()
-    guildId: int = None
-    channelId: int = None
-    messageId: int = None
+    guildId: int
+    channelId: int
+    messageId: int
     pingRoleId: int | None = None
     descriptionMessageId: int | None = None
-    guildName: str = None
+    guildName: str
     """
     Only for displaying in notifications
     """
-    channelName: str = None
+    channelName: str
     """
     Only for displaying in notifications
     """
 
-    def __init__(self, data: list = None):
+    def __init__(self, data: list | None = None):
         """
         :param data: for parsing fields from the database.
         """
