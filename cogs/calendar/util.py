@@ -3,23 +3,7 @@ from discord.ext.commands import Bot
 
 from g.classes.calendar import Calendar
 from g.classes.logger import get_logger, LogType
-from g.classes.section import Section
-from g.util import update_calendar, send_notification_add, send_notification_list, send_notification_delete
-
-
-async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):
-    logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info("Recreating calendar on this channel")
-    new_msg = await interaction.channel.send("Nowa wiadomość kalendarza")
-    logger.info(f"New calendar message created: {new_msg.id}")
-    calendar.messageId = new_msg.id
-    calendar.update()
-    logger.info("Calendar updated in the database")
-
-    await update_calendar(interaction.guild, calendar, interaction.user.name)
-
-    await interaction.response.send_message("Odtworzono kalendarz.", ephemeral=True)
-    logger.info("Calendar is recreated")
+from g.util import send_notification_add, send_notification_list, send_notification_delete
 
 
 async def update_notification_buttons(bot: Bot, interaction: discord.Interaction, calendar: Calendar):

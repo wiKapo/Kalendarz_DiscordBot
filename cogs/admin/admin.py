@@ -30,7 +30,7 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
-            message.message = "**Aktualizacja kalendarza** Dodano niestandardowe sekcje"  # TODO ALWAYS UPDATE ME
+            message.message = "**Aktualizacja kalendarza** UWAGA Usunięto wszystkie sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
@@ -52,7 +52,7 @@ class AdminCog(commands.Cog):
         await no_permissions_message(interaction, error)
 
     @admin_group.command(name="remove_admin_cog", description="[TYLKO DLA ADMINÓW KALENDARZA] "
-                                                              "Chowa komendy administratorów")
+                                                              "Ukrywa komendy administratorów")
     @discord.app_commands.check(check_calendar_admin)
     async def remove_admin_cog(self, interaction: discord.Interaction):
         logger = get_logger()
@@ -103,14 +103,16 @@ class AdminCog(commands.Cog):
                 c_id = c_id[0]
                 event_ids = Db().fetch_all("SELECT Id FROM events WHERE CalendarId=?", (c_id,))
                 logger.info(
-                    f"Found {len(event_ids)} events in calendar {c_id}.{"" if len(event_ids) == 0 else "Populating eventsInCalendars table..."}")
+                    f"Found {len(event_ids)} events in calendar {c_id}."
+                    f"{"" if len(event_ids) == 0 else "Populating eventsInCalendars table..."}")
 
-                for e_id in event_ids:
-                    e_id = e_id[0]
-                    try:
-                        Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (c_id, e_id))
-                    except Exception as e:
-                        logger.error(f"(C{c_id}, E{e_id}) Pair already exists in database. Error: {e}")
+                if event_ids:
+                    for e_id in event_ids:
+                        e_id = e_id[0]
+                        try:
+                            Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (c_id, e_id))
+                        except Exception as e:
+                            logger.error(f"(C{c_id}, E{e_id}) Pair already exists in database. Error: {e}")
 
             logger.info("Finished")
             await interaction.followup.send("Uzupełniono tabelę `eventsInCalendars`", ephemeral=True)

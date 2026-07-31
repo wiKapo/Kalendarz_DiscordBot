@@ -2,6 +2,7 @@ import discord
 
 from cogs.notification.list import SelectCalendarView
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
+from g.classes.section import Section
 from g.util import update_calendar
 
 
@@ -42,8 +43,8 @@ class SectionAddModal(discord.ui.Modal):
         section = Section()
 
         section.name = self.name_input.value
-        section.beginTimestamp = int(self.begin_date_input.value)
-        section.endTimestamp = int(self.end_date_input.value) if self.end_date_input.value else None
+        section.begin_date = self.begin_date_input.value
+        section.end_date = self.end_date_input.value
         section.calendarId = self.calendar.id
 
         self.calendar.customSections.append(section)

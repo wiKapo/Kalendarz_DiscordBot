@@ -44,7 +44,7 @@ class Calendar:
                 f"(PingRoleId:{self.pingRoleId} PingMessageId:{self.pingMessageId})")
 
     def __str__(self):
-        message = f":calendar:\t{self.title if self.title else DEFAULT_TITLE}\t:calendar:"
+        message = f"## \t{self.title if self.title else DEFAULT_TITLE}\t"
         events = self.fetch_events()
         if not events:
             message += "\nPUSTE"

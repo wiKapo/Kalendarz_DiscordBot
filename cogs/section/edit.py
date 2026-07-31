@@ -2,7 +2,7 @@ import discord
 
 from cogs.notification.list import SelectCalendarView
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
-from g.classes.section import Section, __timestamp_to_text__, __text_to_timestamp__
+from g.classes.section import Section
 from g.discord_classes import SelectSectionView
 from g.util import update_calendar
 
@@ -55,21 +55,19 @@ class SectionEditModal(discord.ui.Modal):
         self.add_item(discord.ui.Label(text="Podaj nazwę sekcji", component=self.name_input))
 
         self.begin_date_input = discord.ui.TextInput(placeholder="Podaj datę rozpoczęcia",
-                                                     default=__timestamp_to_text__(self.section.beginTimestamp))
+                                                     default=self.section.begin_date)
         self.add_item(discord.ui.Label(text="Podaj datę rozpoczęcia sekcji", component=self.begin_date_input))
 
         self.end_date_input = discord.ui.TextInput(placeholder="Podaj datę zakończenia",
-                                                   default=__timestamp_to_text__(
-                                                       self.section.endTimestamp) if self.section.endTimestamp else None,
-                                                   required=False)
+                                                   default=self.section.end_date, required=False)
         self.add_item(discord.ui.Label(text="Podaj datę zakończenia sekcji", component=self.end_date_input))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         self.calendar.customSections.remove(self.section)
 
         self.section.name = self.name_input.value
-        self.section.beginTimestamp = __text_to_timestamp__(self.begin_date_input.value)
-        self.section.endTimestamp = __text_to_timestamp__(self.end_date_input.value) if self.end_date_input.value else None
+        self.section.begin_date = self.begin_date_input.value
+        self.section.end_date = self.end_date_input.value
         self.section.calendarId = self.calendar.id
 
         self.calendar.customSections.append(self.section)

@@ -50,11 +50,6 @@ def fetch_outdated_update_messages(calendar_id: int, cutoff_timestamp: int) -> l
     return [Message(x) for x in data]
 
 
-def delete_messages(messages: list[Message]):
-    for message in messages:
-        message.delete()
-
-
 def fetch_messages_for_calendar(calendar_id: int) -> list[Message]:
     data = Db().fetch_all("SELECT * FROM messages WHERE CalendarId=?", (calendar_id,))
     return [Message(x) for x in data]

@@ -41,11 +41,10 @@ class Event:
         if self.team:
             message += f"[{self.team}] "
         # Name
-        message += f"**{self.name}"
+        message += f"**{self.name}**"
         # Place
         if self.place:
             message += f" @ {self.place}"
-        message += " **"
 
         return message
 

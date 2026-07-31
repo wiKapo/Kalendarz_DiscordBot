@@ -68,7 +68,7 @@ class Section:
 
     @end_date.setter
     def end_date(self, date: str | None):
-        if date:
+        if date and date != "":
             self.endTimestamp = self._parse_date(date)
         else:
             self.endTimestamp = None
