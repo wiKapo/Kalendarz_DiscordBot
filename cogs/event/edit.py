@@ -59,7 +59,7 @@ class EventEditModal(discord.ui.Modal):
         self.name_input = discord.ui.TextInput(default=event.name, placeholder="Podaj nazwę wydarzenia")
         self.add_item(discord.ui.Label(text="Nazwa", component=self.name_input))
 
-        self.datetime_input = discord.ui.TextInput(default="", placeholder="Podaj datę i/lub godzinę")
+        self.datetime_input = discord.ui.TextInput(default=event.datetime, placeholder="Podaj datę i/lub godzinę")
         self.add_item(discord.ui.Label(text="Data i czas", component=self.datetime_input,
                                        description="Format: `dd.mm(.yyyy)( hh:mm)` Zamiast `:` można wpisać `.`"))
 

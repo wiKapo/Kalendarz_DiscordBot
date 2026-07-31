@@ -48,6 +48,12 @@ class Event:
 
         return message
 
+    @property
+    def datetime(self) -> str:
+        if self.wholeDay:
+            return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
+        return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y %H:%M")
+
     def date(self) -> str:
         return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
 
