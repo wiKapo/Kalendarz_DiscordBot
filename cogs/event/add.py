@@ -9,6 +9,9 @@ from g.util import update_calendar
 
 async def event_add(interaction: discord.Interaction):
     calendars = fetch_calendars_in_guild(interaction.guild_id)
+    for calendar in calendars:
+        await calendar.get_additional_data(interaction.guild)
+
     await interaction.response.send_modal(EventAddModal(calendars))
 
 

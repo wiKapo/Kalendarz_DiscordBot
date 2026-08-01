@@ -36,8 +36,6 @@ class AdminCog(commands.Cog):
             message.insert_with_check()
             logger.info("Sent update message")
 
-            await calendar.get_additional_data(self.bot.get_guild(calendar.guildId))
-
             try:
                 await admin_update_calendar(self.bot, calendar)
             except Exception as e:

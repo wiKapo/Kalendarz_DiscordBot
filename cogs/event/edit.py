@@ -38,18 +38,21 @@ async def event_edit(interaction: Interaction):
 
 
 async def send_event_edit_modal(interaction: discord.Interaction, events: list[Event], values: list[str]):
-    await interaction.response.send_modal(EventEditModal(events[int(values[0])]))
+    event = events[int(values[0])]
+    guild_id = event.get_guild_id()
+    calendars = fetch_calendars_in_guild(guild_id)
+    for calendar in calendars:
+        await calendar.get_additional_data(interaction.guild)
+
+    await interaction.response.send_modal(EventEditModal(event, calendars))
 
 
 class EventEditModal(discord.ui.Modal):
     event: Event
 
-    def __init__(self, event: Event):
+    def __init__(self, event: Event, calendars: list[Calendar]):
         self.event = event
         super().__init__(title="Edytuj wydarzenie")
-
-        guild_id = self.event.get_guild_id()
-        calendars = fetch_calendars_in_guild(guild_id)
 
         self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars, self.event.calendarIds),
                                                  max_values=len(calendars))

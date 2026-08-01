@@ -10,6 +10,9 @@ from g.util import update_calendar
 async def section_edit(interaction: discord.Interaction, calendar_id: int | None):
     if not calendar_id:
         calendars = fetch_calendars_in_guild(interaction.guild_id)
+        for calendar in calendars:
+            await calendar.get_additional_data(interaction.guild)
+
         await interaction.response.send_message("Wybierz kalendarz, z którego chcesz edytować niestandardową sekcję",
                                                 view=SelectCalendarView(calendars, send_section_select_message),
                                                 ephemeral=True)

@@ -105,6 +105,7 @@ async def send_calendar_select_view(interaction: Interaction, bot: Bot):
         try:
             guild = await bot.fetch_guild(calendar.guildId)
             await guild.fetch_member(interaction.user.id)
+            await calendar.get_additional_data(guild)
         except (discord.NotFound, discord.Forbidden):
             continue
 
