@@ -119,3 +119,7 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
                 selected_section = section
                 break
     return selected_section, selected_custom_section
+
+
+def fetch_outdated_sections():
+    return Db().fetch_all("SELECT * FROM sections WHERE EndTimestamp < ?", (datetime.now().timestamp()))

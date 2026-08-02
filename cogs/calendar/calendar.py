@@ -10,6 +10,7 @@ from cogs.calendar.update import calendar_update
 from g.classes.calendar import fetch_all_calendars
 from g.classes.event import fetch_outdated_events
 from g.classes.logger import get_logger, LogType
+from g.classes.section import fetch_outdated_sections
 from g.util import check_user, send_error_message
 
 UPDATE_TIME = time()
@@ -32,10 +33,25 @@ class CalendarCog(commands.Cog):
         cutoff_timestamp = (
             int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(weeks=1)).timestamp()))
         outdated_events = fetch_outdated_events(cutoff_timestamp)
-        logger.debug(f"Deleting {len(outdated_events)} old events")
-        logger.debug(outdated_events)
-        for event in outdated_events:
-            event.delete()
+        if len(outdated_events) > 0:
+            logger.info(f"Deleting {len(outdated_events)} old events")
+            logger.debug(outdated_events)
+            for event in outdated_events:
+                event.delete()
+            logger.info("Deleted outdated events")
+        else:
+            logger.info("No outdated events found")
+
+        logger.info("Removing old sections")
+        outdated_sections = fetch_outdated_sections()
+        if len(outdated_sections) > 0:
+            logger.info(f"Deleting {len(outdated_sections)} old custom sections")
+            logger.debug(outdated_sections)
+            for section in outdated_sections:
+                section.delete()
+            logger.info("Deleted outdated custom sections")
+        else:
+            logger.info("No outdated sections found")
 
         logger.info("Start of updating all calendars")
         for calendar in calendars:
