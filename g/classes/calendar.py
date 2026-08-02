@@ -55,10 +55,16 @@ class Calendar:
             for event in events:
                 message += "\n"
                 new_section, new_custom_section = select_section(self.customSections, event.timestamp)
-                if new_section != current_section and new_custom_section != current_custom_section:
+
+                # The new section and custom section changed. Custom section is not null
+                if new_section != current_section and new_custom_section and new_custom_section != current_custom_section:
                     message += f"\n\t{new_section.double_str(new_custom_section)}\n"
-                elif new_custom_section != current_custom_section:
+
+                # Only custom section changed and is not null
+                elif new_custom_section and new_custom_section != current_custom_section:
                     message += f"\n\t{new_custom_section}\n"
+
+                # Only section changed
                 elif new_section != current_section:
                     message += f"\n\t{new_section}\n"
 

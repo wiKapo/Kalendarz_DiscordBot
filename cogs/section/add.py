@@ -1,7 +1,10 @@
+from datetime import datetime
+
 import discord
 
 from cogs.notification.list import SelectCalendarView
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
+from g.classes.logger import get_logger, LogType
 from g.classes.section import Section
 from g.util import update_calendar
 
@@ -44,18 +47,33 @@ class SectionAddModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         section = Section()
+        logger = get_logger(LogType.CALENDAR, self.calendar.id)
 
+        logger.info(f"{interaction.user.name} is creating new section")
         section.name = self.name_input.value
         section.begin_date = self.begin_date_input.value
         section.end_date = self.end_date_input.value
+        if section.endTimestamp:
+            if section.beginTimestamp > section.endTimestamp:
+                logger.error("Section begin date is after end date")
+                raise ValueError("Section begin date is after end date")
+
+            if section.endTimestamp < datetime.now().timestamp():
+                logger.error("Section end date is in the past")
+                raise ValueError("Section end date is in the past")
+
         section.calendarId = self.calendar.id
+        logger.info(f"Read section: {repr(section)}")
 
         self.calendar.customSections.append(section)
+        logger.info("Added section to list")
 
         self.calendar.update_sections()
+        logger.info("Updated calendar sections in database")
 
         try:
             await update_calendar(interaction.guild, self.calendar, interaction.user.name)
+            logger.info("Updated calendar")
         except Exception as e:
             await interaction.response.send_message(f"ERROR: {e}", ephemeral=True)
             return

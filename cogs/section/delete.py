@@ -1,8 +1,8 @@
 import discord
 
-from cogs.calendar import update
 from cogs.notification.list import SelectCalendarView
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
+from g.classes.logger import get_logger, LogType
 from g.classes.section import Section
 from g.discord_classes import SelectSection
 from g.util import update_calendar
@@ -35,17 +35,28 @@ class SectionDeleteModal(discord.ui.Modal):
 
         super().__init__(title="Usuń niestandardowe sekcje")
 
-        self.section_select = SelectSection("Wybierz sekcje", None, calendar.customSections)
+        self.section_select = SelectSection("Wybierz sekcje", None, self.calendar.customSections,
+                                            max_values=len(self.calendar.customSections))
         self.add_item(discord.ui.Label(text="Wybierz sekcje do usunięcia", component=self.section_select))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
+        logger = get_logger(LogType.CALENDAR, self.calendar.id)
+        logger.info(f"{interaction.user.name} is deleting sections {self.section_select.values}")
+
         sections_to_delete: list[Section] = [self._fetch_section(x) for x in self.section_select.values]
         for section in sections_to_delete:
+            self.calendar.customSections.remove(section)
             section.delete()
+            logger.info(f"Deleted section {section.name}")
+        logger.info("Removed all selected sections")
         self.calendar.update_sections()
         await update_calendar(interaction.guild, self.calendar, interaction.user.name)
 
+        await interaction.response.send_message(f"Usunięto wybrane sekcje")
+
     @staticmethod
-    def _fetch_section(combined_primary_key: str):
+    def _fetch_section(combined_primary_key: str) -> Section:
         calendar_id, section_id = map(int, combined_primary_key.split("."))
-        return Section().fetch(calendar_id, section_id)
+        section = Section()
+        section.fetch(calendar_id, section_id)
+        return section

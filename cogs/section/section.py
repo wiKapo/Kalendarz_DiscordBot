@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 
 from cogs.section.add import section_add
+from cogs.section.delete import section_delete
 from cogs.section.edit import section_edit
 from g.util import check_user, send_error_message
 
@@ -36,7 +37,7 @@ class SectionCog(commands.Cog):
     @discord.app_commands.describe(calendar_id="Numer id kalendarza")
     @discord.app_commands.check(check_user)
     async def delete(self, interaction: discord.Interaction, calendar_id: int | None):
-        pass  # TODO implement
+        await section_delete(interaction, calendar_id)
 
     @delete.error
     async def delete_error(self, interaction: discord.Interaction, error):
