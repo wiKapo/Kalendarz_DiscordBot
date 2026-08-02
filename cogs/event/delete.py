@@ -2,7 +2,8 @@ import discord
 
 from cogs.event.util import create_event_delete_message
 from g.classes.calendar import Calendar
-from g.classes.event import Event, format_event_options, fetch_events_from_guild
+from g.classes.event import Event, fetch_events_from_guild
+from g.discord_classes import format_event_options
 from g.classes.logger import LogType, get_logger
 from g.util import check_if_calendar_exists, update_calendar
 

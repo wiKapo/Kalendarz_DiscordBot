@@ -1,7 +1,8 @@
 import discord
 
 from cogs.event.util import create_event_update_message
-from g.classes.calendar import fetch_calendars_in_guild, format_calendar_options, Calendar
+from g.classes.calendar import fetch_calendars_in_guild, Calendar
+from g.discord_classes import format_calendar_options
 from g.classes.event import Event
 from g.classes.logger import get_logger, LogType
 from g.util import update_calendar
@@ -39,14 +40,13 @@ class EventAddModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         event = Event()
+        logger = get_logger(LogType.CALENDAR, -1)  # TODO !!IMPORTANT!! REWORK LOGGER
 
         event.name = self.name_input.value
         event.set_datetime(self.datetime_input.value)
         event.team = self.team_input.value
         event.place = self.place_input.value
-        logger = get_logger(LogType.CALENDAR, -1)  # TODO !!IMPORTANT!! REWORK LOGGER
         logger.info("Got all data from modal")
-        logger.debug(f"Event: {repr(event)}")
 
         # Adding new event
         event.insert()
@@ -77,7 +77,7 @@ class EventAddModal(discord.ui.Modal):
 
         await interaction.response.send_message(
             f'Dodano wydarzenie *{event.name}* do {update_message}.\n'
-            f'Wydarzenia będą automatycznie usuwane po upłynięciu 3 tygodni od dnia wydarzenia',
+            f'Wydarzenia będą automatycznie usuwane po upłynięciu 1 tygodnia od dnia wydarzenia',
             ephemeral=True)
 
         for calendar in calendars_to_update:

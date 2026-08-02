@@ -1,7 +1,5 @@
 from datetime import datetime
 
-from discord import SelectOption
-
 from g.classes.db import Db
 
 
@@ -54,9 +52,11 @@ class Event:
             return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
         return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y %H:%M")
 
+    @property
     def date(self) -> str:
         return datetime.fromtimestamp(self.timestamp).strftime("%d.%m.%Y")
 
+    @property
     def time(self) -> str:
         if self.wholeDay:
             return ""
@@ -134,24 +134,3 @@ def fetch_events_from_guild(guild_id: int) -> list[Event]:
 def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
     data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
     return [Event(x) for x in data]
-
-
-def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
-    options = []
-    for i, event in enumerate(events):
-        description = ""
-        if event.team:
-            description += f'[{event.team}] '
-        if event.place:
-            description += event.place
-
-        options.append(
-            SelectOption(
-                label=f"{event.date}{" " + event.time if event.time else ""} {event.name}",
-                description=description,
-                value=f"{i}",
-                default=i == selected_event
-            )
-        )
-
-    return options

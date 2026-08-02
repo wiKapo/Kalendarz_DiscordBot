@@ -2,13 +2,20 @@ import logging
 from collections.abc import Callable
 
 import discord
+from discord import SelectOption
 from discord.ext.commands import Bot
 
-from g.classes.calendar import Calendar, format_calendar_options
-from g.classes.event import Event, format_event_options
+from g.classes.calendar import Calendar, DEFAULT_TITLE
+from g.classes.event import Event
 from g.classes.message import fetch_messages_for_calendar
-from g.classes.section import Section, format_section_options
+from g.classes.section import Section
 
+
+def truncate_text(text: str, max_length: int) -> str:
+    return text[:max_length - 3] + "..." if len(text) > max_length else text
+
+
+# TODO merge all SelectViews into one function
 
 class SelectEvent(discord.ui.Select):
     action: Callable
@@ -171,3 +178,51 @@ class UpdateMessageView(discord.ui.View):
                 "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
                 "wybrać rolę kalendarza i w uprawnieniach włączyć `Zarządzanie powiadomieniami`",
                 ephemeral=True)
+
+
+def format_section_options(sections: list[Section]) -> list[SelectOption]:
+    options = []
+    for section in sections:
+        options.append(SelectOption(
+            label=section.name,
+            description=f"Zaczyna się {section.begin_date}"
+                        f"{f', a kończy {section.end_date}' if section.end_date else ''}",
+            value=f"{section.calendarId}.{section.beginTimestamp}"
+        ))
+    return options
+
+
+def format_calendar_options(calendars: list[Calendar], selected_calendars: set[int] | None = None) \
+        -> list[SelectOption]:
+    options = []
+    for calendar in calendars:
+        options.append(SelectOption(
+            label=f"[{calendar.id}] {calendar.title if calendar.title else DEFAULT_TITLE}",
+            description=f"{calendar.channelName}",
+            value=f"{calendar.id}",
+            default=True if len(calendars) == 1 or (
+                    selected_calendars and calendar.id in selected_calendars) else False
+        ))
+    return options
+
+
+def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
+    options = []
+    for i, event in enumerate(events):
+        description = ""
+        if event.team:
+            description += f'[{event.team}] '
+        if event.place:
+            description += event.place
+
+        label_text = f"{event.date}{f' {event.time}' if event.time else ''} {event.name}"
+        options.append(
+            SelectOption(
+                label=truncate_text(label_text, 100),
+                description=description,
+                value=f"{i}",
+                default=i == selected_event
+            )
+        )
+
+    return options

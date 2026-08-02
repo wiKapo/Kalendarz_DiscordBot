@@ -4,10 +4,10 @@ import discord
 from discord import Interaction
 
 from cogs.event.util import create_event_update_message
-from g.classes.calendar import Calendar, fetch_calendars_in_guild, format_calendar_options
+from g.classes.calendar import Calendar, fetch_calendars_in_guild
 from g.classes.event import fetch_events_from_guild, Event
 from g.classes.logger import LogType, get_logger
-from g.discord_classes import SelectEventView
+from g.discord_classes import SelectEventView, format_calendar_options
 from g.util import check_if_calendar_exists, update_calendar
 
 

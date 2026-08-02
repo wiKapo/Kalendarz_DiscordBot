@@ -1,8 +1,6 @@
 from collections.abc import Callable
 from datetime import datetime
 
-from discord import SelectOption
-
 from g.classes.db import Db
 
 DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
@@ -31,14 +29,16 @@ class Section:
         if data:
             self.calendarId, self.beginTimestamp, self.endTimestamp, self.name = data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Section[{self.calendarId}] BeginTimestamp:{self.beginTimestamp} EndTimestamp:{self.endTimestamp} Name:{self.name}"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"---==[  {self.name}  ]==---"
 
-    def double_str(self, other):
-        return f"---==[  {self.name}  ]=[  {other.name}  ]==---"
+    def double_str(self, other: object) -> str:
+        if isinstance(other, Section):
+            return f"---==[  {self.name}  ]=[  {other.name}  ]==---"
+        return f"{self} | {other}\n-# Did not receive correct custom section"
 
     def __eq__(self, other: object):
         return (isinstance(other, Section) and self.beginTimestamp == other.beginTimestamp
@@ -78,7 +78,7 @@ class Section:
                      (self.calendarId, self.beginTimestamp, self.endTimestamp, self.name))
 
     def fetch(self, calendar_id: int, begin_timestamp: int):
-        self.__init__(Db().fetch_all("SELECT * FROM sections WHERE CalendarId = ? AND BeginTimestamp = ?",
+        self.__init__(Db().fetch_one("SELECT * FROM sections WHERE CalendarId = ? AND BeginTimestamp = ?",
                                      (calendar_id, begin_timestamp)))
 
     def delete(self):
@@ -107,7 +107,7 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
 
     if check.date() >= now.date():
         if custom_sections:
-            custom_sections.sort(key=lambda s: s.timestamp, reverse=True)
+            custom_sections.sort(key=lambda section: section.beginTimestamp, reverse=True)
             for custom_section in custom_sections:
                 if custom_section.beginTimestamp <= timestamp <= custom_section.endTimestamp:
                     selected_custom_section = custom_section
@@ -119,15 +119,3 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
                 selected_section = section
                 break
     return selected_section, selected_custom_section
-
-
-def format_section_options(sections: list[Section]) -> list[SelectOption]:
-    options = []
-    for section in sections:
-        options.append(SelectOption(
-            label=section.name,
-            description=f"Zaczyna się {section.begin_date}"
-                        f"{f', a kończy {section.end_date}' if section.end_date else ''}",
-            value=f"{section.calendarId}.{section.beginTimestamp}"
-        ))
-    return options
