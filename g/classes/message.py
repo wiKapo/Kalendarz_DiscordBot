@@ -22,6 +22,9 @@ class Message:
     def __repr__(self):
         return f"Message [{self.id}]: Event[{self.calendarId}] {self.timestamp} {self.deleteBy} {self.message}"
 
+    def __str__(self):
+        return f"- {self.message}"
+
     def set_time(self, delay_in_days: int = 1):
         current_time = datetime.now()
         self.timestamp = int(current_time.timestamp())

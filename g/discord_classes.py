@@ -155,9 +155,9 @@ class UpdateMessageView(discord.ui.View):
         if not messages:
             await interaction.response.send_message("Brak zmian do pokazania", ephemeral=True)
         else:
-            result = "### Ostatnie zmiany w kalendarzu:\n"
+            result = "## Ostatnie zmiany w kalendarzu:\n"
             for message in messages:
-                result += f"- {message.message}\n"
+                result += str(message) + "\n"
             await interaction.response.send_message(result, ephemeral=True)
 
     async def get_ping_role(self, interaction: discord.Interaction):

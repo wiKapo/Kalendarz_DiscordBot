@@ -32,7 +32,13 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
-            message.message = "**Aktualizacja kalendarza** UWAGA Usunięto wszystkie sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
+            message.message = "**Aktualizacja kalendarza** Możliwe jest dodawanie jednego wydarzenia do wielu kalendarzy"
+            message.insert_with_check()
+            message.message = "**Aktualizacja kalendarza** Zaktualizowanie opisu kalendarza, który teraz pojawia się zawsze. Jest niezależny od roli aktualizacji kalendarza"
+            message.insert_with_check()
+            message.message = "**Aktualizacja kalendarza** Wydzielono tworzenie niestandardowych sekcji do oddzielnej komendy `/section`"
+            message.insert_with_check()
+            message.message = "**Aktualizacja kalendarza** ***UWAGA*** Usunięto wszystkie dotychczas utworzone sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
