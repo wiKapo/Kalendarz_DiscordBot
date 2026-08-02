@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import discord
 
@@ -43,7 +43,8 @@ class SectionAddModal(discord.ui.Modal):
         self.add_item(discord.ui.Label(text="Podaj datę rozpoczęcia sekcji", component=self.begin_date_input))
 
         self.end_date_input = discord.ui.TextInput(placeholder="Podaj datę zakończenia", required=False)
-        self.add_item(discord.ui.Label(text="Podaj datę zakończenia sekcji", component=self.end_date_input))
+        self.add_item(discord.ui.Label(text="Podaj datę zakończenia sekcji", component=self.end_date_input,
+                                       description="Domyślnie dwa tygodnie od daty rozpoczęcia"))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         section = Section()
@@ -61,6 +62,9 @@ class SectionAddModal(discord.ui.Modal):
             if section.endTimestamp < datetime.now().timestamp():
                 logger.error("Section end date is in the past")
                 raise ValueError("Section end date is in the past")
+        else:
+            section.endTimestamp = int(
+                (datetime.fromtimestamp(section.beginTimestamp) + timedelta(weeks=2)).timestamp())
 
         section.calendarId = self.calendar.id
         logger.info(f"Read section: {repr(section)}")
