@@ -4,7 +4,7 @@ from g.classes.db import Db
 
 
 class Event:
-    id: int
+    id: int = None
     timestamp: int
     wholeDay: bool
     name: str

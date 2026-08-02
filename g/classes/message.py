@@ -6,7 +6,7 @@ from g.classes.db import Db
 
 
 class Message:
-    id: int
+    id: int = None
     calendarId: int
     timestamp: int
     deleteBy: int

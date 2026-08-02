@@ -5,7 +5,7 @@ from g.classes.event import Event
 
 
 class Notification:
-    id: int
+    id: int = None
     userId: int
     eventId: int
     timestamp: int

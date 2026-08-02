@@ -9,7 +9,7 @@ DEFAULT_TITLE_RAW = "Kalendarz by wiKapo"
 
 
 class Calendar:
-    id: int
+    id: int = None
     title: str | None = None
     customSections: list[Section] = []
     eventIds: set[int] = set()
