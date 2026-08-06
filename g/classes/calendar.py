@@ -140,6 +140,15 @@ def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
     return []
 
 
+def fetch_calendars_from_ids(calendar_ids: set[int]) -> list[Calendar]:
+    calendars: list[Calendar] = []
+    for calendar_id in calendar_ids:
+        calendar = Calendar()
+        calendar.fetch(calendar_id)
+        calendars.append(calendar)
+    return calendars
+
+
 def fetch_all_calendars() -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars")
     if data:

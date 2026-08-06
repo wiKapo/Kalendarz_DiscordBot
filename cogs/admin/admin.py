@@ -103,7 +103,7 @@ class AdminCog(commands.Cog):
             logger.info("Success")
         except sqlite3.OperationalError as e:
             logger.error(f"Failed on purpose. Error: {e}")
-            await interaction.followup.send("Tabela `calendar` jest już zaktualizowana", ephemeral=True)
+            await interaction.followup.send("Tabela `calendars` jest już zaktualizowana", ephemeral=True)
         except Exception as e:
             logger.error(f"Failed. Error: {e} Type: {type(e)}")
             await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
@@ -156,7 +156,12 @@ class AdminCog(commands.Cog):
 
         try:
             logger.info("Updating sections table")
-            Db().execute("DROP TABLE IF EXISTS sections")
+            data = Db().fetch_all("PRAGMA table_info(sections)")
+            print(data)
+            if len(data) > 3:
+                raise sqlite3.OperationalError("OK")
+
+            Db().execute("DROP TABLE IF EXISTS sections ")
             Db().execute("CREATE TABLE IF NOT EXISTS sections ("
                          "CalendarId INT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE, "
                          "BeginTimestamp INT NOT NULL,"

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from g.classes.calendar import fetch_calendars_from_ids
 from g.classes.db import Db
 from g.classes.event import Event
 
@@ -25,11 +26,15 @@ class Notification:
     def __str__(self):
         event = Event()
         event.fetch(self.eventId)
+        calendars = sorted(fetch_calendars_from_ids(event.calendarIds), key=lambda x: x.id)
+        ids = [str(x.id) for x in calendars]
 
         return (f"Powiadomienie o wydarzeniu [{event}]\n"
                 f"Odbędzie się <t:{event.timestamp}:R>\n"
-                f"-# Z kalendarza znajdującego się na serwerze: https://discord.com/channels/{event.get_guild_id()}\n"
-                f"{self.description if self.description else ""}")
+                f"-# Z kalendarz{'a' if len(calendars) == 1 else 'y'} {', '.join(ids)}\n"
+                f"{self.description if self.description else ""}\n"
+                f"Linki do kalendarzy: {', '.join(
+                    map(lambda x: f'[{x.id}] https://discord.com/channels/{x.guildId}/{x.channelId}/{x.messageId}', calendars))}")
 
     def fetch(self, notification_id: int):
         data = Db().fetch_one("SELECT * FROM notifications WHERE Id=?", (notification_id,))
