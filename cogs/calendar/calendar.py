@@ -7,22 +7,26 @@ from cogs.calendar.create import calendar_create
 from cogs.calendar.delete import calendar_delete
 from cogs.calendar.edit import calendar_edit
 from cogs.calendar.update import calendar_update
-from g.classes.calendar import fetch_all_calendars
-from g.classes.event import fetch_outdated_events
+from g.classes.calendar import fetch_all_calendars, fetch_all_notifications, Calendar
+from g.classes.event import fetch_outdated_events, fetch_events_from_ids
 from g.classes.logger import get_logger, LogType
 from g.classes.section import fetch_outdated_sections
+from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week
 from g.util import check_user, send_error_message
 
 UPDATE_TIME = time()
+NOTIFICATION_TIME = time(hour=7, minute=0, second=0)
 
 
 class CalendarCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.update_loop.start()
+        self.notification_loop.start()
 
     def cog_unload(self):
         self.update_loop.cancel()
+        self.notification_loop.cancel()
 
     @tasks.loop(time=UPDATE_TIME)
     async def update_loop(self):
@@ -62,6 +66,59 @@ class CalendarCog(commands.Cog):
 
             await calendar_message.edit(content=str(calendar))
         logger.info("Updated all calendars")
+
+    @tasks.loop(time=NOTIFICATION_TIME)
+    async def notification_loop(self):
+        notifications: dict[int, set[Calendar]] = fetch_all_notifications()
+        print(notifications)
+        for user_id in notifications:
+            calendars = notifications[user_id]
+            event_ids = set().union(*(calendar.eventIds for calendar in calendars))
+            # Getting all event ids from all calendars user has notifications for
+
+            today = datetime.now().replace(hour=0, minute=0, second=0)
+            events = list(filter(lambda e: today.timestamp() < e.timestamp < (today + timedelta(weeks=3)).timestamp(),
+                                 fetch_events_from_ids(event_ids)))  # Filtering events that are in the next 2 weeks
+            events.sort(key=lambda e: e.timestamp)
+
+            calendar_ids = set().union(*(event.calendarIds for event in events))
+            calendars = list(filter(lambda c: c.id in calendar_ids, calendars))
+            # Filtering calendars that have events in the next 2 weeks
+
+            notification_message = ""
+            section_number = 0
+            for event in events:
+                event_date = datetime.fromtimestamp(event.timestamp)
+                if section_number <= 1 and is_today(event_date):
+                    if section_number == 0:
+                        notification_message += f"# Wydarzenia dzisiaj\n"
+                    section_number = 1
+
+                elif section_number <= 2 and is_tomorrow(event_date):
+                    if section_number < 2:
+                        notification_message += f"## Wydarzenia jutro\n"
+                    section_number = 2
+
+                elif datetime.now().weekday() == 6:  # 6 == Sunday
+                    if section_number <= 7 and is_this_week(event_date):
+                        if section_number < 7:
+                            notification_message += f"### Wydarzenia w tym tygodniu\n"
+                        section_number = 7
+
+                    elif section_number <= 14 and is_next_week(event_date):
+                        if section_number < 14:
+                            notification_message += f"### Wydarzenia w następnym tygodniu\n"
+                        section_number = 14
+
+                else:
+                    print("ERROR in notification_loop")
+
+                notification_message += f"{event}\n"
+
+            if events:
+                notification_message += f"\nZ kalendarz{'a' if len(calendars) == 1 else 'y'} {', '.join(map(lambda c: f'[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})', calendars))}\n"
+
+            await self.bot.get_user(user_id).send(notification_message)
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 

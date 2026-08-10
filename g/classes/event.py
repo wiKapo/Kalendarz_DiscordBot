@@ -130,6 +130,15 @@ def fetch_events_from_guild(guild_id: int) -> list[Event]:
     return [Event(x) for x in data]
 
 
+def fetch_events_from_ids(event_ids: set[int]) -> list[Event]:
+    events: list[Event] = []
+    for event_id in event_ids:
+        event = Event()
+        event.fetch(event_id)
+        events.append(event)
+    return events
+
+
 def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
     data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
     return [Event(x) for x in data]

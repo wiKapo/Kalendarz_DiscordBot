@@ -2,15 +2,16 @@ from collections.abc import Callable
 from datetime import datetime
 
 from g.classes.db import Db
+from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week, is_this_month, is_next_month
 
-DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime, datetime], bool]] = {
-    1: lambda now, check: now.day == check.day and now.month == check.month and now.year == check.year,
-    2: lambda now, check: now.day + 1 == check.day and now.month == check.month and now.year == check.year,
-    3: lambda now, check: now.isocalendar()[1] == check.isocalendar()[1] and now.year == check.year,
-    4: lambda now, check: now.isocalendar()[1] + 1 == check.isocalendar()[1] and now.year == check.year,
-    5: lambda now, check: now.month == check.month and now.year == check.year,
-    6: lambda now, check: now.month + 1 == check.month and now.year == check.year,
-    99: lambda now, check: True
+DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime], bool]] = {
+    1: lambda check: is_today(check),
+    2: lambda check: is_tomorrow(check),
+    3: lambda check: is_this_week(check),
+    4: lambda check: is_next_week(check),
+    5: lambda check: is_this_month(check),
+    6: lambda check: is_next_month(check),
+    99: lambda check: True
 }
 
 DATE_FORMAT = "%d.%m.%Y"
@@ -115,7 +116,7 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
 
         for section in DEFAULT_SECTIONS:
             rule = DEFAULT_SECTIONS_RULES.get(section.beginTimestamp)
-            if rule(now, check):
+            if rule(check):
                 selected_section = section
                 break
     return selected_section, selected_custom_section

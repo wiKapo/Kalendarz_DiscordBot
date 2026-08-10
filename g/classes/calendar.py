@@ -28,8 +28,11 @@ class Calendar:
         if data is not None:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.descriptionMessageId = data
-            self.get_events()
-            self.fetch_sections()
+            event_ids = Db().fetch_all("SELECT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))
+            for event_id in event_ids:
+                self.eventIds.add(event_id[0])
+            custom_sections = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
+            self.customSections = [Section(x) for x in custom_sections]
 
     def __repr__(self):
         event_amount = Db().fetch_one("SELECT COUNT(*) FROM eventsInCalendars WHERE CalendarId=?", (self.id,))[0]
@@ -101,19 +104,10 @@ class Calendar:
 
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
 
-    def get_events(self):
-        event_ids = Db().fetch_all("SELECT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))
-        for event_id in event_ids:
-            self.eventIds.add(event_id)
-
     def fetch_events(self) -> list[Event]:
         data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars eic on events.Id = eic.EventId "
                               "WHERE CalendarId=? ORDER BY Timestamp", (self.id,))
         return [Event(e) for e in data]
-
-    def fetch_sections(self):
-        data = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))
-        self.customSections = [Section(x) for x in data]
 
     def update_sections(self):
         delete_all_sections(self.id)
