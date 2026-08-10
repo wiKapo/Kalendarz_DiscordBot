@@ -61,12 +61,9 @@ async def on_ready():
                      'PRIMARY KEY (GuildId, RoleId)'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
-                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
                      'UserId BIGINT NOT NULL,'
-                     'EventId INTEGER NOT NULL REFERENCES events(Id) ON DELETE CASCADE,'
-                     'Timestamp INT NOT NULL,'
-                     'TimeTag TEXT NOT NULL,'
-                     'Description TEXT'
+                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                     'PRIMARY KEY (UserId, CalendarId)'
                      ');')
         Db().execute('CREATE TABLE IF NOT EXISTS messages ('
                      'Id INTEGER PRIMARY KEY AUTOINCREMENT,'

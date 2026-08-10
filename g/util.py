@@ -2,13 +2,12 @@ import os
 
 import discord
 from discord import Guild
-from discord.ext.commands import Bot
 
 from g.classes.calendar import Calendar
 from g.classes.db import Db
 from g.classes.logger import LogType, get_logger
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
-from g.discord_classes import UpdateMessageView, NotificationButtonsView
+from g.discord_classes import UpdateMessageView
 
 BOT_VERSION = "v0.12"  # TODO ALWAYS UPDATE ME
 
@@ -82,23 +81,10 @@ async def send_error_message(interaction: discord.Interaction, error):
             f"na kanale: https://discord.com/channels/1479867817015771136/1479868335297527899", ephemeral=True)
 
 
-# --------- For notification button actions ---------
-
-async def send_notification_add(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("add").callback(bot, interaction)
-
-
-async def send_notification_list(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("list").callback(bot, interaction)
-
-
-async def send_notification_delete(bot: Bot, interaction: discord.Interaction):
-    await bot.get_cog("NotificationCog").get_app_commands()[0].get_command("delete").callback(bot, interaction)
-
-
 # --------- update message handling ---------
 
-async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: bool = False):
+async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: bool = False,
+                          update_text: str | None = None):
     from datetime import datetime
 
     logger = get_logger(LogType.CALENDAR, calendar.id)
@@ -114,29 +100,7 @@ async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: 
     await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
     logger.info("Updated calendar message")
 
-    await create_calendar_description(channel, calendar, quiet=quiet)
-
-
-# --------- only for /update_all command ---------
-
-async def admin_update_calendar(bot: Bot, calendar: Calendar):
-    logger = get_logger(LogType.CALENDAR, calendar.id)
-
-    channel = await (await bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId)
-
-    logger.info(
-        f"Admin is updating calendar{" " + calendar.title if calendar.title else ""} "
-        f"in [{channel.guild.name} - {calendar.guildId}] in [{channel.name} - {channel.id}]")
-
-    actions = [send_notification_add, send_notification_list, send_notification_delete]
-
-    await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar),
-                                                                 view=NotificationButtonsView(bot, actions))
-
-    await create_calendar_description(channel, calendar,
-                                      f"**Kalendarz został zaktualizowany do najnowszej wersji**\n"
-                                      f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
-                                      f"lub pod przyciskiem `Pokaż ostatnie zmiany`\n")
+    await create_calendar_description(channel, calendar, quiet=quiet, update_text=update_text)
 
 
 # --------- Create calendar description ---------

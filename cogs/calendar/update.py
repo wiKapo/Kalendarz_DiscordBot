@@ -1,13 +1,12 @@
 import discord
-from discord.ext.commands import Bot
 
-from cogs.calendar.util import update_notification_buttons
+from cogs.calendar.util import update_calendar_buttons
 from g.classes.calendar import Calendar
 from g.classes.logger import get_logger, LogType
 from g.util import check_if_calendar_exists, update_calendar
 
 
-async def calendar_update(interaction: discord.Interaction, bot: Bot, quiet: bool):
+async def calendar_update(interaction: discord.Interaction, quiet: bool):
     if not await check_if_calendar_exists(interaction):
         return
 
@@ -17,6 +16,6 @@ async def calendar_update(interaction: discord.Interaction, bot: Bot, quiet: boo
     logger.info("Updating calendar using slash command")
 
     await update_calendar(interaction.guild, calendar, interaction.user.name, quiet)
-    await update_notification_buttons(bot, interaction, calendar)
+    await update_calendar_buttons(interaction.guild, calendar)
 
     await interaction.response.send_message('Kalendarz został zaktualizowany', ephemeral=True)

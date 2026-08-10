@@ -2,11 +2,10 @@ from datetime import datetime, timedelta
 
 import discord
 
-from cogs.notification.list import SelectCalendarView
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
 from g.classes.logger import get_logger, LogType
 from g.classes.section import Section
-from g.discord_classes import SelectSectionView
+from g.discord_classes import SelectSectionView, SelectCalendarView
 from g.util import update_calendar
 
 

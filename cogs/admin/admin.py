@@ -3,11 +3,12 @@ import sqlite3
 import discord
 from discord.ext import commands
 
+from cogs.calendar.util import update_calendar_buttons
 from g.classes.calendar import fetch_all_calendars
 from g.classes.db import Db
 from g.classes.logger import get_logger
 from g.classes.message import Message
-from g.util import check_calendar_admin, admin_update_calendar
+from g.util import check_calendar_admin, update_calendar
 
 
 class AdminCog(commands.Cog):
@@ -43,7 +44,14 @@ class AdminCog(commands.Cog):
             logger.info("Sent update message")
 
             try:
-                await admin_update_calendar(self.bot, calendar)
+                guild = await self.bot.fetch_guild(calendar.guildId)
+                await update_calendar(guild, calendar, interaction.user.name, True,
+                                      f"**Kalendarz został zaktualizowany do najnowszej wersji**\n"
+                                      f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
+                                      f"lub pod przyciskiem `Pokaż ostatnie zmiany`\n")
+                await update_calendar_buttons(guild, calendar)
+
+                await interaction.followup.send(f"Zaktualizowano kalendarz #{calendar.id}", ephemeral=True)
             except Exception as e:
                 logger.error(f"Error: {e}", exc_info=True)
                 await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{repr(calendar)}\n"
@@ -99,7 +107,8 @@ class AdminCog(commands.Cog):
         try:
             logger.info("Updating calendars table. Removing ShowSections column")
             Db().execute("ALTER TABLE calendars DROP COLUMN ShowSections")
-            await interaction.followup.send("Zaktualizowano tabelę `calendars`. Usunięto kolumnę `ShowSections", ephemeral=True)
+            await interaction.followup.send("Zaktualizowano tabelę `calendars`. Usunięto kolumnę `ShowSections",
+                                            ephemeral=True)
             logger.info("Success")
         except sqlite3.OperationalError as e:
             logger.error(f"Failed on purpose. Error: {e}")
@@ -184,11 +193,37 @@ class AdminCog(commands.Cog):
             logger.info("Changing the name of field PingMessageId in calendars table")
             Db().execute('ALTER TABLE calendars RENAME PingMessageId TO DescriptionMessageId')
             logger.info("Finished")
-            await interaction.followup.send(f"Zaktualizowano tabelę `calendars`. Zmieniono pole `PingMessageId` na `DescriptionMessageId`", ephemeral=True)
+            await interaction.followup.send(
+                f"Zaktualizowano tabelę `calendars`. Zmieniono pole `PingMessageId` na `DescriptionMessageId`",
+                ephemeral=True)
 
         except sqlite3.OperationalError as e:
             logger.error(f"Failed on purpose. Error: {e}")
             await interaction.followup.send(f"Tabela `calendars` została już zaktualizowana", ephemeral=True)
+        except Exception as e:
+            logger.error(f"Failed. Error: {e} Type: {type(e)}")
+            await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
+            return
+
+        try:
+            logger.info("Removing notifications table")
+            data = Db().fetch_all("PRAGMA table_info(sections)")
+            print(data)
+            if 0 < len(data) <= 2:
+                raise sqlite3.OperationalError("OK")
+
+            Db().execute("DROP TABLE IF EXISTS notifications")
+            Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
+                         'UserId BIGINT NOT NULL,'
+                         'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
+                         'PRIMARY KEY (UserId, CalendarId)'
+                         ');')
+            logger.info("Done")
+            await interaction.followup.send("Zmieniono tabelę `notifications`", ephemeral=True)
+
+        except sqlite3.OperationalError as e:
+            logger.error(f"Failed on purpose. Error: {e}")
+            await interaction.followup.send(f"Tabela `notifications` została już zmodyfikowana", ephemeral=True)
         except Exception as e:
             logger.error(f"Failed. Error: {e} Type: {type(e)}")
             await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)

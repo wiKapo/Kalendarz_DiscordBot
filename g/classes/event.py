@@ -108,7 +108,6 @@ class Event:
     def delete(self):
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
         Db().execute("DELETE FROM eventsInCalendars WHERE EventId=?", (self.id,))
-        Db().execute("DELETE FROM notifications WHERE EventId=?", (self.id,))
 
     def remove_calendar(self, calendar_id: int):
         if calendar_id in self.calendarIds:

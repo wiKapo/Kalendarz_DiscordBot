@@ -88,35 +88,6 @@ class SelectSectionView(discord.ui.View):
         self.add_item(SelectSection(placeholder="Wybierz sekcję", action=action, sections=sections))
 
 
-class NotificationButton(discord.ui.Button):
-    action: Callable
-    bot: Bot
-
-    def __init__(self, label: str, style: discord.ButtonStyle, bot: Bot, action: Callable):
-        super().__init__(label=label, style=style)
-        self.action = action
-        self.bot = bot
-
-    async def callback(self, interaction: discord.Interaction):
-        try:
-            await self.action(self.bot, interaction)
-        except Exception as e:
-            await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            logger = logging.getLogger("default")
-            logger.error(f"in callback of NotificationButton in [{interaction.guild.name} - {interaction.guild.id}] "
-                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
-
-
-class NotificationButtonsView(discord.ui.View):
-    def __init__(self, bot: Bot, actions: list[Callable]):
-        super().__init__(timeout=None)
-        self.add_item(
-            NotificationButton(label="Dodaj/Edytuj", style=discord.ButtonStyle.primary, bot=bot, action=actions[0]))
-        self.add_item(NotificationButton(label="Pokaż wszystkie", style=discord.ButtonStyle.secondary, bot=bot,
-                                         action=actions[1]))
-        self.add_item(NotificationButton(label="Usuń", style=discord.ButtonStyle.danger, bot=bot, action=actions[2]))
-
-
 class CalendarDescriptionButton(discord.ui.Button):
     def __init__(self, label: str, style: discord.ButtonStyle, action: Callable):
         self.action = action

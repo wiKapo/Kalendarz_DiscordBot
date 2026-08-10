@@ -19,13 +19,7 @@ class Calendar:
     pingRoleId: int | None = None
     descriptionMessageId: int | None = None
     guildName: str
-    """
-    Only for displaying in notifications
-    """
     channelName: str
-    """
-    Only for displaying in notifications
-    """
 
     def __init__(self, data: list | None = None):
         """
@@ -79,8 +73,6 @@ class Calendar:
                 if not current_section:
                     message += "~~"
 
-        message += "\n\nZarządzaj powiadomieniami przyciskami poniżej"
-
         return message
 
     def fetch(self, calendar_id: int):
@@ -131,6 +123,29 @@ class Calendar:
     async def get_additional_data(self, guild: Guild):
         self.guildName = guild.name
         self.channelName = (await guild.fetch_channel(self.channelId)).name
+
+    def get_notification(self, user_id: int) -> bool:
+        data = Db().fetch_one("SELECT * FROM notifications WHERE UserId=? AND CalendarId=?", (user_id, self.id))
+        return bool(data)
+
+    def delete_notification(self, user_id: int):
+        Db().execute("DELETE FROM notifications WHERE UserId=? AND CalendarId=?", (user_id, self.id))
+
+    def add_notification(self, user_id: int):
+        Db().execute("INSERT INTO notifications (UserId, CalendarId) VALUES (?, ?)", (user_id, self.id))
+
+
+def fetch_all_notifications() -> dict[int, set[Calendar]]:
+    calendars = fetch_all_calendars()
+    user_ids = Db().fetch_all("SELECT DISTINCT UserId FROM notifications")
+    user_ids = [u[0] for u in user_ids]
+    notify_calendars: list[set[Calendar]] = []
+    for user_id in user_ids:
+        calendar_ids = Db().fetch_all("SELECT DISTINCT CalendarId FROM notifications WHERE UserId=?", (user_id,))
+        calendar_ids = [c[0] for c in calendar_ids]
+        notify_calendars.append(set(filter(lambda x: x.id in calendar_ids, calendars)))
+
+    return dict(zip(user_ids, notify_calendars))
 
 
 def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:

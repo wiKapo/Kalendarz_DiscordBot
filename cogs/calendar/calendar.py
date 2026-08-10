@@ -69,7 +69,7 @@ class CalendarCog(commands.Cog):
     @discord.app_commands.describe(title="Tytuł kalendarza")
     @discord.app_commands.check(check_user)
     async def create(self, interaction: discord.Interaction, title: str | None):
-        await calendar_create(self.bot, interaction, title)
+        await calendar_create(interaction, title)
 
     @create.error
     async def create_error(self, interaction: discord.Interaction, error):
@@ -80,7 +80,7 @@ class CalendarCog(commands.Cog):
                                          discord.app_commands.Choice(name="Nie", value=False)])
     @discord.app_commands.check(check_user)
     async def update(self, interaction: discord.Interaction, quiet: discord.app_commands.Choice[int] | None):
-        await calendar_update(interaction, self.bot, bool(not quiet or quiet.value))
+        await calendar_update(interaction, bool(not quiet or quiet.value))
 
     @update.error
     async def update_error(self, interaction: discord.Interaction, error):

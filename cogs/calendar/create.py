@@ -1,13 +1,12 @@
 import discord
-from discord.ext.commands import Bot
 
-from cogs.calendar.util import update_notification_buttons
+from cogs.calendar.util import update_calendar_buttons
 from g.classes.calendar import Calendar
 from g.classes.logger import get_logger, LogType
 from g.util import update_calendar
 
 
-async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str = None):
+async def calendar_create(interaction: discord.Interaction, title: str = None):
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
@@ -17,8 +16,7 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
                     f" in [{interaction.channel.name} - {interaction.channel.id}]")
 
         try:
-            await (await (await bot.fetch_guild(interaction.guild_id))
-                   .fetch_channel(interaction.channel_id)).fetch_message(calendar.messageId)
+            await (await interaction.guild.fetch_channel(interaction.channel_id)).fetch_message(calendar.messageId)
 
         except discord.NotFound:
             await recreate_calendar(interaction, calendar)
@@ -46,11 +44,10 @@ async def calendar_create(bot: Bot, interaction: discord.Interaction, title: str
         calendar.messageId = calendar_msg.id
         calendar.insert()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        await calendar.get_additional_data(interaction.guild)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
 
         await update_calendar(interaction.guild, calendar, interaction.user.name)
-        await update_notification_buttons(bot, interaction, calendar)
+        await update_calendar_buttons(interaction.guild, calendar)
 
         await interaction.response.send_message(
             "## Stworzono kalendarz\n"
