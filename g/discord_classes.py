@@ -128,7 +128,7 @@ class UpdateMessageView(discord.ui.View):
         else:
             result = "## Ostatnie zmiany w kalendarzu:\n"
             for message in messages:
-                result += str(message) + "\n"
+                result += "- " + str(message) + "\n"
             await interaction.response.send_message(result, ephemeral=True)
 
     async def get_ping_role(self, interaction: discord.Interaction):
