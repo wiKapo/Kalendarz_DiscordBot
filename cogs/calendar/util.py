@@ -35,10 +35,6 @@ async def update_notification(interaction: discord.Interaction):
             "Powiadomienia będą wykonywane jako wiadomość prywatna od kalendarza", ephemeral=True)
 
 
-async def connect_to_google_calendar(interaction: discord.Interaction):
-    await interaction.response.send_message("WIP", ephemeral=True)  # TODO WIP
-
-
 class NotificationButton(discord.ui.Button):
 
     def __init__(self, label: str, style: discord.ButtonStyle, action: Callable):
@@ -61,6 +57,3 @@ class NotificationButtonsView(discord.ui.View):
         self.add_item(
             NotificationButton(label="Otrzymuj powiadomienia o nadchodzących wydarzeniach",
                                style=discord.ButtonStyle.primary, action=update_notification))
-        self.add_item(
-            NotificationButton(label="Eksportuj do kalendarza Google", style=discord.ButtonStyle.secondary,
-                               action=connect_to_google_calendar))
