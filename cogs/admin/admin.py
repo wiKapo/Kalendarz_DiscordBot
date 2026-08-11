@@ -35,11 +35,15 @@ class AdminCog(commands.Cog):
             message.set_time(5)
             message.message = "**Aktualizacja kalendarza** Możliwe jest dodawanie jednego wydarzenia do wielu kalendarzy"
             message.insert_with_check()
-            message.message = "**Aktualizacja kalendarza** Zaktualizowanie opisu kalendarza, który teraz pojawia się zawsze. Jest niezależny od roli aktualizacji kalendarza"
+            message.message = "**Aktualizacja kalendarza** Zaktualizowano opis kalendarza, który teraz pojawia się zawsze. Jest niezależny od roli aktualizacji kalendarza"
             message.insert_with_check()
-            message.message = "**Aktualizacja kalendarza** Wydzielono tworzenie niestandardowych sekcji do oddzielnej komendy `/section`"
+            message.message = "**Aktualizacja kalendarza** Wydzielono tworzenie niestandardowych sekcji do komendy `/section`"
             message.insert_with_check()
-            message.message = "**Aktualizacja kalendarza** ***UWAGA*** Usunięto wszystkie dotychczas utworzone sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
+            message.message = ("**Aktualizacja kalendarza** Zmieniono działanie powiadomień. Teraz można zaznaczyć chęć otrzymywania powiadomień przez przycisk pod kalendarzem. "
+                               "Powiadomienia zostają wysyłane w dniu lub dzień przed wydarzeniem. W niedzielę zostaje wysłane większe powiadomienie, które zawiera wydarzenia z najbliższego tygodnia i następnego. "
+                               "Powiadomienia są wysyłane o godzinie 08:00.")
+            message.insert_with_check()
+            message.message = "**Aktualizacja kalendarza** ***UWAGA*** Usunięto wszystkie utworzone niestandardowe sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
@@ -48,7 +52,7 @@ class AdminCog(commands.Cog):
                 await update_calendar(guild, calendar, interaction.user.name, True,
                                       f"**Kalendarz został zaktualizowany do najnowszej wersji**\n"
                                       f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
-                                      f"lub pod przyciskiem `Pokaż ostatnie zmiany`\n")
+                                      f"i pod przyciskiem `Pokaż ostatnie zmiany`\n")
                 await update_calendar_buttons(guild, calendar)
 
                 await interaction.followup.send(f"Zaktualizowano kalendarz #{calendar.id}", ephemeral=True)
@@ -232,6 +236,17 @@ class AdminCog(commands.Cog):
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):
         await no_permissions_message(interaction, error)
+
+    # @admin_group.command(name="test", description="Testowanie")
+    # @discord.app_commands.check(check_calendar_admin)
+    # async def test(self, interaction: discord.Interaction):
+    #     test = fetch_all_notifications()
+    #     print(test)
+    #     await interaction.response.send_message("Test", ephemeral=True)
+    #
+    # @test.error
+    # async def test_error(self, interaction: discord.Interaction, error):
+    #     await no_permissions_message(interaction, error)
 
 
 async def setup(bot):
