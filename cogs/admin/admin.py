@@ -40,8 +40,8 @@ class AdminCog(commands.Cog):
             message.message = "**Aktualizacja kalendarza** Wydzielono tworzenie niestandardowych sekcji do komendy `/section`"
             message.insert_with_check()
             message.message = ("**Aktualizacja kalendarza** Zmieniono działanie powiadomień. Teraz można zaznaczyć chęć otrzymywania powiadomień przez przycisk pod kalendarzem. "
-                               "Powiadomienia zostają wysyłane w dniu lub dzień przed wydarzeniem. W niedzielę zostaje wysłane większe powiadomienie, które zawiera wydarzenia z najbliższego tygodnia i następnego. "
-                               "Powiadomienia są wysyłane o godzinie 08:00.")
+                               "Powiadomienia zostają wysyłane w dniu lub dzień przed wydarzeniem. W niedzielę zostaje wysłane większe powiadomienie, które zawiera wydarzenia z najbliższego i następnego tygodnia. "
+                               "Powiadomienia są wysyłane o godzinie 7:00.")
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** ***UWAGA*** Usunięto wszystkie utworzone niestandardowe sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()

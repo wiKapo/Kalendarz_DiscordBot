@@ -31,8 +31,10 @@ async def update_notification(interaction: discord.Interaction):
         calendar.add_notification(interaction.user.id)
         await interaction.response.send_message(
             "Będziesz otrzymywał powiadomienia o nadchodzących wydarzeniach z tego kalendarza\n"
-            "Powiadomienia będą przychodzić dwa tygodnie, tydzień, dzień przed oraz w dzień wydarzenia\n"
-            "Powiadomienia będą wykonywane jako wiadomość prywatna od kalendarza", ephemeral=True)
+            "Powiadomienia będą wysyłane w dniu lub dzień przed wydarzeniem.\n"
+            "W niedzielę będzie wysłane większe powiadomienie, które zawierać będzie również wydarzenia z najbliższego i następnego tygodnia\n"
+            "Powiadomienia będą wykonywane jako wiadomość prywatna od kalendarza, które będą przychodzić o godzinie 7:00",
+            ephemeral=True)
 
 
 class NotificationButton(discord.ui.Button):
