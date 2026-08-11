@@ -12,7 +12,7 @@ class Calendar:
     id: int = None
     title: str | None = None
     customSections: list[Section] = []
-    eventIds: set[int] = set()
+    eventIds: set[int] = None
     guildId: int
     channelId: int
     messageId: int
@@ -28,7 +28,8 @@ class Calendar:
         if data is not None:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.descriptionMessageId = data
-            event_ids = Db().fetch_all("SELECT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))
+            event_ids = Db().fetch_all("SELECT DISTINCT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))
+            self.eventIds = set()
             for event_id in event_ids:
                 self.eventIds.add(event_id[0])
             custom_sections = Db().fetch_all("SELECT * FROM sections WHERE calendarId=?", (self.id,))

@@ -10,7 +10,7 @@ class Event:
     name: str
     team: str | None = None
     place: str | None = None
-    calendarIds: set[int] = set()
+    calendarIds: set[int] = None
 
     def __init__(self, data: list | None = None):
         """
@@ -18,7 +18,9 @@ class Event:
         """
         if data is not None:
             self.id, self.timestamp, self.wholeDay, self.name, self.team, self.place = data
-            calendar_ids = Db().fetch_all("SELECT CalendarId FROM eventsInCalendars WHERE EventId=?", (self.id,))
+            calendar_ids = Db().fetch_all("SELECT DISTINCT CalendarId FROM eventsInCalendars WHERE EventId=?",
+                                          (self.id,))
+            self.calendarIds = set()
             for calendar_id in calendar_ids:
                 self.calendarIds.add(calendar_id[0])
 
@@ -142,3 +144,10 @@ def fetch_events_from_ids(event_ids: set[int]) -> list[Event]:
 def fetch_outdated_events(cutoff_timestamp: int) -> list[Event]:
     data = Db().fetch_all("SELECT * FROM events WHERE Timestamp<? ORDER BY Timestamp", (cutoff_timestamp,))
     return [Event(x) for x in data]
+
+
+def fetch_all_events() -> list[Event]:
+    data = Db().fetch_all("SELECT * FROM events ORDER BY Timestamp")
+    if data:
+        return [Event(x) for x in data]
+    return []
