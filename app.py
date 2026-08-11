@@ -115,8 +115,7 @@ Można opcjonalnie podać nazwę kalendarza.
 Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
 W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
-`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, 
-która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
+`/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 `/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
 `/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
 
@@ -128,8 +127,7 @@ która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 ### ---==[ Polecenia wydarzeń ]==---
 `/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
 `/event edit` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
-`/event delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**.
-"""
+`/event delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**."""
     await interaction.response.send_message(message, ephemeral=True)
 
     message = """### ---==[ Polecenia menedżerów ]==---
@@ -139,18 +137,9 @@ Menedżerowie nie mogą dodawać nowych menedżerów.
 
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
     
-### ---==[ Polecenia powiadomień ]==---
-`/notification add` - Wysyła wiadomość z polem wyboru wydarzenia do którego ma dodać powiadomienia.
-Po wyborze wydarzenia otwiera okienko tworzenia powiadomień.
-(WIP) ~~`/notification edit` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia wysyła wiadomość z listą powiadomień przypisanych do tego wydarzenia.
-Podając `event_id` pokazuje od razu listę powiadomień. Po wyborze powiadomienia otwiera okienko edycji wybranego powiadomienia.~~
-`/notification delete` - Wysyła wiadomość z listą wydarzeń. Po wyborze wydarzenia otwiera okienko z listą powiadomień przypisanych do tego wydarzenia. 
-Po wyborze powiadomień usuwa je. **Tej operacji nie można cofnąć**.
-`/notification list` - Wysyła wiadomość z listą powiadomień użytkownika
-    
-    ### ---==[ Inne polecenia ]==---
-    `/about` - informacja o autorze
-    `/help` - pokazuje tą wiadomość"""
+### ---==[ Inne polecenia ]==---
+`/about` - informacja o autorze
+`/help` - pokazuje tą wiadomość"""
     await interaction.followup.send(message, ephemeral=True)
 
 
