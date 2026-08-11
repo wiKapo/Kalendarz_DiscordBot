@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from g.classes.db import Db
 from g.classes.logger import init_logger, get_logger
+from g.util import BOT_VERSION
 
 load_dotenv()
 
@@ -103,7 +104,12 @@ async def main():
 
 @bot.tree.command(name="about")
 async def about(interaction: discord.Interaction):
-    await interaction.response.send_message("Bot stworzony przez wiKapo", ephemeral=True)
+    await interaction.response.send_message(
+        "## Bot stworzony przez wiKapo.\n"
+        "Informacje o aktualizacjach i o znanych błędach są na tym serwerze: https://discord.gg/ayXkVwVkGA\n"
+        "Ten serwer jest również przeznaczony do dzielenia się własnymi projektami\n\n"
+        f"Wersja kalendarza: {BOT_VERSION}",
+        ephemeral=True)
 
 
 @bot.tree.command(name="help")
