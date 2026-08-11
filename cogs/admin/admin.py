@@ -6,7 +6,8 @@ from discord.ext import commands
 from cogs.calendar.util import update_calendar_buttons
 from g.classes.calendar import fetch_all_calendars
 from g.classes.db import Db
-from g.classes.logger import get_logger
+from g.classes.event import fetch_all_events
+from g.classes.logger import get_logger, LogType
 from g.classes.message import Message
 from g.util import check_calendar_admin, update_calendar
 
@@ -39,9 +40,10 @@ class AdminCog(commands.Cog):
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** Wydzielono tworzenie niestandardowych sekcji do komendy `/section`"
             message.insert_with_check()
-            message.message = ("**Aktualizacja kalendarza** Zmieniono działanie powiadomień. Teraz można zaznaczyć chęć otrzymywania powiadomień przez przycisk pod kalendarzem. "
-                               "Powiadomienia zostają wysyłane w dniu lub dzień przed wydarzeniem. W niedzielę zostaje wysłane większe powiadomienie, które zawiera wydarzenia z najbliższego i następnego tygodnia. "
-                               "Powiadomienia są wysyłane o godzinie 7:00.")
+            message.message = (
+                "**Aktualizacja kalendarza** Zmieniono działanie powiadomień. Teraz można zaznaczyć chęć otrzymywania powiadomień przez przycisk pod kalendarzem. "
+                "Powiadomienia zostają wysyłane w dniu lub dzień przed wydarzeniem. W niedzielę zostaje wysłane większe powiadomienie, które zawiera wydarzenia z najbliższego i następnego tygodnia. "
+                "Powiadomienia są wysyłane o godzinie 7:00.")
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** ***UWAGA*** Usunięto wszystkie utworzone niestandardowe sekcje i powiadomienia"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
@@ -247,6 +249,24 @@ class AdminCog(commands.Cog):
     # @test.error
     # async def test_error(self, interaction: discord.Interaction, error):
     #     await no_permissions_message(interaction, error)
+
+    @admin_group.command(name="prepare_event_loggers", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                                   "Tworzy komentarz do loggera każdego wydarzenia")
+    async def prepare_event_loggers(self, interaction: discord.Interaction):
+        await interaction.response.send_message("Tworzenie wpisów do loggerów wydarzeń", ephemeral=True)
+
+        events = fetch_all_events()
+        for event in events:
+            print(repr(event))
+            guild_id = event.get_guild_id()
+            logger = get_logger(LogType.EVENT, event.id)
+            logger.info(
+                f"In guild {(await self.bot.fetch_guild(guild_id)).name} ({guild_id}) in calendars {event.calendarIds}")
+        await interaction.followup.send("Utworzono wszystkie wpisy", ephemeral=True)
+
+    @prepare_event_loggers.error
+    async def prepare_event_loggers_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
 
 
 async def setup(bot):
