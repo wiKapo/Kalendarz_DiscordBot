@@ -214,7 +214,6 @@ class AdminCog(commands.Cog):
         try:
             logger.info("Removing notifications table")
             data = Db().fetch_all("PRAGMA table_info(sections)")
-            print(data)
             if 0 < len(data) <= 2:
                 raise sqlite3.OperationalError("OK")
 
@@ -250,22 +249,21 @@ class AdminCog(commands.Cog):
     # async def test_error(self, interaction: discord.Interaction, error):
     #     await no_permissions_message(interaction, error)
 
-    @admin_group.command(name="prepare_event_loggers", description="[TYLKO DLA ADMINÓW KALENDARZA] "
-                                                                   "Tworzy komentarz do loggera każdego wydarzenia")
-    async def prepare_event_loggers(self, interaction: discord.Interaction):
+    @admin_group.command(name="update_loggers", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                                   "Aktualizuje loggery")
+    async def update_loggers(self, interaction: discord.Interaction):
         await interaction.response.send_message("Tworzenie wpisów do loggerów wydarzeń", ephemeral=True)
 
         events = fetch_all_events()
         for event in events:
-            print(repr(event))
             guild_id = event.get_guild_id()
             logger = get_logger(LogType.EVENT, event.id)
             logger.info(
                 f"In guild {(await self.bot.fetch_guild(guild_id)).name} ({guild_id}) in calendars {event.calendarIds}")
-        await interaction.followup.send("Utworzono wszystkie wpisy", ephemeral=True)
+        await interaction.followup.send("Dopisano lokację każdego wydarzenia", ephemeral=True)
 
-    @prepare_event_loggers.error
-    async def prepare_event_loggers_error(self, interaction: discord.Interaction, error):
+    @update_loggers.error
+    async def update_loggers_error(self, interaction: discord.Interaction, error):
         await no_permissions_message(interaction, error)
 
 
