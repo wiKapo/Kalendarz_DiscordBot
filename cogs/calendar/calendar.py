@@ -33,7 +33,7 @@ class CalendarCog(commands.Cog):
         calendars = fetch_all_calendars()
         logger = get_logger(LogType.CALENDAR)
 
-        logger.info("Removing old events")
+        logger.info("Start of update loop")
         cutoff_timestamp = (
             int((datetime.now().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(weeks=1)).timestamp()))
         outdated_events = fetch_outdated_events(cutoff_timestamp)
@@ -46,7 +46,6 @@ class CalendarCog(commands.Cog):
         else:
             logger.info("No outdated events found")
 
-        logger.info("Removing old sections")
         outdated_sections = fetch_outdated_sections()
         if len(outdated_sections) > 0:
             logger.info(f"Deleting {len(outdated_sections)} old custom sections")
@@ -70,8 +69,15 @@ class CalendarCog(commands.Cog):
     @tasks.loop(time=NOTIFICATION_TIME)
     async def notification_loop(self):
         notifications: dict[int, set[Calendar]] = fetch_all_notifications()
-        print(notifications)
+        notification_logger = get_logger(LogType.NOTIFICATION)
+        notification_logger.info("Start of notification loop")
+
         for user_id in notifications:
+            user_name = (await self.bot.fetch_user(user_id)).name
+            user_logger = get_logger(LogType.USER, user_name)
+
+            notification_logger.info(f"Checking notifications for user {user_name} ({user_id})")
+            user_logger.info(f"Checking notifications")
             calendars = notifications[user_id]
             event_ids = set().union(*(calendar.eventIds for calendar in calendars))
             # Getting all event ids from all calendars user has notifications for
@@ -80,6 +86,8 @@ class CalendarCog(commands.Cog):
             events = list(filter(lambda e: today.timestamp() < e.timestamp < (today + timedelta(weeks=3)).timestamp(),
                                  fetch_events_from_ids(event_ids)))  # Filtering events that are in the next 2 weeks
             events.sort(key=lambda e: e.timestamp)
+            user_logger.info(f"Found {len(events)} events in the next 2 weeks")
+            user_logger.debug(events)
 
             calendar_ids = set().union(*(event.calendarIds for event in events))
             calendars = list(filter(lambda c: c.id in calendar_ids, calendars))
@@ -111,14 +119,18 @@ class CalendarCog(commands.Cog):
                         section_number = 14
 
                 else:
-                    print("ERROR in notification_loop")
+                    user_logger.warning(f"Event {event} has invalid date {event_date}")
 
                 notification_message += f"{event}\n"
+                user_logger.info("Prepared main part of notification message")
 
             if events:
                 notification_message += f"\nZ kalendarz{'a' if len(calendars) == 1 else 'y'} {', '.join(map(lambda c: f'[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})', calendars))}\n"
+            user_logger.info("Prepared final part of notification message")
 
             await self.bot.get_user(user_id).send(notification_message)
+            user_logger.info("Sent notification")
+        notification_logger.info("Finished notification loop")
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 

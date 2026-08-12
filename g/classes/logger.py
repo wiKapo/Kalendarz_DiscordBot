@@ -8,6 +8,7 @@ class LogType(Enum):  # when adding something that will need a new folder, add i
     CALENDAR = "calendar"
     USER = "user"
     EVENT = "event"
+    NOTIFICATION = "notification"
 
 
 def init_logger():
@@ -23,10 +24,12 @@ def get_logger(log_type: LogType = LogType.DEFAULT, data: str | None = None) -> 
     match log_type:
         case LogType.CALENDAR | LogType.USER | LogType.EVENT:
             logger_name = f"{log_type.value}_{data if data else "default"}"
+        case LogType.NOTIFICATION:
+            logger_name = f"{log_type.value}"
         case LogType.DEFAULT | _:
             logger_name = "default"
 
-    folder = "" if log_type is LogType.DEFAULT else f"{log_type.value}/"
+    folder = "" if log_type in (LogType.DEFAULT, LogType.NOTIFICATION) else f"{log_type.value}/"
 
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.DEBUG)
