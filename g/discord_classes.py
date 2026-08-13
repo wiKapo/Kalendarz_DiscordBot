@@ -21,7 +21,7 @@ class SelectEvent(discord.ui.Select):
     events: list[Event]
 
     def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
-        options = format_event_options(events)  # TODO value changed from order to id
+        options = format_event_options(events)
         super().__init__(placeholder=placeholder, options=options, max_values=max_values)
         self.action = action
         self.events = events
