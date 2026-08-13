@@ -1,12 +1,11 @@
-import logging
 from collections.abc import Callable
 
 import discord
 from discord import SelectOption
-from discord.ext.commands import Bot
 
 from g.classes.calendar import Calendar, DEFAULT_TITLE
 from g.classes.event import Event
+from g.classes.logger import get_logger, LogType
 from g.classes.message import fetch_messages_for_calendar
 from g.classes.section import Section
 
@@ -22,7 +21,7 @@ class SelectEvent(discord.ui.Select):
     events: list[Event]
 
     def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
-        options = format_event_options(events)
+        options = format_event_options(events)  # TODO value changed from order to id
         super().__init__(placeholder=placeholder, options=options, max_values=max_values)
         self.action = action
         self.events = events
@@ -32,7 +31,7 @@ class SelectEvent(discord.ui.Select):
             await self.action(interaction, self.events, self.values)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            logger = logging.getLogger("default")
+            logger = get_logger(LogType.USER, interaction.user.name)
             logger.error(f"in callback of SelectEvent in [{interaction.guild.name} - {interaction.guild.id}] "
                          f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
 
@@ -55,7 +54,7 @@ class SelectCalendar(discord.ui.Select):
         try:
             await self.action(interaction, self.values)
         except Exception as e:
-            logger = logging.getLogger("default")
+            logger = get_logger(LogType.USER, interaction.user.name)
             logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
 
 
@@ -78,7 +77,7 @@ class SelectSection(discord.ui.Select):
             try:
                 await self.action(interaction, self.values)
             except Exception as e:
-                logger = logging.getLogger("default")
+                logger = get_logger(LogType.USER, interaction.user.name)
                 logger.error(f"in callback of SelectSection {e}", exc_info=True)
 
 
@@ -98,7 +97,7 @@ class CalendarDescriptionButton(discord.ui.Button):
             await self.action(interaction)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            logger = logging.getLogger("default")
+            logger = get_logger(LogType.USER, interaction.user.name)
             logger.error(
                 f"in callback of CalendarDescriptionButton in [{interaction.guild.name} - {interaction.guild.id}] "
                 f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
@@ -113,7 +112,6 @@ class UpdateMessageView(discord.ui.View):
 
         self.add_item(CalendarDescriptionButton(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
                                                 action=self.show_messages))
-
         if self.role:
             self.add_item(CalendarDescriptionButton(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
                                                     style=discord.ButtonStyle.secondary,
@@ -133,17 +131,21 @@ class UpdateMessageView(discord.ui.View):
 
     async def get_ping_role(self, interaction: discord.Interaction):
         role: discord.role.Role = interaction.guild.get_role(self.role)
+        logger = get_logger(LogType.USER, interaction.user.name)
         try:
             if role in interaction.user.roles:
+                logger.info(f"{interaction.user.name} unsubscribed from calendar updates")
                 await interaction.user.remove_roles(role)
                 await interaction.response.send_message(
                     "Nie będziesz już otrzymywał powiadomień o aktualizacjach tego kalendarza", ephemeral=True)
             else:
+                logger.info(f"{interaction.user.name} subscribed to calendar updates")
                 await interaction.user.add_roles(role)
                 await interaction.response.send_message(
                     "Teraz będziesz otrzymywał powiadomienia o dodaniu, edycji lub usunięciu wydarzeń z tego kalendarza\n"
                     "Aby zrezygnować kliknij ponownie.", ephemeral=True)
         except discord.Forbidden:
+            logger.error(f"Bot can't add roles to user {interaction.user.name}")
             await interaction.response.send_message(
                 "**Bot nie posiada uprawnień do zmieniania ról**\n"
                 "Aby je dodać trzeba przejść do `Ustawienia serwera > Role`, "
@@ -179,7 +181,7 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
 
 def format_event_options(events: list[Event], selected_event: int | None = None) -> list[SelectOption]:
     options = []
-    for i, event in enumerate(events):
+    for event in events:
         description = ""
         if event.team:
             description += f'[{event.team}] '
@@ -191,8 +193,8 @@ def format_event_options(events: list[Event], selected_event: int | None = None)
             SelectOption(
                 label=truncate_text(label_text, 100),
                 description=description,
-                value=f"{i}",
-                default=i == selected_event
+                value=f"{event.id}",
+                default=event.id == selected_event
             )
         )
 

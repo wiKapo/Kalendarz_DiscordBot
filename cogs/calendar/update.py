@@ -13,7 +13,7 @@ async def calendar_update(interaction: discord.Interaction, quiet: bool):
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info("Updating calendar using slash command")
+    logger.info(f"{interaction.user.name} is updating calendar using slash command")
 
     await interaction.response.send_message(f'Kalendarz jest aktualizowany {"po cichu" if quiet else ""}', ephemeral=True)
 

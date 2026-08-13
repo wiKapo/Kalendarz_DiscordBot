@@ -20,7 +20,7 @@ def init_logger():
         os.makedirs('logs/event')
 
 
-def get_logger(log_type: LogType = LogType.DEFAULT, data: str | None = None) -> logging.Logger:
+def get_logger(log_type: LogType = LogType.DEFAULT, data: str | int | None = None) -> logging.Logger:
     match log_type:
         case LogType.CALENDAR | LogType.USER | LogType.EVENT:
             logger_name = f"{log_type.value}_{data if data else "default"}"

@@ -10,12 +10,12 @@ async def update_calendar_buttons(guild: discord.Guild, calendar: Calendar):
     channel = await guild.fetch_channel(calendar.channelId)
 
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info(f"Updating notification buttons for calendar number {calendar.id}"
-                f" in [{guild.name} - {guild.id}]"
-                f" in [{channel.name} - {channel.id}]")
+    logger.info(f"Updating calendar buttons for calendar number {calendar.id} "
+                f"in [{guild.name} - {guild.id}] "
+                f"in [{channel.name} - {channel.id}]")
 
     await (await channel.fetch_message(calendar.messageId)).edit(view=NotificationButtonsView())
-    logger.info("Finished updating notification buttons")
+    logger.info("Finished updating calendar buttons")
 
 
 async def update_notification(interaction: discord.Interaction):
@@ -48,7 +48,7 @@ class NotificationButton(discord.ui.Button):
             await self.action(interaction)
         except Exception as e:
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            logger = get_logger()
+            logger = get_logger(LogType.USER, interaction.user.name)
             logger.error(f"in callback of NotificationButton in [{interaction.guild.name} - {interaction.guild.id}] "
                          f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
 

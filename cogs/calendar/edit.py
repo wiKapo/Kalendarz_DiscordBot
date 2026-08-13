@@ -13,7 +13,8 @@ async def calendar_edit(interaction: discord.Interaction):
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info(f"Showing edit calendar modal in [{interaction.guild.name} - {interaction.guild.id}]")
+    logger.info(f"Showing edit calendar modal for {interaction.user.name} "
+                f"in [{interaction.guild.name} - {interaction.guild.id}]")
 
     await interaction.response.send_modal(
         EditCalendarModal(calendar, interaction.guild.get_role(calendar.pingRoleId)))
@@ -50,6 +51,7 @@ class EditCalendarModal(discord.ui.Modal):
             self.calendar.pingRoleId = selected_ping_role
             self.calendar.update()
             logger.info("Calendar updated in the database")
+            logger.debug(repr(self.calendar))
 
             await update_calendar(interaction.guild, self.calendar, interaction.user.name)
 

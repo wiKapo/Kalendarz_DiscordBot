@@ -1,4 +1,5 @@
 from g.classes.event import Event
+from g.classes.logger import get_logger, LogType
 from g.classes.message import Message
 
 
@@ -8,16 +9,22 @@ def create_event_update_message(new_event: Event, old_event: Event | None = None
 
     if old_event:
         for calendar_id in new_event.calendarIds.intersection(old_event.calendarIds):
+            logger = get_logger(LogType.CALENDAR, calendar_id)
+            logger.info(f"Changed event from {old_event} to {new_event}")
             message.calendarId = calendar_id
             message.message = compare_event_changes(new_event, old_event)
             message.insert()
 
         for calendar_id in old_event.calendarIds.difference(new_event.calendarIds):
+            logger = get_logger(LogType.CALENDAR, calendar_id)
+            logger.info(f"Deleted event {old_event}")
             message.calendarId = calendar_id
             message.message = f"Wydarzenie {old_event} zostało usunięte z tego kalendarza"
             message.insert()
 
         for calendar_id in new_event.calendarIds.difference(old_event.calendarIds):
+            logger = get_logger(LogType.CALENDAR, calendar_id)
+            logger.info(f"Added event {new_event}")
             message.calendarId = calendar_id
             message.message = f"Wydarzenie {new_event} zostało dodane do tego kalendarza"
             message.insert()

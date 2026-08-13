@@ -12,8 +12,9 @@ async def calendar_create(interaction: discord.Interaction, title: str = None):
 
     if calendar.id:
         logger = get_logger(LogType.CALENDAR, calendar.id)
-        logger.info(f"Checking calendar in [{interaction.guild.name} - {interaction.guild.id}]"
-                    f" in [{interaction.channel.name} - {interaction.channel.id}]")
+        logger.info(f"{interaction.user.name} is checking calendar "
+                    f"in [{interaction.guild.name} - {interaction.guild.id}] "
+                    f"in [{interaction.channel.name} - {interaction.channel.id}]")
 
         try:
             await (await interaction.guild.fetch_channel(interaction.channel_id)).fetch_message(calendar.messageId)
@@ -31,9 +32,10 @@ async def calendar_create(interaction: discord.Interaction, title: str = None):
             await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
     else:
         logger = get_logger(LogType.CALENDAR)
-        logger.info(f"Creating calendar with {f'title \"{title}\"' if title is not None else 'default title'}"
-                    f" in [{interaction.guild.name} - {interaction.guild.id}]"
-                    f" in [{interaction.channel.name} - {interaction.channel.id}]")
+        logger.info(f"{interaction.user.name} is creating calendar with "
+                    f"{f'title \"{title}\"' if title is not None else 'default title'} "
+                    f"in [{interaction.guild.name} - {interaction.guild.id}] "
+                    f"in [{interaction.channel.name} - {interaction.channel.id}]")
 
         calendar_msg = await interaction.channel.send(f'Kalendarz pojawi się tutaj')
         logger.info(f"Calendar message created: {calendar_msg.id}")
@@ -45,6 +47,10 @@ async def calendar_create(interaction: discord.Interaction, title: str = None):
         calendar.insert()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
+
+        calendar_logger = get_logger(LogType.CALENDAR, calendar.id)
+        calendar_logger.info(f"Calendar created in {interaction.guild.name} ({interaction.guild.id}) "
+                             f"in {interaction.channel.name} ({interaction.channel.id})")
 
         await update_calendar(interaction.guild, calendar, interaction.user.name)
         await update_calendar_buttons(interaction.guild, calendar)
@@ -63,7 +69,7 @@ async def calendar_create(interaction: discord.Interaction, title: str = None):
 
 async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info("Recreating calendar on this channel")
+    logger.info(f"{interaction.user.name} is recreating calendar on this channel")
     new_msg = await interaction.channel.send("Nowa wiadomość kalendarza")
     logger.info(f"New calendar message created: {new_msg.id}")
     calendar.messageId = new_msg.id

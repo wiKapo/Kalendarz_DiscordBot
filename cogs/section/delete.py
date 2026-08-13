@@ -9,14 +9,21 @@ from g.util import update_calendar
 
 async def section_delete(interaction: discord.Interaction, calendar_id: int | None):
     if not calendar_id:
+        logger = get_logger(LogType.CALENDAR)
+        logger.info(f"{interaction.user.name} is deleting sections")
+
         calendars = fetch_calendars_in_guild(interaction.guild_id)
         for calendar in calendars:
             await calendar.get_additional_data(interaction.guild)
 
+        logger.info("Showing calendar select form")
         await interaction.response.send_message("Wybierz kalendarz, z którego chcesz edytować niestandardową sekcję",
                                                 view=SelectCalendarView(calendars, send_section_delete_modal),
                                                 ephemeral=True)
     else:
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"{interaction.user.name} is deleting sections from this calendar")
+
         calendar = Calendar()
         calendar.fetch(calendar_id)
         await interaction.response.send_modal(SectionDeleteModal(calendar))
@@ -40,15 +47,16 @@ class SectionDeleteModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         logger = get_logger(LogType.CALENDAR, self.calendar.id)
-        logger.info(f"{interaction.user.name} is deleting sections {self.section_select.values}")
-
         sections_to_delete: list[Section] = [self._fetch_section(x) for x in self.section_select.values]
+        logger.info(f"{interaction.user.name} is deleting sections {sections_to_delete}")
+
         for section in sections_to_delete:
             self.calendar.customSections.remove(section)
             section.delete()
             logger.info(f"Deleted section {section.name}")
         logger.info("Removed all selected sections")
         self.calendar.update_sections()
+        logger.info("Updated calendar sections in database")
         await update_calendar(interaction.guild, self.calendar, interaction.user.name)
 
         await interaction.response.send_message(f"Usunięto wybrane sekcje")

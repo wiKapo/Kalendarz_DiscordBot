@@ -11,14 +11,20 @@ from g.util import update_calendar
 
 async def section_add(interaction: discord.Interaction, calendar_id: int | None):
     if not calendar_id:
+        logger = get_logger(LogType.CALENDAR)
+        logger.info(f"{interaction.user.name} is adding new section")
         calendars = fetch_calendars_in_guild(interaction.guild_id)
         for calendar in calendars:
             await calendar.get_additional_data(interaction.guild)
 
+        logger.info("Showing calendar select form")
         await interaction.response.send_message("Wybierz kalendarz, do którego chcesz dodać niestandardową sekcję",
                                                 view=SelectCalendarView(calendars, send_section_add_modal),
                                                 ephemeral=True)
     else:
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"{interaction.user.name} is adding new section to this calendar")
+
         calendar = Calendar()
         calendar.fetch(calendar_id)
         await interaction.response.send_modal(SectionAddModal(calendar))
@@ -83,3 +89,4 @@ class SectionAddModal(discord.ui.Modal):
             return
 
         await interaction.response.send_message(f"Stworzono sekcję {section.name}", ephemeral=True)
+        logger.info("Created new section")

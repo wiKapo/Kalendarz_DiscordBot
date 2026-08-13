@@ -11,15 +11,22 @@ from g.util import update_calendar
 
 async def section_edit(interaction: discord.Interaction, calendar_id: int | None):
     if not calendar_id:
+        logger = get_logger(LogType.CALENDAR)
+        logger.info(f"{interaction.user.name} is editing sections")
         calendars = fetch_calendars_in_guild(interaction.guild_id)
         for calendar in calendars:
             await calendar.get_additional_data(interaction.guild)
+        logger.info("Showing calendar select form")
         await interaction.response.send_message("Wybierz kalendarz, z którego chcesz edytować niestandardową sekcję",
                                                 view=SelectCalendarView(calendars, send_section_select_message),
                                                 ephemeral=True)
     else:
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"{interaction.user.name} is editing sections from this calendar")
+
         calendar = Calendar()
         calendar.fetch(calendar_id)
+        logger.info("Showing section select form")
         await interaction.response.send_message("Wybierz sekcję do edycji",
                                                 view=SelectSectionView(calendar.customSections,
                                                                        send_section_edit_modal),
@@ -29,9 +36,13 @@ async def section_edit(interaction: discord.Interaction, calendar_id: int | None
 async def send_section_select_message(interaction: discord.Interaction, values: list[str]):
     calendar = Calendar()
     calendar.fetch(int(values[0]))
+    logger = get_logger(LogType.CALENDAR, calendar.id)
+
     if not len(calendar.customSections):
+        logger.info("No custom sections in this calendar")
         await interaction.response.send_message("Wybrany kalendarz nie posiada niestandardowych sekcji", ephemeral=True)
     else:
+        logger.info("Showing section select form")
         await interaction.response.send_message("Wybierz sekcję do edycji",
                                                 view=SelectSectionView(calendar.customSections,
                                                                        send_section_edit_modal),
@@ -72,7 +83,6 @@ class SectionEditModal(discord.ui.Modal):
         calendar.customSections.remove(self.section)
         logger.info("Removed section from list")
 
-
         self.section.name = self.name_input.value
         self.section.begin_date = self.begin_date_input.value
         self.section.end_date = self.end_date_input.value
@@ -100,3 +110,4 @@ class SectionEditModal(discord.ui.Modal):
         await update_calendar(interaction.guild, calendar, interaction.user.name)
 
         await interaction.response.send_message(f"Zmieniono sekcję {self.section.name}", ephemeral=True)
+        logger.info("Finished editing section")

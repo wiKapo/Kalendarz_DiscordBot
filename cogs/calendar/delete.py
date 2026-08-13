@@ -12,8 +12,9 @@ async def calendar_delete(interaction: discord.Interaction):
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
     logger = get_logger(LogType.CALENDAR, calendar.id)
-    logger.info(f"Showing delete calendar modal in [{interaction.guild.name} - {interaction.guild.id}]"
-                f" in [{interaction.channel.name} - {interaction.channel.id}]")
+    logger.info(f"Showing delete calendar modal for {interaction.user.name} "
+                f"in [{interaction.guild.name} - {interaction.guild.id}] "
+                f"in [{interaction.channel.name} - {interaction.channel.id}]")
     await interaction.response.send_modal(DeleteCalendarModal())
 
 
@@ -25,7 +26,7 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
         calendar = Calendar()
         calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger = get_logger(LogType.CALENDAR, calendar.id)
-        logger.info("Deleting this calendar")
+        logger.info(f"{interaction.user.name} is deleting this calendar")
 
         channel = await interaction.guild.fetch_channel(calendar.channelId)
         calendar_message = await channel.fetch_message(calendar.messageId)

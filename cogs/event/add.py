@@ -1,10 +1,10 @@
 import discord
 
 from cogs.event.util import create_event_update_message
-from g.classes.calendar import fetch_calendars_in_guild, Calendar
-from g.discord_classes import format_calendar_options
+from g.classes.calendar import fetch_calendars_in_guild, Calendar, fetch_calendars_from_ids
 from g.classes.event import Event
 from g.classes.logger import get_logger, LogType
+from g.discord_classes import format_calendar_options
 from g.util import update_calendar
 
 
@@ -13,6 +13,10 @@ async def event_add(interaction: discord.Interaction):
     for calendar in calendars:
         await calendar.get_additional_data(interaction.guild)
 
+    logger = get_logger(LogType.EVENT)
+    logger.info(f"Showing add event modal for {interaction.user.name} "
+                f"in {interaction.guild.name} ({interaction.guild_id}) "
+                f"in {interaction.channel.name} ({interaction.channel_id})")
     await interaction.response.send_modal(EventAddModal(calendars))
 
 
@@ -40,45 +44,40 @@ class EventAddModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         event = Event()
-        logger = get_logger(LogType.CALENDAR, -1)  # TODO !!IMPORTANT!! REWORK LOGGER
+        logger = get_logger(LogType.EVENT)
 
         event.name = self.name_input.value
         event.set_datetime(self.datetime_input.value)
         event.team = self.team_input.value
         event.place = self.place_input.value
-        logger.info("Got all data from modal")
+        logger.info(f"{interaction.user.name} is creating new event {repr(event)}")
 
         # Adding new event
         event.insert()
         logger.info("Event was inserted to the database")
         event.fetch_id_using_raw()
-        logger.info("Event id was fetched")
+        logger.debug(f"Event: {repr(event)}")
         create_event_update_message(event)
-        logger.info("Created event update message")
 
-        calendars_to_update: list[Calendar] = []
-
-        for calendar_id in self.calendar_select.values:
-            calendar = Calendar()
-            calendar.fetch(int(calendar_id))
-
-            logger.info(f"Adding new event {repr(event)} to calendar {repr(calendar)}")
-            calendars_to_update.append(calendar)
-            logger.debug(f"Calendar saved to be updated")
-
-            event.connect_to_calendar(calendar.id)
-            logger.info("Added this event to this calendar")
+        calendars = fetch_calendars_from_ids(set(map(lambda x: int(x), self.calendar_select.values)))
 
         update_message: str
-        if len(calendars_to_update) == 1:
-            update_message = f"kalendarza o numerze {calendars_to_update[0].id}"
+        if len(calendars) == 1:
+            update_message = f"kalendarza o numerze {calendars[0].id}"
         else:
-            update_message = f"kalendarzy o numerach: {', '.join(map(lambda x: str(x.id), calendars_to_update))}"
+            update_message = f"kalendarzy o numerach: {', '.join(map(lambda x: str(x.id), calendars))}"
 
         await interaction.response.send_message(
             f'Dodano wydarzenie *{event.name}* do {update_message}.\n'
             f'Wydarzenia będą automatycznie usuwane po upłynięciu 1 tygodnia od dnia wydarzenia',
             ephemeral=True)
 
-        for calendar in calendars_to_update:
+        logger.info("Sending message to user")
+        for calendar in calendars:
+            calendar_logger = get_logger(LogType.CALENDAR, calendar.id)
+            calendar_logger.info(f"Adding new event {repr(event)}")
+
+            event.connect_to_calendar(calendar.id)
+            logger.info(f"Added this event to calendar #{calendar.id}")
             await update_calendar(interaction.guild, calendar, interaction.user.name)
+        logger.info("Finished creating new event")

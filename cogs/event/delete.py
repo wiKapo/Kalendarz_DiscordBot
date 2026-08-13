@@ -1,31 +1,33 @@
 import discord
 
 from cogs.event.util import create_event_delete_message
-from g.classes.calendar import Calendar
+from g.classes.calendar import Calendar, fetch_calendars_from_ids
 from g.classes.event import Event, fetch_events_from_guild
-from g.discord_classes import format_event_options
 from g.classes.logger import LogType, get_logger
+from g.discord_classes import format_event_options
 from g.util import check_if_calendar_exists, update_calendar
 
 
 async def event_delete(interaction: discord.Interaction):
     calendar_id = await check_if_calendar_exists(interaction)
 
-    logger = get_logger(LogType.CALENDAR, -1)  # TODO !!IMPORTANT!! REWORK LOGGER
-    logger.info(f"Trying to delete events in [{interaction.guild.name} - {interaction.guild_id}]"
-                f" in [{interaction.channel.name} - {interaction.channel_id}]")
+    logger = get_logger(LogType.EVENT)
+    logger.info(f"{interaction.user.name} is trying to delete events "
+                f"in [{interaction.guild.name} - {interaction.guild_id}] "
+                f"in [{interaction.channel.name} - {interaction.channel_id}]")
 
     if calendar_id:
+        logger.info(f"Fetching events from calendar #{calendar_id}")
         calendar = Calendar()
         calendar.fetch(calendar_id)
         events = calendar.fetch_events()
     else:
+        logger.info(f"Fetching events from guild")
         events = fetch_events_from_guild(interaction.guild_id)
 
     if events:
         # TODO if calendar_id: show button to show all remaining events in the guild
-        logger.info(f"Sending delete events modal in [{interaction.guild.name} - {interaction.guild.id}]"
-                    f" in [{interaction.channel.name} - {interaction.channel.id}]")
+        logger.info(f"Sending delete events modal")
         await interaction.response.send_modal(DeleteEventsModal(events))
     else:
         logger.info(f"No events found in this guild")
@@ -36,24 +38,33 @@ class DeleteEventsModal(discord.ui.Modal):
     def __init__(self, events: list[Event]):
         super().__init__(title="Usuń wydarzenia")
 
+        self.add_item(discord.ui.TextDisplay(
+            "Usuwa wydarzenia, ze **wszystkich** kalendarzy.\n"
+            "Użyj `/event edit`, aby usunąć wydarzenia tylko z tego kalendarza"))
+
         options = format_event_options(events)
         self.event_select = discord.ui.Select(options=options, max_values=len(options), required=True)
         self.add_item(discord.ui.Label(text="Wybierz wydarzenia do usunięcia", component=self.event_select))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        calendar = Calendar()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        logger = get_logger(LogType.CALENDAR, calendar.id)
+        logger = get_logger(LogType.EVENT)
 
-        events = calendar.fetch_events()
-        events_to_delete = [events[int(i)] for i in self.event_select.values]
-        logger.info(f"Deleting events {events_to_delete}")
+        events = fetch_events_from_guild(interaction.guild_id)
+        events_to_delete = list(filter(lambda e: e.id in list(map(lambda x: int(x), self.event_select.values)), events))
+        logger.info(f"{interaction.user.name} is deleting events {events_to_delete}")
+
+        calendar_ids = set().union(*(event.calendarIds for event in events_to_delete))
+        logger.info(f"Affected calendars: {calendar_ids}")
+        calendars = fetch_calendars_from_ids(calendar_ids)
 
         for event in events_to_delete:
             create_event_delete_message(event)
             event.delete()
 
-        await update_calendar(interaction.guild, calendar, interaction.user.name)
+        for calendar in calendars:
+            calenadar_logger = get_logger(LogType.CALENDAR, calendar.id)
+            calenadar_logger.info(f"Deleted events {calendar.eventIds.intersection(events_to_delete)}")
+            await update_calendar(interaction.guild, calendar, interaction.user.name)
         logger.info(f"Deleted events")
 
         if self.event_select.values:
