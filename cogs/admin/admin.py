@@ -1,15 +1,17 @@
 import sqlite3
+from datetime import datetime
 
 import discord
 from discord.ext import commands
 
+from cogs.calendar.create import calendar_create
 from cogs.calendar.util import update_calendar_buttons
 from g.classes.calendar import fetch_all_calendars
 from g.classes.db import Db
-from g.classes.event import fetch_all_events
+from g.classes.event import fetch_all_events, Event
 from g.classes.logger import get_logger, LogType
 from g.classes.message import Message
-from g.util import check_calendar_admin, update_calendar
+from g.util import check_calendar_admin, update_calendar, check_if_calendar_exists
 
 
 class AdminCog(commands.Cog):
@@ -249,22 +251,42 @@ class AdminCog(commands.Cog):
     # async def test_error(self, interaction: discord.Interaction, error):
     #     await no_permissions_message(interaction, error)
 
-    @admin_group.command(name="update_loggers", description="[TYLKO DLA ADMINÓW KALENDARZA] "
-                                                                   "Aktualizuje loggery")
-    async def update_loggers(self, interaction: discord.Interaction):
+    @admin_group.command(name="update_event_loggers", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                                  "Aktualizuje loggery wydarzeń")
+    @discord.app_commands.check(check_calendar_admin)
+    async def update_event_loggers(self, interaction: discord.Interaction):
         await interaction.response.send_message("Tworzenie wpisów do loggerów wydarzeń", ephemeral=True)
 
         events = fetch_all_events()
         for event in events:
             guild_id = event.get_guild_id()
             logger = get_logger(LogType.EVENT, event.id)
-            logger.info(
-                f"In guild {(await self.bot.fetch_guild(guild_id)).name} ({guild_id}) in calendars {event.calendarIds}")
+            logger.info(f"In guild {(await self.bot.fetch_guild(guild_id)).name} "
+                        f"({guild_id}) in calendars {event.calendarIds}")
+            logger.debug(repr(event))
         await interaction.followup.send("Dopisano lokację każdego wydarzenia", ephemeral=True)
 
-    @update_loggers.error
-    async def update_loggers_error(self, interaction: discord.Interaction, error):
+    @update_event_loggers.error
+    async def update_event_loggers_error(self, interaction: discord.Interaction, error):
         await no_permissions_message(interaction, error)
+
+    @admin_group.command(name="create_test_calendar", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                                  "Tworzy testowy kalendarz")
+    @discord.app_commands.check(check_calendar_admin)
+    async def create_test_calendar(self, interaction: discord.Interaction):
+        if await check_if_calendar_exists(interaction):
+            await interaction.response.send_message("Nie można utworzyć kalendarza testowego. "
+                                                    "Inny kalendarz istnieje na tym kanale")
+            return
+
+        calendar = await calendar_create(interaction, "Kalendarz testowy")
+        await interaction.followup.send("Utworzono testowy kalendarz", ephemeral=True)
+
+        today = datetime.now()
+        event = Event()
+        event.name = "Uno"
+        event.set_datetime(today.strftime())
+        # TODO add events and custom sections
 
 
 async def setup(bot):

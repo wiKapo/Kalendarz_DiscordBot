@@ -6,7 +6,7 @@ from g.classes.logger import get_logger, LogType
 from g.util import update_calendar
 
 
-async def calendar_create(interaction: discord.Interaction, title: str = None):
+async def calendar_create(interaction: discord.Interaction, title: str = None) -> Calendar:
     calendar = Calendar()
     calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
 
@@ -65,6 +65,7 @@ async def calendar_create(interaction: discord.Interaction, title: str = None):
             "- Wszystkie komendy są opisane w `/help`",
             ephemeral=True)
         logger.info("Calendar created")
+    return calendar
 
 
 async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar):
