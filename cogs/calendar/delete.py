@@ -30,13 +30,28 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
         logger.info(f"{interaction.user.name} is deleting this calendar")
 
         channel = await interaction.guild.fetch_channel(calendar.channelId)
-        calendar_message = await channel.fetch_message(calendar.messageId)
-        await calendar_message.delete()
-        logger.info("Removed the calendar message.")
+        try:
+            calendar_message = await channel.fetch_message(calendar.messageId)
+            await calendar_message.delete()
+            logger.info("Removed the calendar message.")
+        except discord.NotFound:
+            logger.info("The calendar message was already deleted.")
+        except Exception as e:
+            await interaction.response.send_message(f"Wystąpił błąd przy usuwaniu wiadomości kalendarza\n{e}",
+                                                    ephemeral=True)
+            logger.error(f"Error while deleting the calendar message: {e}", exc_info=True)
+            return
 
         if calendar.descriptionMessageId:
-            await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
-            logger.info("Removed the calendar description message.")
+            try:
+                await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
+                logger.info("Removed the calendar description message.")
+            except discord.NotFound:
+                logger.info("The calendar description message was already deleted.")
+            except Exception as e:
+                await interaction.response.send_message(
+                    f"Wystąpił błąd przy usuwaniu wiadomości z opisem kalendarza\n{e}",
+                    ephemeral=True)
 
         calendar.delete()
         logger.info("The calendar and its events have been removed from the database.")
