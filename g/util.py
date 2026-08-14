@@ -17,6 +17,7 @@ BOT_VERSION = "PREv1.0"  # TODO ALWAYS UPDATE ME
 async def check_if_calendar_exists(interaction) -> None | int:
     calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
                                  (interaction.guild.id, interaction.channel.id))[0]
+    print(f"CHECKING IF EXISTS {calendar_id}")
     if not calendar_id:
         await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
         return None
@@ -68,11 +69,11 @@ async def send_error_message(interaction: discord.Interaction, error):
     logger = get_logger()
     if isinstance(error, discord.app_commands.CheckFailure):
         if check_dm(interaction):
-            logger.info(f"User {interaction.user.name} tried to use /{command_name} in DM channel")
+            logger.warning(f"User {interaction.user.name} tried to use /{command_name} in DM channel")
             await interaction.response.send_message(f"`/{command_name}` nie jest wspierane w prywatnych wiadomościach",
                                                     ephemeral=True)
         else:
-            logger.info(f"User {interaction.user.name} doesn't have permissions to use /{command_name}")
+            logger.warning(f"User {interaction.user.name} doesn't have permissions to use /{command_name}")
             await interaction.response.send_message("Brak uprawnień", ephemeral=True)
     else:
         logger.error(f"Received an error while executing {command_name}: {error}", exc_info=True)
