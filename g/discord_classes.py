@@ -15,6 +15,7 @@ def truncate_text(text: str, max_length: int) -> str:
 
 
 # TODO merge all SelectViews into one function
+# TODO handle having more than 25 items in Select
 
 class SelectEvent(discord.ui.Select):
     action: Callable
@@ -169,9 +170,20 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
         -> list[SelectOption]:
     options = []
     for calendar in calendars:
+        event_amount = len(calendar.eventIds)
+        if event_amount:
+            amount_text = f"{event_amount} wydarze"
+            if event_amount == 1:
+                amount_text += "nie"
+            elif event_amount < 5:
+                amount_text += "nia"
+            else:
+                amount_text += "ń"
+        else:
+            amount_text = "Brak wydarzeń"
         options.append(SelectOption(
             label=f"[{calendar.id}] {calendar.title if calendar.title else DEFAULT_TITLE}",
-            description=f"{calendar.channelName}",
+            description=f"{calendar.channelName} ({amount_text})",
             value=f"{calendar.id}",
             default=True if len(calendars) == 1 or (
                     selected_calendars and calendar.id in selected_calendars) else False
