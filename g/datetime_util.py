@@ -13,12 +13,12 @@ def is_tomorrow(check: datetime) -> bool:
 
 def is_this_week(check: datetime) -> bool:
     now = datetime.now()
-    return check.isocalendar()[1] == now.isocalendar()[1] and check.year == now.year
+    return check.isocalendar().week == now.isocalendar().week and check.year == now.year
 
 
 def is_next_week(check: datetime) -> bool:
     now = datetime.now()
-    return check.isocalendar()[1] + 1 == now.isocalendar()[1] and check.year == now.year
+    return check.isocalendar().week == now.isocalendar().week + 1 and check.year == now.year
 
 
 def is_this_month(check: datetime) -> bool:
@@ -28,4 +28,4 @@ def is_this_month(check: datetime) -> bool:
 
 def is_next_month(check: datetime) -> bool:
     now = datetime.now()
-    return check.month + 1 == now.month and check.year == now.year
+    return check.month == now.month + 1 and check.year == now.year
