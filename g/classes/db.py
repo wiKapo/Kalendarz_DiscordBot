@@ -35,13 +35,15 @@ class Db:
         self.disconnect()
         return result
 
-    def execute(self, query: str, data=None):
+    def execute(self, query: str, data=None) -> list:
         self.connect()
         if data is not None:
             self.cursor.execute(query, data)
         else:
             self.cursor.execute(query)
+        result = self.cursor.fetchall()
         self.commit_disconnect()
+        return result
 
     def connect(self) -> sqlite3.Cursor:
         self.connection = sqlite3.connect('calendar_database.db')

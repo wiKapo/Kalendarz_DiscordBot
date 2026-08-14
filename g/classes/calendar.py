@@ -91,9 +91,10 @@ class Calendar:
             self.__init__(data)
 
     def insert(self):
-        Db().execute(
-            "INSERT INTO calendars (Title, GuildId, ChannelId, MessageId) VALUES (?, ?, ?, ?)",
+        db_id = Db().execute(  # returns list of tuples [(xx,)]
+            "INSERT INTO calendars (Title, GuildId, ChannelId, MessageId) VALUES (?, ?, ?, ?) RETURNING Id",
             (self.title, self.guildId, self.channelId, self.messageId))
+        self.id = db_id[0][0]
 
     def update(self):
         Db().execute(

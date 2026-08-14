@@ -55,7 +55,6 @@ class EventAddModal(discord.ui.Modal):
         # Adding new event
         event.insert()
         logger.info("Event was inserted to the database")
-        event.fetch_id_using_raw()
         logger.debug(f"Event: {repr(event)}")
         create_event_update_message(event)
 

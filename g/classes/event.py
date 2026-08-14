@@ -85,16 +85,11 @@ class Event:
         data = Db().fetch_one("SELECT * FROM events WHERE Id=?", (event_id,))
         self.__init__(data)
 
-    def fetch_id_using_raw(self):  # I don't like this, but I have no idea how to do it differently
-        db_id = Db().fetch_one("SELECT Id FROM events WHERE Timestamp=? AND WholeDay=? "
-                               "AND Name=? AND Team=? AND Place=? ORDER BY Id DESC LIMIT 1",
-                               (self.timestamp, self.wholeDay, self.name, self.team, self.place))[0]
-        self.id = db_id
-
     def insert(self):
-        Db().execute(
-            "INSERT INTO events (Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?)",
+        db_id = Db().execute(  # returns list of tuples [(xx,)]
+            "INSERT INTO events (Timestamp, WholeDay, Name, Team, Place) VALUES (?, ?, ?, ?, ?) RETURNING Id",
             (self.timestamp, self.wholeDay, self.name, self.team, self.place))
+        self.id = db_id[0][0]
 
     def connect_to_calendar(self, calendar_id: int):
         Db().execute("INSERT INTO eventsInCalendars (CalendarId, EventId) VALUES (?, ?)", (calendar_id, self.id))

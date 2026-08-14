@@ -45,7 +45,6 @@ async def calendar_create(interaction: discord.Interaction, title: str = None) -
         calendar.channelId = interaction.channel_id
         calendar.messageId = calendar_msg.id
         calendar.insert()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
         logger.info(f"Calendar inserted. ID: {calendar.id}")
 
         calendar_logger = get_logger(LogType.CALENDAR, calendar.id)
