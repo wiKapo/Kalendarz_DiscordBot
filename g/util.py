@@ -14,16 +14,15 @@ BOT_VERSION = "PREv1.0"  # TODO ALWAYS UPDATE ME
 
 # --------- CHECKS ---------
 
-async def check_if_calendar_exists(interaction) -> None | int:
+async def check_if_calendar_exists(interaction: discord.Interaction) -> None | int:
     calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                                 (interaction.guild.id, interaction.channel.id))
+                                 (interaction.guild_id, interaction.channel_id))
     if not calendar_id:
-        await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
         return None
     return calendar_id[0]
 
 
-async def check_admin(interaction) -> bool:
+async def check_admin(interaction: discord.Interaction) -> bool:
     if (await interaction.guild.fetch_member(interaction.user.id)).guild_permissions.administrator:
         return True
 
@@ -32,7 +31,7 @@ async def check_admin(interaction) -> bool:
     return False
 
 
-async def check_calendar_admin(interaction) -> bool:
+async def check_calendar_admin(interaction: discord.Interaction) -> bool:
     admins = list(map(int, os.getenv("USERS").split(',')))
     if interaction.user.id in admins:
         return True
@@ -44,7 +43,7 @@ async def check_manager(interaction: discord.Interaction) -> bool:
     return bool(set(interaction.user.roles).intersection(manager_roles))
 
 
-async def check_user(interaction) -> bool:
+async def check_user(interaction: discord.Interaction) -> bool:
     """
     Checks if the user is admin or manager AND if it is called in a guild
     """
@@ -56,7 +55,7 @@ async def check_user(interaction) -> bool:
     return False
 
 
-def check_dm(interaction) -> bool:
+def check_dm(interaction: discord.Interaction) -> bool:
     return isinstance(interaction.channel, discord.channel.DMChannel)
 
 

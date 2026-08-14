@@ -8,6 +8,7 @@ from g.util import check_if_calendar_exists, update_calendar
 
 async def calendar_update(interaction: discord.Interaction, quiet: bool):
     if not await check_if_calendar_exists(interaction):
+        await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
         return
 
     calendar = Calendar()

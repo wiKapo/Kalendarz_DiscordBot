@@ -130,7 +130,7 @@ class Event:
 
 
 def fetch_events_from_guild(guild_id: int) -> list[Event]:
-    data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars AS eic "
+    data = Db().fetch_all("SELECT DISTINCT events.* FROM events INNER JOIN eventsInCalendars AS eic "
                           "ON events.Id = eic.EventId INNER JOIN calendars ON eic.CalendarId = calendars.Id "
                           "WHERE guildId=? ORDER BY Timestamp", (guild_id,))
     return [Event(x) for x in data]
