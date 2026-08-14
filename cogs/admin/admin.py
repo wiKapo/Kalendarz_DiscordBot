@@ -1,12 +1,12 @@
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import discord
 from discord.ext import commands
 
 from cogs.calendar.create import calendar_create
 from cogs.calendar.util import update_calendar_buttons
-from g.classes.calendar import fetch_all_calendars
+from g.classes.calendar import fetch_all_calendars, Calendar
 from g.classes.db import Db
 from g.classes.event import fetch_all_events, Event
 from g.classes.logger import get_logger, LogType
@@ -274,19 +274,57 @@ class AdminCog(commands.Cog):
                                                                   "Tworzy testowy kalendarz")
     @discord.app_commands.check(check_calendar_admin)
     async def create_test_calendar(self, interaction: discord.Interaction):
-        if await check_if_calendar_exists(interaction):
-            await interaction.response.send_message("Nie można utworzyć kalendarza testowego. "
-                                                    "Inny kalendarz istnieje na tym kanale")
-            return
+        default_calendar_logger = get_logger(LogType.CALENDAR)
+        default_calendar_logger.info("Checking if calendar exists on the channel")
+        calendar_id = await check_if_calendar_exists(interaction)
+        if calendar_id:
+            default_calendar_logger.warning("Calendar already exists")
+            calendar = Calendar()
+            calendar.fetch(calendar_id)
+            await interaction.response.send_message("Dodawanie do tego kalendarza wydarzeń testowych", ephemeral=True)
+        else:
+            default_calendar_logger.warning("Creating test calendar")
+            calendar = await calendar_create(interaction, "Kalendarz testowy")
+            await interaction.followup.send("Utworzono testowy kalendarz", ephemeral=True)
+        logger = get_logger(LogType.CALENDAR, calendar.id)
+        logger.info("Creating test events")
 
-        calendar = await calendar_create(interaction, "Kalendarz testowy")
-        await interaction.followup.send("Utworzono testowy kalendarz", ephemeral=True)
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        create_event("Uno", today, calendar.id)
+        create_event("Dwa", today + timedelta(hours=1), calendar.id, whole_day=False)
+        create_event("Set", today + timedelta(days=1), calendar.id)
+        create_event("Vier", today + timedelta(days=2), calendar.id)
+        create_event("Week", today + timedelta(weeks=1), calendar.id, team="LOL")
+        create_event("Weak", today + timedelta(weeks=1, days=2, hours=14, minutes=22), calendar.id, whole_day=False)
+        create_event("Week2", today + timedelta(weeks=2), calendar.id, team="xD", place="Chrząszczyżewoszyce")
+        create_event("Tygodzianka", today + timedelta(weeks=3), calendar.id, place=":calendar: :calendar: :calendar:")
+        create_event("Monat", today + timedelta(days=31, hours=21, minutes=37), calendar.id, whole_day=False)
+        create_event("Moneta", today + timedelta(days=35, hours=8, minutes=13, weeks=2), calendar.id, whole_day=False)
+        create_event("Money", today + timedelta(days=42, hours=15, minutes=45, weeks=3), calendar.id, whole_day=False)
+        create_event("Przyszłość", today + timedelta(days=62, hours=11, minutes=55, weeks=3), calendar.id,
+                     team="Przyszłość", place="Przyszłość", whole_day=False)
+        logger.info("Done")
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
+        await interaction.followup.send("Utworzono testowe wydarzenia", ephemeral=True)
 
-        today = datetime.now()
-        event = Event()
-        event.name = "Uno"
-        event.set_datetime(today.strftime())
-        # TODO add events and custom sections
+    @create_test_calendar.error
+    async def create_test_calendar_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+
+def create_event(name: str, dt: datetime, calendar_id: int, whole_day: bool = True, place: str | None = None,
+                 team: str | None = None) -> Event:
+    event = Event()
+    event.name = name
+    if whole_day:
+        event.set_datetime(dt.strftime("%d.%m.%Y"))
+    else:
+        event.set_datetime(dt.strftime("%d.%m.%Y %H:%M"))
+    event.place = place
+    event.team = team
+    event.insert()
+    event.connect_to_calendar(calendar_id)
+    return event
 
 
 async def setup(bot):
@@ -296,5 +334,5 @@ async def setup(bot):
 async def no_permissions_message(interaction: discord.Interaction, error):
     logger = get_logger()
     logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
-                   f"doesn't have permissions to use admin commands")
+                   f"doesn't have permissions to use admin commands", exc_info=True)
     await interaction.response.send_message("Brak uprawnień", ephemeral=True)
