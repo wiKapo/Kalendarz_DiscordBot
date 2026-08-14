@@ -16,12 +16,11 @@ BOT_VERSION = "PREv1.0"  # TODO ALWAYS UPDATE ME
 
 async def check_if_calendar_exists(interaction) -> None | int:
     calendar_id = Db().fetch_one("SELECT Id FROM calendars WHERE GuildId = ? AND ChannelId = ?",
-                                 (interaction.guild.id, interaction.channel.id))[0]
-    print(f"CHECKING IF EXISTS {calendar_id}")
+                                 (interaction.guild.id, interaction.channel.id))
     if not calendar_id:
         await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
         return None
-    return calendar_id
+    return calendar_id[0]
 
 
 async def check_admin(interaction) -> bool:
