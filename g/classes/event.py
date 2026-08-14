@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from g.classes.db import Db
+from g.classes.logger import get_logger, LogType
 
 
 class Event:
@@ -108,8 +109,11 @@ class Event:
             self.connect_to_calendar(calendar_id)
 
     def delete(self):
+        logger = get_logger(LogType.EVENT, self.id)
+        logger.warning("Deleting self")
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
         Db().execute("DELETE FROM eventsInCalendars WHERE EventId=?", (self.id,))
+        logger.info("Żegnam")
 
     def remove_calendar(self, calendar_id: int):
         if calendar_id in self.calendarIds:

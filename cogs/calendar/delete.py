@@ -20,7 +20,7 @@ async def calendar_delete(interaction: discord.Interaction):
 
 class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
     _ = discord.ui.TextDisplay("# Czy na pewno chcesz usunąć ten kalendarz?\n"
-                               "Usuwając kalendarz usuniesz również wydarzenia!")
+                               "Usuwając kalendarz usuniesz również wydarzenia, które są przypisane tylko do niego.")
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         calendar = Calendar()
@@ -40,4 +40,4 @@ class DeleteCalendarModal(discord.ui.Modal, title="Usuń kalendarz"):
         calendar.delete()
         logger.info("The calendar and its events have been removed from the database.")
 
-        await interaction.response.send_message("Kalendarz został usunięty **RAZEM** z wydarzeniami", ephemeral=True)
+        await interaction.response.send_message("Kalendarz został usunięty", ephemeral=True)

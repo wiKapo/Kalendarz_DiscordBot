@@ -2,6 +2,7 @@ from collections.abc import Callable
 from datetime import datetime
 
 from g.classes.db import Db
+from g.classes.logger import get_logger, LogType
 from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week, is_this_month, is_next_month
 
 DEFAULT_SECTIONS_RULES: dict[int, Callable[[datetime], bool]] = {
@@ -83,8 +84,11 @@ class Section:
                                      (calendar_id, begin_timestamp)))
 
     def delete(self):
+        logger = get_logger(LogType.CALENDAR, self.calendarId)
+        logger.warning(f"Deleting section {repr(self)}")
         Db().execute("DELETE FROM sections WHERE CalendarId = ? AND BeginTimestamp = ?",
                      (self.calendarId, self.beginTimestamp))
+        logger.info("Bye. Bye.")
 
 
 DEFAULT_SECTIONS = [Section([0, 1, None, "Dzisiaj"]),

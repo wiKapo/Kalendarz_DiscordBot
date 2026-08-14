@@ -2,6 +2,7 @@ from discord import Guild
 
 from g.classes.db import Db
 from g.classes.event import Event
+from g.classes.logger import LogType, get_logger
 from g.classes.section import Section, select_section, delete_all_sections
 
 DEFAULT_TITLE = ":calendar:\tKalendarz by wiKapo\t:calendar:"
@@ -100,10 +101,13 @@ class Calendar:
             (self.title, self.messageId, self.pingRoleId, self.descriptionMessageId, self.id))
 
     def delete(self):
+        logger = get_logger(LogType.CALENDAR, self.id)
+        logger.warning("Deleting self")
         for event in self.fetch_events():
             event.remove_calendar(self.id)
 
         Db().execute("DELETE FROM calendars WHERE GuildId = ? AND ChannelId = ?", (self.guildId, self.channelId))
+        logger.info("Done. Goodbye")
 
     def fetch_events(self) -> list[Event]:
         data = Db().fetch_all("SELECT events.* FROM events INNER JOIN eventsInCalendars eic on events.Id = eic.EventId "
