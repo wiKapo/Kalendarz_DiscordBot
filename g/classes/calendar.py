@@ -80,8 +80,22 @@ class Calendar:
 
         return message
 
+    def __bool__(self):
+        return bool(self.id)
+
     def fetch(self, calendar_id: int):
         data = Db().fetch_one("SELECT * FROM calendars WHERE id=?", (calendar_id,))
+        if data:
+            self.__init__(data)
+
+    def fetch_in_guild(self, calendar_id: int, guild_id: int):
+        """
+        Check if this calendar is in the selected guild.
+        :param calendar_id: Calendar id to fetch.
+        :param guild_id: Check if this calendar is in the selected guild.
+        :return:
+        """
+        data = Db().fetch_one("SELECT * FROM calendars WHERE id=? AND GuildId=?", (calendar_id, guild_id))
         if data:
             self.__init__(data)
 
@@ -150,6 +164,15 @@ def fetch_all_notifications() -> dict[int, set[Calendar]]:
 
 def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars WHERE GuildId=?", (guild_id,))
+    if data:
+        return [Calendar(x) for x in data]
+    return []
+
+
+def fetch_calendars_in_guild_with_sections(guild_id: int) -> list[Calendar]:
+    data = Db().fetch_all(
+        "SELECT calendars.* FROM calendars INNER JOIN sections ON calendars.Id = sections.CalendarId "
+        "WHERE GuildId=?", (guild_id,))
     if data:
         return [Calendar(x) for x in data]
     return []
