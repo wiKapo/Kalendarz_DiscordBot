@@ -83,9 +83,13 @@ class CalendarCog(commands.Cog):
             event_ids = set().union(*(calendar.eventIds for calendar in calendars))
             # Getting all event ids from all calendars user has notifications for
 
-            today = datetime.now().replace(hour=0, minute=0, second=0)
-            events = list(filter(lambda e: today.timestamp() < e.timestamp < (today + timedelta(weeks=3)).timestamp(),
+            today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+            events = list(filter(lambda e: today.timestamp() <= e.timestamp < (today + timedelta(weeks=2)).timestamp(),
                                  fetch_events_from_ids(event_ids)))  # Filtering events that are in the next 2 weeks
+            if not events:
+                user_logger.info("No events to be notified about in the next 2 weeks")
+                continue
+
             events.sort(key=lambda e: e.timestamp)
             user_logger.info(f"Found {len(events)} events in the next 2 weeks")
             user_logger.debug(events)
@@ -120,7 +124,7 @@ class CalendarCog(commands.Cog):
                         section_number = 14
 
                 else:
-                    user_logger.warning(f"Event {event} has invalid date {event_date}")
+                    break
 
                 notification_message += f"{event}\n"
                 user_logger.info("Prepared main part of notification message")
