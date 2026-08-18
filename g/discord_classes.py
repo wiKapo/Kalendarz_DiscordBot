@@ -181,12 +181,12 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
                 amount_text += "ń"
         else:
             amount_text = "Brak wydarzeń"
+        label_text = f"[{calendar.id}] {calendar.title if calendar.title else DEFAULT_TITLE}"
         options.append(SelectOption(
-            label=f"[{calendar.id}] {calendar.title if calendar.title else DEFAULT_TITLE}",
+            label=truncate_text(label_text, 100),
             description=f"{calendar.channelName} ({amount_text})",
             value=f"{calendar.id}",
-            default=True if len(calendars) == 1 or (
-                    selected_calendars and calendar.id in selected_calendars) else False
+            default=bool(selected_calendars and calendar.id in selected_calendars)
         ))
     return options
 
@@ -198,13 +198,19 @@ def format_event_options(events: list[Event], selected_event: int | None = None)
         if event.team:
             description += f'[{event.team}] '
         if event.place:
-            description += event.place
+            description += f"{event.place} "
+
+        if len(description) < 40:
+            description += f"w kalendarz{'u' if len(event.calendarIds) == 1 else 'ach'} "
+        else:
+            description += "w"
+        description += f"#{", #".join(set(map(str, event.calendarIds)))}"
 
         label_text = f"{event.date}{f' {event.time}' if event.time else ''} {event.name}"
         options.append(
             SelectOption(
                 label=truncate_text(label_text, 100),
-                description=description,
+                description=truncate_text(description, 100),
                 value=f"{event.id}",
                 default=event.id == selected_event
             )
