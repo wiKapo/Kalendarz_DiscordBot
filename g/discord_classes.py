@@ -88,7 +88,7 @@ class SelectSectionView(discord.ui.View):
         self.add_item(SelectSection(placeholder="Wybierz sekcję", action=action, sections=sections))
 
 
-class CalendarDescriptionButton(discord.ui.Button):
+class UniversalButton(discord.ui.Button):
     def __init__(self, label: str, style: discord.ButtonStyle, action: Callable):
         self.action = action
         super().__init__(label=label, style=style)
@@ -100,8 +100,21 @@ class CalendarDescriptionButton(discord.ui.Button):
             await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
             logger = get_logger(LogType.USER, interaction.user.name)
             logger.error(
-                f"in callback of CalendarDescriptionButton in [{interaction.guild.name} - {interaction.guild.id}] "
+                f"in callback of {self.label} in [{interaction.guild.name} - {interaction.guild.id}] "
                 f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
+
+
+async def show_messages(interaction: discord.Interaction):
+    calendar = Calendar()
+    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+    messages = fetch_messages_for_calendar(calendar.id)
+    if not messages:
+        await interaction.response.send_message("Brak zmian do pokazania", ephemeral=True)
+    else:
+        result = "## Ostatnie zmiany w kalendarzu:\n"
+        for message in messages:
+            result += "- " + str(message) + "\n"
+        await interaction.response.send_message(result, ephemeral=True)
 
 
 class UpdateMessageView(discord.ui.View):
@@ -111,24 +124,12 @@ class UpdateMessageView(discord.ui.View):
         super().__init__(timeout=None)
         self.role: int | None = role
 
-        self.add_item(CalendarDescriptionButton(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
-                                                action=self.show_messages))
+        self.add_item(UniversalButton(label="Pokaż ostatnie zmiany", style=discord.ButtonStyle.primary,
+                                      action=show_messages))
         if self.role:
-            self.add_item(CalendarDescriptionButton(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
-                                                    style=discord.ButtonStyle.secondary,
-                                                    action=self.get_ping_role))
-
-    async def show_messages(self, interaction: discord.Interaction):
-        calendar = Calendar()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        messages = fetch_messages_for_calendar(calendar.id)
-        if not messages:
-            await interaction.response.send_message("Brak zmian do pokazania", ephemeral=True)
-        else:
-            result = "## Ostatnie zmiany w kalendarzu:\n"
-            for message in messages:
-                result += "- " + str(message) + "\n"
-            await interaction.response.send_message(result, ephemeral=True)
+            self.add_item(UniversalButton(label="Otrzymuj powiadomienia o aktualizacji kalendarza",
+                                          style=discord.ButtonStyle.secondary,
+                                          action=self.get_ping_role))
 
     async def get_ping_role(self, interaction: discord.Interaction):
         role: discord.role.Role = interaction.guild.get_role(self.role)
