@@ -158,7 +158,7 @@ def format_event_options(events: list[Event], selected_event: int | None = None)
         if len(description) < 40:
             description += f"w kalendarz{'u' if len(event.calendarIds) == 1 else 'ach'} "
         else:
-            description += "w"
+            description += "w "
         description += f"#{", #".join(set(map(str, event.calendarIds)))}"
 
         label_text = f"{event.date}{f' {event.time}' if event.time else ''} {event.name}"
