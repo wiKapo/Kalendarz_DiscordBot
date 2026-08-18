@@ -5,10 +5,11 @@ from g.classes.calendar import fetch_calendars_in_guild, Calendar, fetch_calenda
 from g.classes.event import Event
 from g.classes.logger import get_logger, LogType
 from g.discord_classes import format_calendar_options
-from g.util import update_calendar
+from g.util import update_calendar, check_if_calendar_exists
 
 
 async def event_add(interaction: discord.Interaction):
+    calendar_id = await check_if_calendar_exists(interaction)
     calendars = fetch_calendars_in_guild(interaction.guild_id)
     for calendar in calendars:
         await calendar.get_additional_data(interaction.guild)
@@ -17,15 +18,16 @@ async def event_add(interaction: discord.Interaction):
     logger.info(f"Showing add event modal for {interaction.user.name} "
                 f"in {interaction.guild.name} ({interaction.guild_id}) "
                 f"in {interaction.channel.name} ({interaction.channel_id})")
-    await interaction.response.send_modal(EventAddModal(calendars))
+    await interaction.response.send_modal(EventAddModal(calendars, calendar_id))
 
 
 class EventAddModal(discord.ui.Modal):
 
-    def __init__(self, calendars: list[Calendar]):
+    def __init__(self, calendars: list[Calendar], selected_calendar_id: int | None):
         super().__init__(title="Dodaj wydarzenie")
 
-        self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars), max_values=len(calendars))
+        selected_calendar_id = {selected_calendar_id} if selected_calendar_id else None
+        self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars, selected_calendar_id), max_values=len(calendars))
         self.add_item(discord.ui.Label(text="Do których kalendarzy przypisać wydarzenie?",
                                        component=self.calendar_select))
 

@@ -121,7 +121,7 @@ def format_section_options(sections: list[Section]) -> list[SelectOption]:
     return options
 
 
-def format_calendar_options(calendars: list[Calendar], selected_calendars: set[int] | None = None) \
+def format_calendar_options(calendars: list[Calendar], selected_calendar_ids: set[int] | None = None) \
         -> list[SelectOption]:
     options = []
     for calendar in calendars:
@@ -141,7 +141,7 @@ def format_calendar_options(calendars: list[Calendar], selected_calendars: set[i
             label=truncate_text(label_text, 100),
             description=f"{calendar.channelName} ({amount_text})",
             value=f"{calendar.id}",
-            default=bool(selected_calendars and calendar.id in selected_calendars)
+            default=bool(selected_calendar_ids and calendar.id in selected_calendar_ids)
         ))
     return options
 
