@@ -173,10 +173,7 @@ class AdminCog(commands.Cog):
 
         try:
             logger.info("Updating sections table")
-            data = Db().fetch_all("PRAGMA table_info(sections)")
-            print(data)
-            if len(data) > 3:
-                raise sqlite3.OperationalError("OK")
+            Db().execute("SELECT TimeTag FROM sections")
 
             Db().execute("DROP TABLE IF EXISTS sections ")
             Db().execute("CREATE TABLE IF NOT EXISTS sections ("
@@ -215,9 +212,9 @@ class AdminCog(commands.Cog):
 
         try:
             logger.info("Removing notifications table")
-            data = Db().fetch_all("PRAGMA table_info(sections)")
+            data = Db().fetch_all("PRAGMA table_info(notifications)")
             if 0 < len(data) <= 2:
-                raise sqlite3.OperationalError("OK")
+                raise sqlite3.OperationalError("Notification table is smaller than 3 columns")
 
             Db().execute("DROP TABLE IF EXISTS notifications")
             Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
@@ -235,6 +232,8 @@ class AdminCog(commands.Cog):
             logger.error(f"Failed. Error: {e} Type: {type(e)}")
             await interaction.followup.send(f"Wykryto błąd zatrzymuję. ERROR: {e}", ephemeral=True)
             return
+
+        await interaction.followup.send("Skończono aktualizować bazę danych", ephemeral=True)
 
     @update_db.error
     async def update_db_error(self, interaction: discord.Interaction, error):
