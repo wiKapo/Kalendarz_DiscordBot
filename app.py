@@ -123,7 +123,8 @@ W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar
 
 `/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 `/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
-`/calendar update` - Aktualizuje kalendarz z tego kanału. (Komenda nie powinna być już potrzebna)
+`/calendar update <calendar_id> <quiet>` - Aktualizuje kalendarz z tego kanału.
+Można podać id kalendarza, który ma być zaktualizowany. Można opcjonalnie ustawić `quiet` na `False`, aby powiadomić o aktualizacji.
 
 ### ---==[ Polecenia niestandardowych sekcji ]==---
 `/section add <calendar_id>` - Dodaje sekcję do wybranego kalendarza. Można opcjonalnie podać id kalendarza do którego ma być dodana.

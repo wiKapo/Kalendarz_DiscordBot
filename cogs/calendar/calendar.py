@@ -145,11 +145,12 @@ class CalendarCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @cal_group.command(name="update", description="Aktualizuje kalendarz")
-    @discord.app_commands.choices(quiet=[discord.app_commands.Choice(name="Tak (domyślnie)", value=True),
-                                         discord.app_commands.Choice(name="Nie", value=False)])
+    @discord.app_commands.choices(quiet=[discord.app_commands.Choice(name="Yes (default)", value=True),
+                                         discord.app_commands.Choice(name="No", value=False)])
+    @discord.app_commands.describe(calendar_id="Numer kalendarza do aktualizacji (domyślnie kalendarz, który znajduje się na kanale)")
     @discord.app_commands.check(check_user)
-    async def update(self, interaction: discord.Interaction, quiet: discord.app_commands.Choice[int] | None):
-        await calendar_update(interaction, bool(not quiet or quiet.value))
+    async def update(self, interaction: discord.Interaction, calendar_id: int | None, quiet: discord.app_commands.Choice[int] | None):
+        await calendar_update(interaction, calendar_id, bool(not quiet or quiet.value))
 
     @update.error
     async def update_error(self, interaction: discord.Interaction, error):
