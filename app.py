@@ -133,8 +133,10 @@ Można podać id kalendarza, który ma być zaktualizowany. Można opcjonalnie u
 
 ### ---==[ Polecenia wydarzeń ]==---
 `/event add` - Dodaje wydarzenie. Dodane wydarzenia będą usuwane po 3 tygodniach od dnia wydarzenia.
-`/event edit` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
-`/event delete` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je. **Tej operacji nie można cofnąć**."""
+`/event edit <calendar_id>` - Wysyła wiadomość z polem wyboru wydarzenia do edycji. Po wyborze wydarzenia otwiera okienko edycji.
+Można podać id kalendarza, z którego będzie wybierane wydarzenie do edycji.
+`/event delete <calendar_id>` - Otwiera okienko z polem wyboru wydarzeń do usunięcia. Po wyborze wydarzeń usuwa je całkowicie. **Tej operacji nie można cofnąć**.
+Można podać id kalendarza, z którego będą pobierane wydarzenia do usunięcia."""
     await interaction.response.send_message(message, ephemeral=True)
 
     message = """### ---==[ Polecenia menedżerów ]==---

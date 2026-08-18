@@ -4,12 +4,12 @@ from cogs.event.util import create_event_delete_message
 from g.classes.calendar import Calendar, fetch_calendars_from_ids
 from g.classes.event import Event, fetch_events_from_guild
 from g.classes.logger import LogType, get_logger
-from g.discord_classes import format_event_options
+from g.discord_classes import format_event_options, UniversalSelectView
 from g.util import check_if_calendar_exists, update_calendar
 
 
-async def event_delete(interaction: discord.Interaction):
-    calendar_id = await check_if_calendar_exists(interaction)
+async def event_delete(interaction: discord.Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
 
     logger = get_logger(LogType.EVENT)
     logger.info(f"{interaction.user.name} is trying to delete events "
@@ -17,21 +17,54 @@ async def event_delete(interaction: discord.Interaction):
                 f"in [{interaction.channel.name} - {interaction.channel_id}]")
 
     if calendar_id:
-        logger.info(f"Fetching events from calendar #{calendar_id}")
         calendar = Calendar()
-        calendar.fetch(calendar_id)
+        calendar.fetch_in_guild(calendar_id, interaction.guild_id)
+        if not calendar:
+            await interaction.response.send_message("Kalendarz o tym numerze nie istnieje", ephemeral=True)
+            logger.warning(f"Tried to delete events from calendar #{calendar_id} that does not exist in this guild")
+            return
+        logger.info(f"Fetching events from calendar #{calendar_id}")
         events = calendar.fetch_events()
+        if not events:
+            logger.info("No events found in this calendar")
+            await interaction.response.send_message("Brak wydarzeń w tym kalendarzu", ephemeral=True)
+            return
+        events_source = f"z kalendarza #{calendar_id}"
     else:
-        logger.info(f"Fetching events from guild")
+        logger.info("Fetching events from guild")
         events = fetch_events_from_guild(interaction.guild_id)
+        if not events:
+            logger.info("No events found in this guild")
+            await interaction.response.send_message("Brak wydarzeń na tym serwerze", ephemeral=True)
+            return
+        events_source = "z całego serwera"
 
-    if events:
-        # TODO if calendar_id: show button to show all remaining events in the guild
-        logger.info(f"Sending delete events modal")
+    if len(events) <= 25:
+        logger.info("Sending delete events modal")
         await interaction.response.send_modal(DeleteEventsModal(events))
     else:
-        logger.info(f"No events found in this guild")
-        await interaction.response.send_message("Brak wydarzeń na tym serwerze.", ephemeral=True)
+        logger.info("Sending select event range form")
+        options = []
+        for i in range(0, len(events), 25):
+            options.append(discord.SelectOption(
+                label=f"Od {i} do {min(i + 25, len(events))}",
+                description=f"Od {events[i].date} do {events[min(i + 25, len(events)) - 1].date}",
+                value=f"{calendar_id if calendar_id else ''}.{i}.{min(i + 25, len(events))}", ))
+        await interaction.response.send_message(
+            f"Wybierz przedział wydarzeń {events_source}",
+            view=UniversalSelectView(options, "Wybierz przedział", send_event_delete_modal),
+            ephemeral=True)
+
+
+async def send_event_delete_modal(interaction: discord.Interaction, values: list[str]):
+    calendar_id, begin, end = list(map(lambda x: int(x), values[0].split('.')))
+    if calendar_id:
+        calendar = Calendar()
+        calendar.fetch(calendar_id)
+        events = calendar.fetch_events()[begin:end]
+    else:
+        events = fetch_events_from_guild(interaction.guild_id)[begin:end]
+    await interaction.response.send_modal(DeleteEventsModal(events))
 
 
 class DeleteEventsModal(discord.ui.Modal):

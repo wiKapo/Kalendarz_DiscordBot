@@ -11,8 +11,8 @@ from g.discord_classes import format_calendar_options, UniversalSelectView, form
 from g.util import check_if_calendar_exists, update_calendar
 
 
-async def event_edit(interaction: Interaction):
-    calendar_id = await check_if_calendar_exists(interaction)
+async def event_edit(interaction: Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
 
     logger = get_logger(LogType.EVENT)
     logger.info(f"{interaction.user.name} is trying to edit event "
@@ -20,25 +20,33 @@ async def event_edit(interaction: Interaction):
                 f"in [{interaction.channel.name} - {interaction.channel_id}]")
 
     if calendar_id:
-        logger.info(f"Fetching events from calendar #{calendar_id}")
         calendar = Calendar()
-        calendar.fetch(calendar_id)
+        calendar.fetch_in_guild(calendar_id, interaction.guild_id)
+        if not calendar:
+            await interaction.response.send_message("Kalendarz o tym numerze nie istnieje", ephemeral=True)
+            logger.warning(f"Tried to delete events from calendar #{calendar_id} that does not exist in this guild")
+            return
+        logger.info(f"Fetching events from calendar #{calendar_id}")
         events = calendar.fetch_events()
+        if not events:
+            logger.info("No events found in this calendar")
+            await interaction.response.send_message("Brak wydarzeń w tym kalendarzu", ephemeral=True)
+            return
+        events_source = f"z kalendarza #{calendar_id}"
     else:
         logger.info(f"Fetching events from guild")
         events = fetch_events_from_guild(interaction.guild_id)
+        if not events:
+            logger.info("No events found in this guild")
+            await interaction.response.send_message("Brak wydarzeń do edycji na tym serwerze.", ephemeral=True)
+            return
+        events_source = "z całego serwera"
 
-    if events:
-        logger.info("Showing event select form")
-        # TODO if calendar_id: show button to show all remaining events in the guild
-
-        await interaction.response.send_message(
-            "Wydarzenia posortowane od najbliższego do najdalszego",
-            view=UniversalSelectView(format_event_options(events), "Wybierz wydarzenie do edytowania",
-                                     send_event_edit_modal), ephemeral=True)
-    else:
-        logger.info("No events found in this guild")
-        await interaction.response.send_message("Brak wydarzeń do edycji na tym serwerze.", ephemeral=True)
+    logger.info("Showing event select form")
+    await interaction.response.send_message(
+        f"Wydarzenia {events_source}, posortowane od najbliższego do najdalszego",
+        view=UniversalSelectView(format_event_options(events), "Wybierz wydarzenie do edytowania",
+                                 send_event_edit_modal), ephemeral=True)
 
 
 async def send_event_edit_modal(interaction: discord.Interaction, values: list[str]):
