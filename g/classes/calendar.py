@@ -162,6 +162,10 @@ def fetch_all_notifications() -> dict[int, set[Calendar]]:
     return dict(zip(user_ids, notify_calendars))
 
 
+def remove_all_notifications_from_user(user_id: int):
+    Db().execute("DELETE FROM notifications WHERE UserId=?", (user_id,))
+
+
 def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
     data = Db().fetch_all("SELECT * FROM calendars WHERE GuildId=?", (guild_id,))
     if data:

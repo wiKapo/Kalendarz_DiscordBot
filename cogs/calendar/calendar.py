@@ -7,6 +7,7 @@ from cogs.calendar.create import calendar_create
 from cogs.calendar.delete import calendar_delete
 from cogs.calendar.edit import calendar_edit
 from cogs.calendar.update import calendar_update
+from cogs.calendar.util import DMNotificationButtonsView
 from g.classes.calendar import fetch_all_calendars, fetch_all_notifications, Calendar
 from g.classes.event import fetch_outdated_events, fetch_events_from_ids
 from g.classes.logger import get_logger, LogType
@@ -124,11 +125,13 @@ class CalendarCog(commands.Cog):
                 notification_message += f"{event}\n"
                 user_logger.info("Prepared main part of notification message")
 
-            if events:
-                notification_message += f"\nZ kalendarz{'a' if len(calendars) == 1 else 'y'} {', '.join(map(lambda c: f'[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})', calendars))}\n"
+            notification_message += \
+                (f"\nZ kalendarz{'a' if len(calendars) == 1 else 'y'} "
+                 f"{', '.join(map(lambda c:
+                                  f'[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})', calendars))}\n")
             user_logger.info("Prepared final part of notification message")
 
-            await self.bot.get_user(user_id).send(notification_message)
+            await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
             user_logger.info("Sent notification")
         notification_logger.info("Finished notification loop")
 
