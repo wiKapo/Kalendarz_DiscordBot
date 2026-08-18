@@ -24,6 +24,6 @@ async def calendar_update(interaction: discord.Interaction, calendar_id: int | N
         await update_calendar(interaction.guild, calendar, interaction.user.name, quiet)
         await update_calendar_buttons(interaction.guild, calendar)
 
-        await interaction.followup.send('Kalendarz został zaktualizowany', ephemeral=True)
+        await interaction.followup.send(f'Kalendarz #{calendar_id} został zaktualizowany', ephemeral=True)
     else:
-        await interaction.response.send_message('Kalendarz o tym numerze nie istnieje', ephemeral=True)
+        await interaction.response.send_message(f'Kalendarz o numerze {calendar_id} nie istnieje', ephemeral=True)
