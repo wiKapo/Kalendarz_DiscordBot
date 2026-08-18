@@ -89,6 +89,8 @@ class EventEditModal(discord.ui.Modal):
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         old_event = copy.deepcopy(self.event)
+        user_loggers = get_logger(LogType.USER, interaction.user.name)
+        user_loggers.info(f"Editing event {self.event.id}")
         logger = get_logger(LogType.EVENT, self.event.id)
         logger.info(f"{interaction.user.name} is editing event {self.event.name}")
 
@@ -100,11 +102,12 @@ class EventEditModal(discord.ui.Modal):
         logger.debug(f"New event: {repr(self.event)}")
 
         self.event.update()
+
+        self.event.calendarIds = set(map(lambda x: int(x), self.calendar_select.values))
         self.event.update_calendar_connections()
         create_event_update_message(self.event, old_event)
 
-        modified_calendars_ids = old_event.calendarIds.intersection(
-            set(map(lambda x: int(x), self.calendar_select.values)))
+        modified_calendars_ids = old_event.calendarIds.union(self.event.calendarIds)
         logger.info(f"Affected calendars: {modified_calendars_ids}")
         calendars = fetch_calendars_from_ids(modified_calendars_ids)
 
