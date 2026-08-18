@@ -74,7 +74,7 @@ async def send_error_message(interaction: discord.Interaction, error):
             logger.warning(f"User {interaction.user.name} doesn't have permissions to use /{command_name}")
             await interaction.response.send_message("Brak uprawnień", ephemeral=True)
     else:
-        logger.error(f"Received an error while executing {command_name}: {error}", exc_info=True)
+        logger.error(f"Received an error while executing '/{command_name}':\n{error}", exc_info=True)
         await interaction.response.send_message(
             f"Błąd: {error}\nZgłoś do @wiKapo lub na serwerze https://discord.gg/ayXkVwVkGA "
             f"na kanale: https://discord.com/channels/1479867817015771136/1479868335297527899", ephemeral=True)
