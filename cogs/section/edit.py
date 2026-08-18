@@ -2,35 +2,46 @@ from datetime import datetime, timedelta
 
 import discord
 
-from g.classes.calendar import Calendar, fetch_calendars_in_guild
+from g.classes.calendar import Calendar, fetch_calendars_in_guild_with_sections
 from g.classes.logger import get_logger, LogType
 from g.classes.section import Section
-from g.discord_classes import SelectSectionView, SelectCalendarView
-from g.util import update_calendar
+from g.discord_classes import UniversalSelectView, format_calendar_options, format_section_options
+from g.util import update_calendar, check_if_calendar_exists
 
 
 async def section_edit(interaction: discord.Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
     if not calendar_id:
         logger = get_logger(LogType.CALENDAR)
         logger.info(f"{interaction.user.name} is editing sections")
-        calendars = fetch_calendars_in_guild(interaction.guild_id)
+        calendars = fetch_calendars_in_guild_with_sections(interaction.guild_id)
+        if not calendars:
+            await interaction.response.send_message("Brak kalendarzy z niestandardowymi sekcjami", ephemeral=True)
+            return
         for calendar in calendars:
             await calendar.get_additional_data(interaction.guild)
         logger.info("Showing calendar select form")
-        await interaction.response.send_message("Wybierz kalendarz, z którego chcesz edytować niestandardową sekcję",
-                                                view=SelectCalendarView(calendars, send_section_select_message),
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "Wybierz kalendarz, z którego chcesz edytować niestandardową sekcję",
+            view=UniversalSelectView(format_calendar_options(calendars), "Wybierz kalendarz",
+                                     send_section_select_message),
+            ephemeral=True)
     else:
-        logger = get_logger(LogType.CALENDAR, calendar_id)
-        logger.info(f"{interaction.user.name} is editing sections from this calendar")
-
         calendar = Calendar()
-        calendar.fetch(calendar_id)
-        logger.info("Showing section select form")
-        await interaction.response.send_message("Wybierz sekcję do edycji",
-                                                view=SelectSectionView(calendar.customSections,
-                                                                       send_section_edit_modal),
-                                                ephemeral=True)
+        calendar.fetch_in_guild(calendar_id, interaction.guild_id)
+        if calendar:
+            if not calendar.customSections:
+                await interaction.response.send_message("Brak niestandardowych sekcji w tym kalendarzu", ephemeral=True)
+            logger = get_logger(LogType.CALENDAR, calendar_id)
+            logger.info(f"{interaction.user.name} is editing sections from this calendar")
+            logger.info("Showing section select form")
+            await interaction.response.send_message(
+                "Wybierz sekcję do edycji",
+                view=UniversalSelectView(format_section_options(calendar.customSections), "Wybierz sekcję",
+                                         send_section_edit_modal), ephemeral=True)
+        else:
+            await interaction.response.send_message("Kalendarz o tym numerze nie istnieje",
+                                                    ephemeral=True)
 
 
 async def send_section_select_message(interaction: discord.Interaction, values: list[str]):
@@ -43,10 +54,10 @@ async def send_section_select_message(interaction: discord.Interaction, values: 
         await interaction.response.send_message("Wybrany kalendarz nie posiada niestandardowych sekcji", ephemeral=True)
     else:
         logger.info("Showing section select form")
-        await interaction.response.send_message("Wybierz sekcję do edycji",
-                                                view=SelectSectionView(calendar.customSections,
-                                                                       send_section_edit_modal),
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "Wybierz sekcję do edycji",
+            view=UniversalSelectView(format_section_options(calendar.customSections), "Wybierz sekcję",
+                                     send_section_edit_modal), ephemeral=True)
 
 
 async def send_section_edit_modal(interaction: discord.Interaction, values: list[str]):
@@ -83,6 +94,7 @@ class SectionEditModal(discord.ui.Modal):
         calendar.customSections.remove(self.section)
         logger.info("Removed section from list")
 
+        old_section_name = self.section.name
         self.section.name = self.name_input.value
         self.section.begin_date = self.begin_date_input.value
         self.section.end_date = self.end_date_input.value
@@ -107,7 +119,8 @@ class SectionEditModal(discord.ui.Modal):
         calendar.update_sections()
         logger.info("Updated calendar sections in database")
 
-        await update_calendar(interaction.guild, calendar, interaction.user.name)
-
-        await interaction.response.send_message(f"Zmieniono sekcję {self.section.name}", ephemeral=True)
+        await interaction.response.send_message(f"Zmieniono sekcję `{old_section_name}`", ephemeral=True)
         logger.info("Finished editing section")
+
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
+        logger.info("Updated calendar")

@@ -5,11 +5,13 @@ import discord
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
 from g.classes.logger import get_logger, LogType
 from g.classes.section import Section
-from g.discord_classes import SelectCalendarView
-from g.util import update_calendar
+from g.discord_classes import UniversalSelectView, format_calendar_options
+from g.util import update_calendar, check_if_calendar_exists
 
 
 async def section_add(interaction: discord.Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
+
     if not calendar_id:
         logger = get_logger(LogType.CALENDAR)
         logger.info(f"{interaction.user.name} is adding new section")
@@ -18,9 +20,10 @@ async def section_add(interaction: discord.Interaction, calendar_id: int | None)
             await calendar.get_additional_data(interaction.guild)
 
         logger.info("Showing calendar select form")
-        await interaction.response.send_message("Wybierz kalendarz, do którego chcesz dodać niestandardową sekcję",
-                                                view=SelectCalendarView(calendars, send_section_add_modal),
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            "Wybierz kalendarz, do którego chcesz dodać niestandardową sekcję",
+            view=UniversalSelectView(format_calendar_options(calendars), "Wybierz kalendarz", send_section_add_modal),
+            ephemeral=True)
     else:
         logger = get_logger(LogType.CALENDAR, calendar_id)
         logger.info(f"{interaction.user.name} is adding new section to this calendar")
@@ -81,12 +84,7 @@ class SectionAddModal(discord.ui.Modal):
         self.calendar.update_sections()
         logger.info("Updated calendar sections in database")
 
-        try:
-            await update_calendar(interaction.guild, self.calendar, interaction.user.name)
-            logger.info("Updated calendar")
-        except Exception as e:
-            await interaction.response.send_message(f"ERROR: {e}", ephemeral=True)
-            return
-
-        await interaction.response.send_message(f"Stworzono sekcję {section.name}", ephemeral=True)
+        await interaction.response.send_message(f"Stworzono sekcję `{section.name}`", ephemeral=True)
         logger.info("Created new section")
+
+        await update_calendar(interaction.guild, self.calendar, interaction.user.name)

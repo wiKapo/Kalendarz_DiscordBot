@@ -55,10 +55,11 @@ class EventAddModal(discord.ui.Modal):
         # Adding new event
         event.insert()
         logger.info("Event was inserted to the database")
+        event.calendarIds = set(map(lambda x: int(x), self.calendar_select.values))
         logger.debug(f"Event: {repr(event)}")
         create_event_update_message(event)
 
-        calendars = fetch_calendars_from_ids(set(map(lambda x: int(x), self.calendar_select.values)))
+        calendars = fetch_calendars_from_ids(event.calendarIds)
 
         update_message: str
         if len(calendars) == 1:

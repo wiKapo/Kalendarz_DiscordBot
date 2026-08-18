@@ -7,7 +7,7 @@ from cogs.event.util import create_event_update_message
 from g.classes.calendar import Calendar, fetch_calendars_in_guild, fetch_calendars_from_ids
 from g.classes.event import fetch_events_from_guild, Event
 from g.classes.logger import LogType, get_logger
-from g.discord_classes import SelectEventView, format_calendar_options
+from g.discord_classes import format_calendar_options, UniversalSelectView, format_event_options
 from g.util import check_if_calendar_exists, update_calendar
 
 
@@ -33,14 +33,16 @@ async def event_edit(interaction: Interaction):
         # TODO if calendar_id: show button to show all remaining events in the guild
 
         await interaction.response.send_message(
-            view=SelectEventView(events, "Wybierz wydarzenie do edytowania", send_event_edit_modal),
-            ephemeral=True)
+            "Wydarzenia posortowane od najbliższego do najdalszego",
+            view=UniversalSelectView(format_event_options(events), "Wybierz wydarzenie do edytowania",
+                                     send_event_edit_modal), ephemeral=True)
     else:
         logger.info("No events found in this guild")
         await interaction.response.send_message("Brak wydarzeń do edycji na tym serwerze.", ephemeral=True)
 
 
-async def send_event_edit_modal(interaction: discord.Interaction, events: list[Event], values: list[str]):
+async def send_event_edit_modal(interaction: discord.Interaction, values: list[str]):
+    events = fetch_events_from_guild(interaction.guild_id)
     event = next(event for event in events if event.id == int(values[0]))
     guild_id = event.get_guild_id()
     calendars = fetch_calendars_in_guild(guild_id)
@@ -93,7 +95,8 @@ class EventEditModal(discord.ui.Modal):
         self.event.update_calendar_connections()
         create_event_update_message(self.event, old_event)
 
-        modified_calendars_ids = old_event.calendarIds.intersection(set(map(lambda x: int(x), self.calendar_select.values)))
+        modified_calendars_ids = old_event.calendarIds.intersection(
+            set(map(lambda x: int(x), self.calendar_select.values)))
         logger.info(f"Affected calendars: {modified_calendars_ids}")
         calendars = fetch_calendars_from_ids(modified_calendars_ids)
 

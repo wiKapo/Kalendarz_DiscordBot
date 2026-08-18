@@ -14,78 +14,32 @@ def truncate_text(text: str, max_length: int) -> str:
     return text[:max_length - 3] + "..." if len(text) > max_length else text
 
 
-# TODO merge all SelectViews into one function
-# TODO handle having more than 25 items in Select
+class UniversalSelect(discord.ui.Select):
+    action: Callable | None
 
-class SelectEvent(discord.ui.Select):
-    action: Callable
-    events: list[Event]
-
-    def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
-        options = format_event_options(events)
+    def __init__(self, options: list[SelectOption], placeholder: str, action: Callable | None = None,
+                 max_values: int = 1):
         super().__init__(placeholder=placeholder, options=options, max_values=max_values)
         self.action = action
-        self.events = events
-
-    async def callback(self, interaction: discord.Interaction):
-        try:
-            await self.action(interaction, self.events, self.values)
-        except Exception as e:
-            await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
-            logger = get_logger(LogType.USER, interaction.user.name)
-            logger.error(f"in callback of SelectEvent in [{interaction.guild.name} - {interaction.guild.id}] "
-                         f"in [{interaction.channel.name} - {interaction.channel.id}]: {e}", exc_info=True)
-
-
-class SelectEventView(discord.ui.View):
-    def __init__(self, events: list[Event], placeholder: str, action: Callable, max_values: int = 1):
-        super().__init__()
-        self.add_item(SelectEvent(events, placeholder, action, max_values))
-
-
-class SelectCalendar(discord.ui.Select):
-    action: Callable
-
-    def __init__(self, placeholder: str, action: Callable, calendars: list[Calendar]):
-        options = format_calendar_options(calendars)
-        super().__init__(placeholder=placeholder, options=options)
-        self.action = action
-
-    async def callback(self, interaction: discord.Interaction):
-        try:
-            await self.action(interaction, self.values)
-        except Exception as e:
-            logger = get_logger(LogType.USER, interaction.user.name)
-            logger.error(f"in callback of SelectCalendar {e}", exc_info=True)
-
-
-class SelectCalendarView(discord.ui.View):
-    def __init__(self, calendars: list[Calendar], action: Callable):
-        super().__init__()
-        self.add_item(SelectCalendar(placeholder="Wybierz kalendarz", action=action, calendars=calendars))
-
-
-class SelectSection(discord.ui.Select):
-    action: Callable
-
-    def __init__(self, placeholder: str, action: Callable | None, sections: list[Section], max_values: int = 1):
-        options = format_section_options(sections)
-        super().__init__(placeholder=placeholder, options=options, max_values=max_values)
-        self.action: Callable | None = action
 
     async def callback(self, interaction: discord.Interaction):
         if self.action:
             try:
                 await self.action(interaction, self.values)
             except Exception as e:
+                await interaction.response.send_message(f"Błąd przy wykonywaniu akcji", ephemeral=True)
                 logger = get_logger(LogType.USER, interaction.user.name)
-                logger.error(f"in callback of SelectSection {e}", exc_info=True)
+                logger.error(f"In callback of {self.placeholder} in [{interaction.guild.name} - {interaction.guild_id}] "
+                             f"in [{interaction.channel.name} - {interaction.channel_id}]: {e}", exc_info=True)
 
 
-class SelectSectionView(discord.ui.View):
-    def __init__(self, sections: list[Section], action: Callable):
+class UniversalSelectView(discord.ui.View):
+    def __init__(self, options: list[SelectOption], placeholder: str, action: Callable,
+                 max_values: int = 1):
         super().__init__()
-        self.add_item(SelectSection(placeholder="Wybierz sekcję", action=action, sections=sections))
+        amount = len(options)
+        for start in range(0, amount, 25):
+            self.add_item(UniversalSelect(options[start:start + 25], placeholder, action, max_values))
 
 
 class UniversalButton(discord.ui.Button):
