@@ -108,13 +108,13 @@ async def about(interaction: discord.Interaction):
         "## Bot stworzony przez wiKapo.\n"
         "Informacje o aktualizacjach i o znanych błędach są na tym serwerze: https://discord.gg/ayXkVwVkGA\n"
         "Ten serwer jest również przeznaczony do dzielenia się własnymi projektami\n\n"
-        f"Wersja kalendarza: {BOT_VERSION}",
+        f"Wersja kalendarza: v{BOT_VERSION}",
         ephemeral=True)
 
 
 @bot.tree.command(name="help")
 async def help(interaction: discord.Interaction):
-    message = """## Kalendarz by wiKapo
+    message = f"""## Kalendarz by wiKapo (v{BOT_VERSION})
 ### ---==[ Polecenia kalendarza ]==---
 `/calendar create <title>` - Tworzy nowy kalendarz.
 Można opcjonalnie podać nazwę kalendarza.
@@ -123,7 +123,7 @@ W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar
 
 `/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
 `/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
-`/calendar update <calendar_id> <quiet>` - Aktualizuje kalendarz z tego kanału.
+`/calendar update <calendar_id> <quiet>` - Aktualizuje kalendarz. Domyślnie wybierany jest kalendarz z kanału, na którym wykonano komendę.
 Można podać id kalendarza, który ma być zaktualizowany. Można opcjonalnie ustawić `quiet` na `False`, aby powiadomić o aktualizacji.
 
 ### ---==[ Polecenia niestandardowych sekcji ]==---

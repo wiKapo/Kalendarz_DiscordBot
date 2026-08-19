@@ -11,7 +11,7 @@ from g.classes.db import Db
 from g.classes.event import fetch_all_events, Event
 from g.classes.logger import get_logger, LogType
 from g.classes.message import Message
-from g.util import check_calendar_admin, update_calendar, check_if_calendar_exists
+from g.util import check_calendar_admin, update_calendar, check_if_calendar_exists, BOT_VERSION
 
 
 class AdminCog(commands.Cog):
@@ -36,6 +36,8 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(5)
+            message.message = "**Aktualizacja kalendarza** WERSJA 1.0!!!"
+            message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** Możliwe jest dodawanie jednego wydarzenia do wielu kalendarzy"
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** Zaktualizowano opis kalendarza, który teraz pojawia się zawsze. Jest niezależny od roli aktualizacji kalendarza"
@@ -54,7 +56,7 @@ class AdminCog(commands.Cog):
             try:
                 guild = await self.bot.fetch_guild(calendar.guildId)
                 await update_calendar(guild, calendar, interaction.user.name, True,
-                                      f"**Kalendarz został zaktualizowany do najnowszej wersji**\n"
+                                      f"**Kalendarz został zaktualizowany do wersji {BOT_VERSION}**\n"
                                       f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
                                       f"i pod przyciskiem `Pokaż ostatnie zmiany`\n")
                 await update_calendar_buttons(guild, calendar)

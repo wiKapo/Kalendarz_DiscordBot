@@ -9,7 +9,7 @@ from g.classes.logger import LogType, get_logger
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
 from g.discord_classes import UpdateMessageView
 
-BOT_VERSION = "PREv1.0"  # TODO ALWAYS UPDATE ME
+BOT_VERSION = "1.0"  # TODO ALWAYS UPDATE ME
 
 
 # --------- CHECKS ---------
@@ -119,7 +119,7 @@ async def create_calendar_description(channel, calendar: Calendar, update_text: 
 
     logger.info("Sending new calendar description")
     message = await channel.send(ping_text + (update_text if update_text else "") +
-                                 f"-# Wersja kalendarza: {BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
+                                 f"-# Wersja kalendarza: v{BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
                                  view=UpdateMessageView(calendar.pingRoleId))
     calendar.descriptionMessageId = message.id
     calendar.update()
