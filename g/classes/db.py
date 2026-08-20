@@ -7,7 +7,7 @@ class Db:
 
     def fetch_one(self, query: str, data=None):
         self.connect()
-        if data is not None:
+        if data:
             self.cursor.execute(query, data)
         else:
             self.cursor.execute(query)
@@ -17,7 +17,7 @@ class Db:
 
     def fetch_all(self, query: str, data=None) -> list:
         self.connect()
-        if data is not None:
+        if data:
             self.cursor.execute(query, data)
         else:
             self.cursor.execute(query)
@@ -27,7 +27,7 @@ class Db:
 
     def fetch_many(self, query: str, amount: int, data=None) -> list:
         self.connect()
-        if data is not None:
+        if data:
             self.cursor.execute(query, data)
         else:
             self.cursor.execute(query)
@@ -37,7 +37,7 @@ class Db:
 
     def execute(self, query: str, data=None) -> list:
         self.connect()
-        if data is not None:
+        if data:
             self.cursor.execute(query, data)
         else:
             self.cursor.execute(query)
@@ -46,7 +46,7 @@ class Db:
         return result
 
     def connect(self) -> sqlite3.Cursor:
-        self.connection = sqlite3.connect('calendar_database.db')
+        self.connection = sqlite3.connect("calendar_database.db")
         self.cursor = self.connection.cursor()
         return self.cursor
 

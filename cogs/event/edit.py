@@ -111,7 +111,7 @@ class EventEditModal(discord.ui.Modal):
         logger.info(f"Affected calendars: {modified_calendars_ids}")
         calendars = fetch_calendars_from_ids(modified_calendars_ids)
 
-        await interaction.response.send_message(f'Wydarzenie *{self.event.name}* zostało zmienione', ephemeral=True)
+        await interaction.response.send_message(f"Wydarzenie *{self.event.name}* zostało zmienione", ephemeral=True)
 
         for calendar in calendars:
             await update_calendar(interaction.guild, calendar, interaction.user.name)

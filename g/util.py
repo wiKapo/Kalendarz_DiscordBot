@@ -32,7 +32,7 @@ async def check_admin(interaction: discord.Interaction) -> bool:
 
 
 async def check_calendar_admin(interaction: discord.Interaction) -> bool:
-    admins = list(map(int, os.getenv("USERS").split(',')))
+    admins = list(map(int, os.getenv("USERS").split(",")))
     if interaction.user.id in admins:
         return True
     return False
@@ -107,7 +107,7 @@ async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: 
 async def create_calendar_description(channel, calendar: Calendar, update_text: str | None = None, quiet: bool = False):
     logger = get_logger(LogType.CALENDAR, calendar.id)
 
-    if calendar.descriptionMessageId is not None:
+    if calendar.descriptionMessageId:
         logger.info("Removing old calendar description")
         await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
         calendar.descriptionMessageId = None

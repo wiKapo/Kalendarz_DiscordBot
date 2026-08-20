@@ -67,11 +67,11 @@ class EventAddModal(discord.ui.Modal):
         if len(calendars) == 1:
             update_message = f"kalendarza o numerze {calendars[0].id}"
         else:
-            update_message = f"kalendarzy o numerach: {', '.join(map(lambda x: str(x.id), calendars))}"
+            update_message = f"kalendarzy o numerach: {", ".join(map(lambda x: str(x.id), calendars))}"
 
         await interaction.response.send_message(
-            f'Dodano wydarzenie *{event.name}* do {update_message}.\n'
-            f'Wydarzenia będą automatycznie usuwane po upłynięciu 1 tygodnia od dnia wydarzenia',
+            f"Dodano wydarzenie *{event.name}* do {update_message}.\n"
+            f"Wydarzenia będą automatycznie usuwane po upłynięciu 1 tygodnia od dnia wydarzenia",
             ephemeral=True)
 
         logger.info("Sending message to user")

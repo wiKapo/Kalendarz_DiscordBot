@@ -9,7 +9,7 @@ from g.util import check_if_calendar_exists, update_calendar
 async def calendar_update(interaction: discord.Interaction, calendar_id: int | None, quiet: bool):
     calendar_id = calendar_id or await check_if_calendar_exists(interaction)
     if not calendar_id:
-        await interaction.response.send_message('Kalendarz nie istnieje na tym kanale', ephemeral=True)
+        await interaction.response.send_message("Kalendarz nie istnieje na tym kanale", ephemeral=True)
         return
 
     calendar = Calendar()
@@ -18,12 +18,12 @@ async def calendar_update(interaction: discord.Interaction, calendar_id: int | N
         logger = get_logger(LogType.CALENDAR, calendar.id)
         logger.info(f"{interaction.user.name} is updating calendar using slash command")
 
-        await interaction.response.send_message(f'Kalendarz jest aktualizowany {"po cichu" if quiet else ""}',
+        await interaction.response.send_message(f"Kalendarz jest aktualizowany {"po cichu" if quiet else ""}",
                                                 ephemeral=True)
 
         await update_calendar(interaction.guild, calendar, interaction.user.name, quiet)
         await update_calendar_buttons(interaction.guild, calendar)
 
-        await interaction.followup.send(f'Kalendarz #{calendar_id} został zaktualizowany', ephemeral=True)
+        await interaction.followup.send(f"Kalendarz #{calendar_id} został zaktualizowany", ephemeral=True)
     else:
-        await interaction.response.send_message(f'Kalendarz o numerze {calendar_id} nie istnieje', ephemeral=True)
+        await interaction.response.send_message(f"Kalendarz o numerze {calendar_id} nie istnieje", ephemeral=True)

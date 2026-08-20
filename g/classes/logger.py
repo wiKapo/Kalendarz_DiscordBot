@@ -12,12 +12,12 @@ class LogType(Enum):  # when adding something that will need a new folder, add i
 
 
 def init_logger():
-    if not os.path.exists('logs/calendar'):
-        os.makedirs('logs/calendar')
-    if not os.path.exists('logs/user'):
-        os.makedirs('logs/user')
-    if not os.path.exists('logs/event'):
-        os.makedirs('logs/event')
+    if not os.path.exists("logs/calendar"):
+        os.makedirs("logs/calendar")
+    if not os.path.exists("logs/user"):
+        os.makedirs("logs/user")
+    if not os.path.exists("logs/event"):
+        os.makedirs("logs/event")
 
 
 def get_logger(log_type: LogType = LogType.DEFAULT, data: str | int | None = None) -> logging.Logger:
@@ -37,12 +37,12 @@ def get_logger(log_type: LogType = LogType.DEFAULT, data: str | int | None = Non
     if not logger.handlers:
         stream_handler = logging.StreamHandler()
         stream_handler.setStream(logging.FileHandler(f"logs/{folder}{logger_name}.log").stream)
-        stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        stream_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
         logger.addHandler(stream_handler)
 
         error_handler = logging.StreamHandler()
         error_handler.setStream(logging.FileHandler(f"logs/error.log").stream)
-        error_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+        error_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
         error_handler.addFilter(lambda record: record.levelno == logging.ERROR)
         logger.addHandler(error_handler)
 

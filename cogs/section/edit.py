@@ -61,7 +61,7 @@ async def send_section_select_message(interaction: discord.Interaction, values: 
 
 
 async def send_section_edit_modal(interaction: discord.Interaction, values: list[str]):
-    calendar_id, begin_timestamp = map(lambda x: int(x), values[0].split('.'))
+    calendar_id, begin_timestamp = map(lambda x: int(x), values[0].split("."))
     section = Section()
     section.fetch(calendar_id, begin_timestamp)
     await interaction.response.send_modal(SectionEditModal(section))

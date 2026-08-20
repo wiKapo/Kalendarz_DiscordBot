@@ -16,7 +16,7 @@ class Message:
         """
         :param data: for parsing fields from the database.
         """
-        if data is not None:
+        if data:
             self.id, self.calendarId, self.timestamp, self.deleteBy, self.message = data
 
     def __repr__(self):
@@ -44,7 +44,7 @@ class Message:
     def check_if_duplicate(self) -> bool:
         data = Db().fetch_one("SELECT * FROM messages WHERE CalendarId=? AND Message=?",
                               (self.calendarId, self.message))
-        return data is not None
+        return bool(data)
 
 
 def fetch_outdated_update_messages(calendar_id: int, cutoff_timestamp: int) -> list[Message]:

@@ -26,7 +26,7 @@ class Calendar:
         """
         :param data: for parsing fields from the database.
         """
-        if data is not None:
+        if data:
             self.id, self.title, self.guildId, self.channelId, self.messageId, \
                 self.pingRoleId, self.descriptionMessageId = data
             event_ids = Db().fetch_all("SELECT DISTINCT EventId FROM eventsInCalendars WHERE CalendarId=?", (self.id,))

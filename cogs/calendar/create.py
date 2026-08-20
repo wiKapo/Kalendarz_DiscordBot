@@ -23,21 +23,21 @@ async def calendar_create(interaction: discord.Interaction, title: str = None) -
             await recreate_calendar(interaction, calendar)
         except discord.HTTPException as e:
             logger.error(f"HTTP exception: {e}", exc_info=True)
-            await interaction.response.send_message('Błąd HTTP Uh Oh', ephemeral=True)
+            await interaction.response.send_message("Błąd HTTP Uh Oh", ephemeral=True)
         except Exception as e:
             logger.error(f"Internal error: {e}", exc_info=True)
-            await interaction.response.send_message('Błąd wewnętrzny Uh Oh', ephemeral=True)
+            await interaction.response.send_message("Błąd wewnętrzny Uh Oh", ephemeral=True)
         else:
             logger.info("Calendar already exists on this channel.")
-            await interaction.response.send_message('Kalendarz już istnieje na tym kanale', ephemeral=True)
+            await interaction.response.send_message("Kalendarz już istnieje na tym kanale", ephemeral=True)
     else:
         logger = get_logger(LogType.CALENDAR)
         logger.info(f"{interaction.user.name} is creating calendar with "
-                    f"{f'title \"{title}\"' if title is not None else 'default title'} "
+                    f"{f"title \"{title}\"" if title else "default title"} "
                     f"in [{interaction.guild.name} - {interaction.guild.id}] "
                     f"in [{interaction.channel.name} - {interaction.channel.id}]")
 
-        calendar_msg = await interaction.channel.send(f'Kalendarz pojawi się tutaj')
+        calendar_msg = await interaction.channel.send(f"Kalendarz pojawi się tutaj")
         logger.info(f"Calendar message created: {calendar_msg.id}")
 
         calendar.title = title
@@ -51,9 +51,6 @@ async def calendar_create(interaction: discord.Interaction, title: str = None) -
         calendar_logger.info(f"Calendar created in {interaction.guild.name} ({interaction.guild.id}) "
                              f"in {interaction.channel.name} ({interaction.channel.id})")
 
-        await update_calendar(interaction.guild, calendar, interaction.user.name)
-        await update_calendar_buttons(interaction.guild, calendar)
-
         await interaction.response.send_message(
             "## Stworzono kalendarz\n"
             "Kalendarz jest automatycznie aktualizowany codziennie o godzinie 0:00 UTC\n"
@@ -64,6 +61,9 @@ async def calendar_create(interaction: discord.Interaction, title: str = None) -
             "- Wszystkie komendy są opisane w `/help`",
             ephemeral=True)
         logger.info("Calendar created")
+
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
+        await update_calendar_buttons(interaction.guild, calendar)
     return calendar
 
 
@@ -76,7 +76,8 @@ async def recreate_calendar(interaction: discord.Interaction, calendar: Calendar
     calendar.update()
     logger.info("Calendar updated in the database")
 
-    await update_calendar(interaction.guild, calendar, interaction.user.name)
-
     await interaction.response.send_message("Odtworzono kalendarz.", ephemeral=True)
     logger.info("Calendar is recreated")
+
+    await update_calendar(interaction.guild, calendar, interaction.user.name)
+    await update_calendar_buttons(interaction.guild, calendar)

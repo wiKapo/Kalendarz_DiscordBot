@@ -198,7 +198,7 @@ class AdminCog(commands.Cog):
 
         try:
             logger.info("Changing the name of field PingMessageId in calendars table")
-            Db().execute('ALTER TABLE calendars RENAME PingMessageId TO DescriptionMessageId')
+            Db().execute("ALTER TABLE calendars RENAME PingMessageId TO DescriptionMessageId")
             logger.info("Finished")
             await interaction.followup.send(
                 f"Zaktualizowano tabelę `calendars`. Zmieniono pole `PingMessageId` na `DescriptionMessageId`",
@@ -219,11 +219,11 @@ class AdminCog(commands.Cog):
                 raise sqlite3.OperationalError("Notification table is smaller than 3 columns")
 
             Db().execute("DROP TABLE IF EXISTS notifications")
-            Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
-                         'UserId BIGINT NOT NULL,'
-                         'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
-                         'PRIMARY KEY (UserId, CalendarId)'
-                         ');')
+            Db().execute("CREATE TABLE IF NOT EXISTS notifications ("
+                         "UserId BIGINT NOT NULL,"
+                         "CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,"
+                         "PRIMARY KEY (UserId, CalendarId)"
+                         ");")
             logger.info("Done")
             await interaction.followup.send("Zmieniono tabelę `notifications`", ephemeral=True)
 

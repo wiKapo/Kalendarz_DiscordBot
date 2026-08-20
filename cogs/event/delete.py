@@ -49,7 +49,7 @@ async def event_delete(interaction: discord.Interaction, calendar_id: int | None
             options.append(discord.SelectOption(
                 label=f"Od {i} do {min(i + 25, len(events))}",
                 description=f"Od {events[i].date} do {events[min(i + 25, len(events)) - 1].date}",
-                value=f"{calendar_id if calendar_id else ''}.{i}.{min(i + 25, len(events))}", ))
+                value=f"{calendar_id if calendar_id else ""}.{i}.{min(i + 25, len(events))}", ))
         await interaction.response.send_message(
             f"Wybierz przedział wydarzeń {events_source}",
             view=UniversalSelectView(options, "Wybierz przedział", send_event_delete_modal),
@@ -57,7 +57,7 @@ async def event_delete(interaction: discord.Interaction, calendar_id: int | None
 
 
 async def send_event_delete_modal(interaction: discord.Interaction, values: list[str]):
-    calendar_id, begin, end = list(map(lambda x: int(x), values[0].split('.')))
+    calendar_id, begin, end = list(map(lambda x: int(x), values[0].split(".")))
     if calendar_id:
         calendar = Calendar()
         calendar.fetch(calendar_id)
@@ -96,9 +96,9 @@ class DeleteEventsModal(discord.ui.Modal):
             event.delete()
 
         if self.event_select.values:
-            await interaction.response.send_message(f'Wydarzenia zostały usunięte', ephemeral=True)
+            await interaction.response.send_message(f"Wydarzenia zostały usunięte", ephemeral=True)
         else:
-            await interaction.response.send_message(f'Wydarzenie zostało usunięte', ephemeral=True)
+            await interaction.response.send_message(f"Wydarzenie zostało usunięte", ephemeral=True)
 
         calendars = fetch_calendars_from_ids(calendar_ids)
         for calendar in calendars:

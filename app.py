@@ -15,7 +15,7 @@ intents = discord.Intents.default()
 intents.message_content = True
 intents.messages = True
 intents.members = True
-bot = commands.Bot(command_prefix='/', intents=intents, help_command=None)
+bot = commands.Bot(command_prefix="/", intents=intents, help_command=None)
 
 init_logger()
 logger = get_logger()
@@ -24,7 +24,7 @@ logger = get_logger()
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
-    print(f'We have logged in as {bot.user}')
+    print(f"We have logged in as {bot.user}")
     try:
         synced_commands = await bot.tree.sync()
         logger.info(f"Synced {len(synced_commands)} commands")
@@ -34,55 +34,55 @@ async def on_ready():
         print(f"Error with syncing bot commands: {e}")
 
     try:
-        Db().execute('CREATE TABLE IF NOT EXISTS calendars ('
-                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'Title TEXT,'
-                     'GuildId BIGINT NOT NULL,'
-                     'ChannelId BIGINT NOT NULL,'
-                     'MessageId BIGINT NOT NULL,'
-                     'PingRoleId BIGINT,'
-                     'DescriptionMessageId BIGINT'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS events ('
-                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'Timestamp INT NOT NULL,'
-                     'WholeDay BOOLEAN NOT NULL,'
-                     'Name TEXT NOT NULL,'
-                     'Team TEXT,'
-                     'Place TEXT'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS eventsInCalendars ('
-                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
-                     'EventId INTEGER NOT NULL REFERENCES events(Id) ON DELETE CASCADE,'
-                     'PRIMARY KEY (CalendarId, EventId)'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS managerRoles ('
-                     'GuildId INTEGER,'
-                     'RoleId BIGINT NOT NULL,'
-                     'PRIMARY KEY (GuildId, RoleId)'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS notifications ('
-                     'UserId BIGINT NOT NULL,'
-                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
-                     'PRIMARY KEY (UserId, CalendarId)'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS messages ('
-                     'Id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                     'CalendarId BIGINT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,'
-                     'Timestamp INT NOT NULL,'
-                     'DeleteBy INT NOT NULL,'
-                     'Message TEXT NOT NULL'
-                     ');')
-        Db().execute('CREATE TABLE IF NOT EXISTS sections ('
-                     'CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE, '
-                     'BeginTimestamp INT NOT NULL,'
-                     'EndTimestamp INT,'
-                     'Name TEXT NOT NULL,'
-                     'PRIMARY KEY (CalendarId, BeginTimestamp)'
-                     ');')
+        Db().execute("CREATE TABLE IF NOT EXISTS calendars ("
+                     "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "Title TEXT,"
+                     "GuildId BIGINT NOT NULL,"
+                     "ChannelId BIGINT NOT NULL,"
+                     "MessageId BIGINT NOT NULL,"
+                     "PingRoleId BIGINT,"
+                     "DescriptionMessageId BIGINT"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS events ("
+                     "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "Timestamp INT NOT NULL,"
+                     "WholeDay BOOLEAN NOT NULL,"
+                     "Name TEXT NOT NULL,"
+                     "Team TEXT,"
+                     "Place TEXT"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS eventsInCalendars ("
+                     "CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,"
+                     "EventId INTEGER NOT NULL REFERENCES events(Id) ON DELETE CASCADE,"
+                     "PRIMARY KEY (CalendarId, EventId)"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS managerRoles ("
+                     "GuildId INTEGER,"
+                     "RoleId BIGINT NOT NULL,"
+                     "PRIMARY KEY (GuildId, RoleId)"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS notifications ("
+                     "UserId BIGINT NOT NULL,"
+                     "CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,"
+                     "PRIMARY KEY (UserId, CalendarId)"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS messages ("
+                     "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                     "CalendarId BIGINT NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE,"
+                     "Timestamp INT NOT NULL,"
+                     "DeleteBy INT NOT NULL,"
+                     "Message TEXT NOT NULL"
+                     ");")
+        Db().execute("CREATE TABLE IF NOT EXISTS sections ("
+                     "CalendarId INTEGER NOT NULL REFERENCES calendars(Id) ON DELETE CASCADE, "
+                     "BeginTimestamp INT NOT NULL,"
+                     "EndTimestamp INT,"
+                     "Name TEXT NOT NULL,"
+                     "PRIMARY KEY (CalendarId, BeginTimestamp)"
+                     ");")
 
-        logger.info('Tables are ready')
-        print('Tables are ready')
+        logger.info("Tables are ready")
+        print("Tables are ready")
     except Exception as e:
         logger.error(f"Error with syncing database: {e}", exc_info=True)
         print("Error with syncing database: ", e)

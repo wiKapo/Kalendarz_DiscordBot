@@ -112,10 +112,10 @@ class UpdateMessageView(discord.ui.View):
 def format_section_options(sections: list[Section]) -> list[SelectOption]:
     options = []
     for section in sections:
+        end_date_text = f", a kończy {section.end_date}" if section.end_date else ""
         options.append(SelectOption(
             label=section.name,
-            description=f"Zaczyna się {section.begin_date}"
-                        f"{f', a kończy {section.end_date}' if section.end_date else ''}",
+            description=f"Zaczyna się {section.begin_date}{end_date_text}",
             value=f"{section.calendarId}.{section.beginTimestamp}"
         ))
     return options
@@ -151,17 +151,17 @@ def format_event_options(events: list[Event], selected_event: int | None = None)
     for event in events:
         description = ""
         if event.team:
-            description += f'[{event.team}] '
+            description += f"[{event.team}] "
         if event.place:
             description += f"{event.place} "
 
         if len(description) < 40:
-            description += f"w kalendarz{'u' if len(event.calendarIds) == 1 else 'ach'} "
+            description += f"w kalendarz{"u" if len(event.calendarIds) == 1 else "ach"} "
         else:
             description += "w "
-        description += f"#{", #".join(set(map(str, event.calendarIds)))}"
+        description += f"#{", #".join(sorted(list(map(str, event.calendarIds))))}"
 
-        label_text = f"{event.date}{f' {event.time}' if event.time else ''} {event.name}"
+        label_text = f"{event.date}{f" {event.time}" if event.time else ""} {event.name}"
         options.append(
             SelectOption(
                 label=truncate_text(label_text, 100),

@@ -129,10 +129,10 @@ class CalendarCog(commands.Cog):
                 notification_message += f"{event}\n"
                 user_logger.info("Prepared main part of notification message")
 
-            notification_message += \
-                (f"\nZ kalendarz{'a' if len(calendars) == 1 else 'y'} "
-                 f"{', '.join(map(lambda c:
-                                  f'[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})', calendars))}\n")
+            calendar_links = ", ".join(
+                map(lambda c: f"[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})",
+                    calendars))
+            notification_message += f"\nZ kalendarz{"a" if len(calendars) == 1 else "y"} {calendar_links}\n"
             user_logger.info("Prepared final part of notification message")
 
             await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
