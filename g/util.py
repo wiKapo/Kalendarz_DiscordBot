@@ -96,8 +96,14 @@ async def update_calendar(guild: Guild, calendar: Calendar, caller: str, quiet: 
         logger.info(f"Deleted {len(outdated_update_messages)} outdated update messages")
 
     channel = await guild.fetch_channel(calendar.channelId)
-    await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
-    logger.info("Updated calendar message")
+    try:
+        await (await channel.fetch_message(calendar.messageId)).edit(content=str(calendar))
+        logger.info("Updated calendar message")
+    except discord.NotFound:
+        calendar_message = await channel.send(str(calendar))
+        calendar.messageId = calendar_message.id
+        calendar.update()
+        logger.info("Created new calendar message")
 
     await create_calendar_description(channel, calendar, quiet=quiet, update_text=update_text)
 
