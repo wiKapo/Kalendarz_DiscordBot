@@ -3,10 +3,10 @@ import copy
 import discord
 from discord import Interaction
 
-from cogs.event.util import create_event_update_message
 from g.classes.calendar import Calendar, fetch_calendars_in_guild, fetch_calendars_from_ids
 from g.classes.event import fetch_events_from_guild, Event
 from g.classes.logger import LogType, get_logger
+from g.classes.message import Message
 from g.discord_classes import format_calendar_options, UniversalSelectView, format_event_options
 from g.util import check_if_calendar_exists, update_calendar
 
@@ -50,8 +50,8 @@ async def event_edit(interaction: Interaction, calendar_id: int | None):
 
 
 async def send_event_edit_modal(interaction: discord.Interaction, values: list[str]):
-    events = fetch_events_from_guild(interaction.guild_id)
-    event = next(event for event in events if event.id == int(values[0]))
+    event = Event()
+    event.fetch(int(values[0]))
     guild_id = event.get_guild_id()
     calendars = fetch_calendars_in_guild(guild_id)
     for calendar in calendars:
@@ -92,7 +92,7 @@ class EventEditModal(discord.ui.Modal):
         user_loggers = get_logger(LogType.USER, interaction.user.name)
         user_loggers.info(f"Editing event {self.event.id}")
         logger = get_logger(LogType.EVENT, self.event.id)
-        logger.info(f"{interaction.user.name} is editing event {self.event.name}")
+        logger.info(f"{interaction.user.name} is editing this event")
 
         self.event.name = self.name_input.value
         self.event.set_datetime(self.datetime_input.value)
@@ -100,6 +100,11 @@ class EventEditModal(discord.ui.Modal):
         self.event.place = self.place_input.value
         logger.debug(f"Old event: {repr(old_event)}")
         logger.debug(f"New event: {repr(self.event)}")
+
+        if old_event == self.event:
+            logger.info("No changes were made to the event")
+            await interaction.response.send_message("Nie wprowadzono zmian do wydarzenia", ephemeral=True)
+            return
 
         self.event.update()
 
@@ -115,3 +120,53 @@ class EventEditModal(discord.ui.Modal):
 
         for calendar in calendars:
             await update_calendar(interaction.guild, calendar, interaction.user.name)
+
+
+def create_event_update_message(new_event: Event, old_event: Event):
+    message = Message()
+
+    for calendar_id in new_event.calendarIds.intersection(old_event.calendarIds):
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"Changed event from {repr(old_event)} to {repr(new_event)}")
+        message.calendarId = calendar_id
+        message.message = compare_event_changes(new_event, old_event)
+        message.insert()
+
+    for calendar_id in old_event.calendarIds.difference(new_event.calendarIds):
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"Deleted event {repr(old_event)}")
+        message.calendarId = calendar_id
+        message.message = f"Wydarzenie {old_event} zostało usunięte z tego kalendarza"
+        message.insert()
+
+    for calendar_id in new_event.calendarIds.difference(old_event.calendarIds):
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"Added event {repr(new_event)}")
+        message.calendarId = calendar_id
+        message.message = f"Wydarzenie {new_event} zostało dodane do tego kalendarza"
+        message.insert()
+
+
+def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
+    if new_event == old_event:
+        return None
+    message = f"Zmiany w wydarzeniu **{old_event.name}**: "
+
+    if new_event.name != old_event.name:
+        message += f"| *Nazwa*: `{old_event.name}` -> `{new_event.name}` "
+
+    if new_event.time != old_event.time:
+        message += f"| *Godzina*: `{old_event.time if old_event.time else "-"}` -> `{new_event.time if new_event.time else "-"}` "
+
+    if new_event.date != old_event.date:
+        message += f"| *Data*: `{old_event.date}` -> `{new_event.date}` "
+
+    if new_event.team != old_event.team:
+        message += f"| *Grupa*: `{old_event.team if old_event.team else "-"}` -> `{new_event.team if new_event.team else "-"}` "
+
+    if new_event.place != old_event.place:
+        message += f"| *Miejsce*: `{old_event.place if old_event.place else "-"}` -> `{new_event.place if new_event.place else "-"}` "
+
+    message += "|"
+
+    return message

@@ -114,7 +114,6 @@ async def create_calendar_description(channel, calendar: Calendar, update_text: 
     logger = get_logger(LogType.CALENDAR, calendar.id)
 
     if calendar.descriptionMessageId:
-        logger.info("Removing old calendar description")
         await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
         calendar.descriptionMessageId = None
         logger.info("Removed old calendar description")
@@ -123,7 +122,6 @@ async def create_calendar_description(channel, calendar: Calendar, update_text: 
     if calendar.pingRoleId and not quiet:
         ping_text += f"<@&{calendar.pingRoleId}>\n\n"
 
-    logger.info("Sending new calendar description")
     message = await channel.send(ping_text + (update_text if update_text else "") +
                                  f"-# Wersja kalendarza: v{BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
                                  view=UpdateMessageView(calendar.pingRoleId))

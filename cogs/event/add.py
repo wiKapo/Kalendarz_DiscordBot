@@ -1,9 +1,9 @@
 import discord
 
-from cogs.event.util import create_event_update_message
 from g.classes.calendar import fetch_calendars_in_guild, Calendar, fetch_calendars_from_ids
 from g.classes.event import Event
 from g.classes.logger import get_logger, LogType
+from g.classes.message import Message
 from g.discord_classes import format_calendar_options
 from g.util import update_calendar, check_if_calendar_exists
 
@@ -27,7 +27,8 @@ class EventAddModal(discord.ui.Modal):
         super().__init__(title="Dodaj wydarzenie")
 
         selected_calendar_id = {selected_calendar_id} if selected_calendar_id else None
-        self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars, selected_calendar_id), max_values=len(calendars))
+        self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars, selected_calendar_id),
+                                                 max_values=len(calendars))
         self.add_item(discord.ui.Label(text="Do których kalendarzy przypisać wydarzenie?",
                                        component=self.calendar_select))
 
@@ -56,10 +57,12 @@ class EventAddModal(discord.ui.Modal):
 
         # Adding new event
         event.insert()
-        logger.info("Event was inserted to the database")
+        logger.info(f"Event {event.id} created")
+        event_logger = get_logger(LogType.EVENT, event.id)
+        event_logger.info(f"Event created in {interaction.guild.name}")
+        event_logger.info(repr(event))
         event.calendarIds = set(map(lambda x: int(x), self.calendar_select.values))
-        logger.debug(f"Event: {repr(event)}")
-        create_event_update_message(event)
+        create_event_add_message(event)
 
         calendars = fetch_calendars_from_ids(event.calendarIds)
 
@@ -83,3 +86,14 @@ class EventAddModal(discord.ui.Modal):
             logger.info(f"Added this event to calendar #{calendar.id}")
             await update_calendar(interaction.guild, calendar, interaction.user.name)
         logger.info("Finished creating new event")
+
+
+def create_event_add_message(event: Event):
+    message = Message()
+
+    for calendar_id in event.calendarIds:
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"Added new event {repr(event)}")
+        message.calendarId = calendar_id
+        message.message = f"Utworzono nowe wydarzenie: {event}"
+        message.insert()

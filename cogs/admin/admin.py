@@ -35,7 +35,7 @@ class AdminCog(commands.Cog):
             logger.info(f"Updating calendar id={calendar.id}")
             message = Message()
             message.calendarId = calendar.id
-            message.set_time(5)
+            message.set_time(14)
             message.message = "**Aktualizacja kalendarza** WERSJA 1.0!!!"
             message.insert_with_check()
             message.message = "**Aktualizacja kalendarza** Możliwe jest dodawanie jednego wydarzenia do wielu kalendarzy"

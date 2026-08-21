@@ -49,6 +49,11 @@ class Event:
 
         return message
 
+    def __eq__(self, other: object):
+        return (isinstance(other, Event) and self.id == other.id and self.timestamp == other.timestamp
+                and self.wholeDay == other.wholeDay and self.name == other.name and self.team == other.team
+                and self.place == other.place and self.calendarIds == other.calendarIds)
+
     @property
     def datetime(self) -> str:
         if self.wholeDay:
@@ -104,18 +109,18 @@ class Event:
             self.connect_to_calendar(calendar_id)
 
     def delete(self):
-        logger = get_logger(LogType.EVENT, self.id)
-        logger.warning("Deleting self")
         Db().execute("DELETE FROM events WHERE Id=?", (self.id,))
         Db().execute("DELETE FROM eventsInCalendars WHERE EventId=?", (self.id,))
-        logger.info("Żegnam")
 
     def remove_calendar(self, calendar_id: int):
         if calendar_id in self.calendarIds:
             self.calendarIds.remove(calendar_id)
             Db().execute("DELETE FROM eventsInCalendars WHERE CalendarId=? AND EventId=?", (calendar_id, self.id))
             if not len(self.calendarIds):
+                logger = get_logger(LogType.EVENT, self.id)
+                logger.warning("Deleting self because there are no calendars left")
                 self.delete()
+                logger.info("Żegnam")
 
     def get_guild_id(self) -> int:
         guild_id = Db().fetch_one("SELECT GuildId FROM calendars INNER JOIN eventsInCalendars eic "
