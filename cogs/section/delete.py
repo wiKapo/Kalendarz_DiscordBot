@@ -2,6 +2,7 @@ import discord
 
 from g.classes.calendar import Calendar, fetch_calendars_in_guild_with_sections
 from g.classes.logger import get_logger, LogType
+from g.classes.message import Message
 from g.classes.section import Section
 from g.discord_classes import UniversalSelectView, UniversalSelect, format_calendar_options, \
     format_section_options
@@ -68,6 +69,7 @@ class SectionDeleteModal(discord.ui.Modal):
         for section in sections_to_delete:
             self.calendar.customSections.remove(section)
             section.delete()
+            create_section_delete_message(section)
             logger.info(f"Deleted section {section.name}")
         logger.info("Removed all selected sections")
         self.calendar.update_sections()
@@ -82,3 +84,10 @@ class SectionDeleteModal(discord.ui.Modal):
         section = Section()
         section.fetch(calendar_id, section_id)
         return section
+
+
+def create_section_delete_message(section: Section):
+    message = Message()
+    message.calendarId = section.calendarId
+    message.message = f"Usunięto sekcję {section.name}"
+    message.insert()

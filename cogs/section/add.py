@@ -4,6 +4,7 @@ import discord
 
 from g.classes.calendar import Calendar, fetch_calendars_in_guild
 from g.classes.logger import get_logger, LogType
+from g.classes.message import Message
 from g.classes.section import Section
 from g.discord_classes import UniversalSelectView, format_calendar_options
 from g.util import update_calendar, check_if_calendar_exists
@@ -83,8 +84,16 @@ class SectionAddModal(discord.ui.Modal):
 
         self.calendar.update_sections()
         logger.info("Updated calendar sections in database")
+        create_section_add_message(section)
 
         await interaction.response.send_message(f"Stworzono sekcję `{section.name}`", ephemeral=True)
         logger.info("Created new section")
 
         await update_calendar(interaction.guild, self.calendar, interaction.user.name)
+
+
+def create_section_add_message(section: Section):
+    message = Message()
+    message.calendarId = section.calendarId
+    message.message = f"Stworzono sekcję {section.name}"
+    message.insert()

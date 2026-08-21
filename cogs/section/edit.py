@@ -1,9 +1,11 @@
+import copy
 from datetime import datetime, timedelta
 
 import discord
 
 from g.classes.calendar import Calendar, fetch_calendars_in_guild_with_sections
 from g.classes.logger import get_logger, LogType
+from g.classes.message import Message
 from g.classes.section import Section
 from g.discord_classes import UniversalSelectView, format_calendar_options, format_section_options
 from g.util import update_calendar, check_if_calendar_exists
@@ -90,14 +92,20 @@ class SectionEditModal(discord.ui.Modal):
         calendar.fetch(self.section.calendarId)
         logger = get_logger(LogType.CALENDAR, calendar.id)
         logger.info(f"{interaction.user.name} is editing section {self.section.name}")
+        old_section = copy.deepcopy(self.section)
 
-        calendar.customSections.remove(self.section)
-        logger.info("Removed section from list")
-
-        old_section_name = self.section.name
         self.section.name = self.name_input.value
         self.section.begin_date = self.begin_date_input.value
         self.section.end_date = self.end_date_input.value
+
+        if old_section == self.section:
+            logger.info("No changes were made to the section")
+            await interaction.response.send_message("Nie wprowadzono zmian do sekcji", ephemeral=True)
+            return
+
+        calendar.customSections.remove(old_section)
+        logger.info("Removed section from list")
+
         if self.section.endTimestamp:
             if self.section.beginTimestamp > self.section.endTimestamp:
                 logger.error("Section begin date is after end date")
@@ -119,8 +127,29 @@ class SectionEditModal(discord.ui.Modal):
         calendar.update_sections()
         logger.info("Updated calendar sections in database")
 
-        await interaction.response.send_message(f"Zmieniono sekcję `{old_section_name}`", ephemeral=True)
+        create_section_edit_message(self.section, old_section)
+
+        await interaction.response.send_message(f"Zmieniono sekcję `{old_section.name}`", ephemeral=True)
         logger.info("Finished editing section")
 
         await update_calendar(interaction.guild, calendar, interaction.user.name)
         logger.info("Updated calendar")
+
+
+def create_section_edit_message(section: Section, old_section: Section):
+    message = Message()
+    message.calendarId = section.calendarId
+
+    text = f"Zmieniono sekcję **{old_section.name}**: "
+    if section.name != old_section.name:
+        text += f"| *Nazwa*: `{old_section.name}` -> `{section.name}` "
+
+    if section.begin_date != old_section.begin_date:
+        text += f"| *Data rozpoczęcia*: `{old_section.begin_date}` -> `{section.begin_date}` "
+
+    if section.end_date != old_section.end_date:
+        text += f"| *Data zakończenia*: `{old_section.end_date if old_section.end_date else "-"}` -> `{section.end_date if section.end_date else "-"}` "
+
+    text += "|"
+    message.message = text
+    message.insert()
