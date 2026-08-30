@@ -148,6 +148,13 @@ class Calendar:
     def add_notification(self, user_id: int):
         Db().execute("INSERT INTO notifications (UserId, CalendarId) VALUES (?, ?)", (user_id, self.id))
 
+    def get_exclusive_events(self) -> set[int]:
+        """ Checks how many events are exclusive to the given calendar """
+        exclusive_events = Db().fetch_all(
+            "SELECT EventId FROM eventsInCalendars GROUP BY EventId HAVING COUNT(EventId) = 1")
+
+        return set(map(lambda x: x[0], exclusive_events)).intersection(self.eventIds)
+
 
 def fetch_all_notifications() -> dict[int, set[Calendar]]:
     calendars = fetch_all_calendars()
