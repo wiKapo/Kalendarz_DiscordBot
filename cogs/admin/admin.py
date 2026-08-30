@@ -358,7 +358,13 @@ async def setup(bot):
 
 
 async def no_permissions_message(interaction: discord.Interaction, error):
+    command_name = interaction.command.qualified_name
+
     logger = get_logger()
-    logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
-                   f"doesn't have permissions to use admin commands", exc_info=True)
-    await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+    if isinstance(error, discord.app_commands.CheckFailure):
+        logger.warning(f"{error}\nUser {interaction.user.name} {interaction.user.id} "
+                       f"doesn't have permissions to use admin command. Tried to use /{command_name}")
+        await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+    else:
+        logger.error(f"Received an error while executing '/{command_name}':\n{error}", exc_info=True)
+        await interaction.response.send_message(f"Błąd {error}", ephemeral=True)
