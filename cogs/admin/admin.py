@@ -312,6 +312,31 @@ class AdminCog(commands.Cog):
     async def create_test_calendar_error(self, interaction: discord.Interaction, error):
         await no_permissions_message(interaction, error)
 
+    @admin_group.command(name="stop", description="[TYLKO DLA ADMINÓW KALENDARZA] Wyłącza bota")
+    @discord.app_commands.check(check_calendar_admin)
+    async def stop(self, interaction: discord.Interaction):
+        await interaction.response.send_modal(StopBotModal(self.bot))
+
+    @stop.error
+    async def stop_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+
+class StopBotModal(discord.ui.Modal):
+    bot: commands.Bot
+
+    def __init__(self, bot: commands.Bot):
+        super().__init__(title="Potwierdź zatrzymanie bota")
+        self.bot = bot
+        self.add_item(discord.ui.TextDisplay("# Czy na pewno chcesz zatrzymać bota?"))
+
+    async def on_submit(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message("Bot się wyłącza", ephemeral=True)
+        logger = get_logger()
+        logger.info(f"{interaction.user.name} is stopping the bot")
+        print("Stopping bot")
+        await self.bot.close()
+
 
 def create_event(name: str, dt: datetime, calendar_id: int, whole_day: bool = True, place: str | None = None,
                  team: str | None = None) -> Event:
