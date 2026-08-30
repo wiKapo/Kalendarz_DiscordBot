@@ -1,65 +1,121 @@
-from cogs.event.util import *
+import discord
+
+from g.classes.calendar import Calendar, fetch_calendars_from_ids
+from g.classes.event import Event, fetch_events_from_guild, fetch_events_from_ids
+from g.classes.logger import LogType, get_logger
+from g.classes.message import Message
+from g.discord_classes import format_event_options, UniversalSelectView
+from g.util import check_if_calendar_exists, update_calendar
 
 
-async def event_delete(interaction: discord.Interaction, event_id: int | None):
-    if not await check_if_calendar_exists(interaction): return
+async def event_delete(interaction: discord.Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
 
-    calendar = Calendar()
-    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-    logger = get_logger(LogType.CALENDAR, calendar.id)
+    logger = get_logger(LogType.EVENT)
+    logger.info(f"{interaction.user.name} is trying to delete events "
+                f"in [{interaction.guild.name} - {interaction.guild_id}] "
+                f"in [{interaction.channel.name} - {interaction.channel_id}]")
 
-    if event_id is None:
-        events = fetch_events_by_channel(interaction.guild_id, interaction.channel_id)
-        if events:
-            logger.info(f"Sending delete events modal in [{interaction.guild.name} - {interaction.guild.id}]"
-                        f" in [{interaction.channel.name} - {interaction.channel.id}]")
-            await interaction.response.send_modal(DeleteEventsModal(events))
-        else:
-            logger.info(f"No available events found in the calendar")
-            await interaction.response.send_message("Brak dostępnych wydarzeń w tym kalendarzu.", ephemeral=True)
-    else:
-        logger.info(f"Deleting event number {event_id} from [{interaction.guild.name} - {interaction.guild.id}]"
-              f" [{interaction.channel.name} - {interaction.channel.id}]")
-
+    if calendar_id:
         calendar = Calendar()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+        calendar.fetch_in_guild(calendar_id, interaction.guild_id)
+        if not calendar:
+            await interaction.response.send_message("Kalendarz o tym numerze nie istnieje", ephemeral=True)
+            logger.warning(f"Tried to delete events from calendar #{calendar_id} that does not exist in this guild")
+            return
+        logger.info(f"Fetching events from calendar #{calendar_id}")
+        events = calendar.fetch_events()
+        if not events:
+            logger.info("No events found in this calendar")
+            await interaction.response.send_message("Brak wydarzeń w tym kalendarzu", ephemeral=True)
+            return
+        events_source = f"z kalendarza #{calendar_id}"
+    else:
+        logger.info("Fetching events from guild")
+        events = fetch_events_from_guild(interaction.guild_id)
+        if not events:
+            logger.info("No events found in this guild")
+            await interaction.response.send_message("Brak wydarzeń na tym serwerze", ephemeral=True)
+            return
+        events_source = "z całego serwera"
 
-        event = Event()
-        event.fetch_local(event_id, interaction.guild_id, interaction.channel_id)
-        logger.info(f"Deleting event {repr(event)}")
-        event.delete()
-        logger.info("Deleted this event from the database")
+    if len(events) <= 25:
+        logger.info("Sending delete events modal")
+        await interaction.response.send_modal(DeleteEventsModal(events))
+    else:
+        logger.info("Sending select event range form")
+        options = []
+        for i in range(0, len(events), 25):
+            options.append(discord.SelectOption(
+                label=f"Od {i} do {min(i + 25, len(events))}",
+                description=f"Od {events[i].date} do {events[min(i + 25, len(events)) - 1].date}",
+                value=f"{calendar_id if calendar_id else ""}.{i}.{min(i + 25, len(events))}", ))
+        await interaction.response.send_message(
+            f"Wybierz przedział wydarzeń {events_source}",
+            view=UniversalSelectView(options, "Wybierz przedział", send_event_delete_modal),
+            ephemeral=True)
 
-        await update_calendar(interaction, calendar)
 
-        await interaction.response.send_message(f'Wydarzenie numer {event_id} zostało usunięte', ephemeral=True)
+async def send_event_delete_modal(interaction: discord.Interaction, values: list[str]):
+    calendar_id, begin, end = list(map(lambda x: int(x), values[0].split(".")))
+    if calendar_id:
+        calendar = Calendar()
+        calendar.fetch(calendar_id)
+        events = calendar.fetch_events()[begin:end]
+    else:
+        events = fetch_events_from_guild(interaction.guild_id)[begin:end]
+    await interaction.response.send_modal(DeleteEventsModal(events))
 
 
 class DeleteEventsModal(discord.ui.Modal):
     def __init__(self, events: list[Event]):
         super().__init__(title="Usuń wydarzenia")
 
-        options = format_event_entries(events)
-        self.event_select = discord.ui.Select(options=options, max_values=len(options), required=True)
-        self.add_item(discord.ui.Label(text="Wybierz wydarzenia do usunięcia", component=self.event_select))
+        self.add_item(discord.ui.TextDisplay(
+            "Usuwa wydarzenia, ze **wszystkich** kalendarzy.\n"
+            "Użyj `/event edit`, aby usunąć wydarzenia tylko z tego kalendarza"))
+
+        options = format_event_options(events)  # TODO handle having more than 25 events
+        self.event_select = discord.ui.Select(options=options[:25], max_values=min(len(options), 25), required=True)
+        self.add_item(discord.ui.Label(text="Wybierz wydarzenia do usunięcia", component=self.event_select,
+                                       description="Najbliższe 25 wydarzeń w polu wyboru" if len(
+                                           options) > 25 else ""))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
-        calendar = Calendar()
-        calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
-        logger = get_logger(LogType.CALENDAR, calendar.id)
-        events = fetch_events_by_calendar(calendar.id)
+        logger = get_logger(LogType.EVENT)
 
-        events_to_delete = [events[int(i)] for i in self.event_select.values]
-        logger.info(f"Deleting events {events_to_delete}")
+        events_to_delete = sorted(fetch_events_from_ids(set(map(lambda x: int(x), self.event_select.values))),
+                                  key=lambda e: e.id)
+        logger.info(f"{interaction.user.name} is deleting events {list(map(lambda e: e.id, events_to_delete))}")
+
+        calendar_ids = set().union(*(event.calendarIds for event in events_to_delete))
+        logger.info(f"Affected calendars: {calendar_ids}")
 
         for event in events_to_delete:
             create_event_delete_message(event)
+            event_logger = get_logger(LogType.EVENT, event.id)
+            event_logger.warning("Deleting self")
             event.delete()
+            event_logger.warning("Żegnam")
+        logger.info("Deleted event")
 
-        await update_calendar(interaction, calendar)
+        if len(events_to_delete) > 1:
+            await interaction.response.send_message(f"Wydarzenia zostały usunięte", ephemeral=True)
+        else:
+            await interaction.response.send_message(f"Wydarzenie zostało usunięte", ephemeral=True)
+
+        calendars = fetch_calendars_from_ids(calendar_ids)
+        for calendar in calendars:
+            await update_calendar(interaction.guild, calendar, interaction.user.name)
         logger.info(f"Deleted events")
 
-        if self.event_select.values:
-            await interaction.response.send_message(f'Wydarzenia zostały usunięte', ephemeral=True)
-        else:
-            await interaction.response.send_message(f'Wydarzenie zostało usunięte', ephemeral=True)
+
+def create_event_delete_message(event: Event):
+    message = Message()
+
+    for calendar_id in event.calendarIds:
+        logger = get_logger(LogType.CALENDAR, calendar_id)
+        logger.info(f"Deleted event {repr(event)}")
+        message.calendarId = calendar_id
+        message.message = f"Usunięto wydarzenie: {event}"
+        message.insert()

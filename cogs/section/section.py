@@ -1,42 +1,43 @@
 import discord
 from discord.ext import commands
 
-from cogs.event.add import event_add
-from cogs.event.delete import event_delete
-from cogs.event.edit import event_edit
-from g.util import send_error_message, check_user
+from cogs.section.add import section_add
+from cogs.section.delete import section_delete
+from cogs.section.edit import section_edit
+from g.util import check_user, send_error_message
 
 
-class EventCog(commands.Cog):
+class SectionCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    event_group = discord.app_commands.Group(name="event", description="Komendy do zarządzania wydarzeniami")
+    section_group = discord.app_commands.Group(name="section", description="Polecenia niestandardowych sekcji")
 
-    @event_group.command(name="add", description="Dodaje nowe wydarzenie")
+    @section_group.command(name="add", description="Stwórz niestandardową sekcję do kalendarza")
+    @discord.app_commands.describe(calendar_id="Numer id kalendarza")
     @discord.app_commands.check(check_user)
-    async def add(self, interaction: discord.Interaction):
-        await event_add(interaction)
+    async def add(self, interaction: discord.Interaction, calendar_id: int | None):
+        await section_add(interaction, calendar_id)
 
     @add.error
     async def add_error(self, interaction: discord.Interaction, error):
         await send_error_message(interaction, error)
 
-    @event_group.command(name="edit", description="Zmienia wydarzenie")
+    @section_group.command(name="edit", description="Edytuj niestandardową sekcję")
     @discord.app_commands.describe(calendar_id="Numer id kalendarza")
     @discord.app_commands.check(check_user)
     async def edit(self, interaction: discord.Interaction, calendar_id: int | None):
-        await event_edit(interaction, calendar_id)
+        await section_edit(interaction, calendar_id)
 
     @edit.error
     async def edit_error(self, interaction: discord.Interaction, error):
         await send_error_message(interaction, error)
 
-    @event_group.command(name="delete", description="Usuwa wydarzenia")
+    @section_group.command(name="delete", description="Usuń niestandardową sekcję z kalendarza")
     @discord.app_commands.describe(calendar_id="Numer id kalendarza")
     @discord.app_commands.check(check_user)
     async def delete(self, interaction: discord.Interaction, calendar_id: int | None):
-        await event_delete(interaction, calendar_id)
+        await section_delete(interaction, calendar_id)
 
     @delete.error
     async def delete_error(self, interaction: discord.Interaction, error):
@@ -44,4 +45,4 @@ class EventCog(commands.Cog):
 
 
 async def setup(bot):
-    await bot.add_cog(EventCog(bot))
+    await bot.add_cog(SectionCog(bot))
