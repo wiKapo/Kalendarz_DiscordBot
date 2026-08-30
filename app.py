@@ -24,7 +24,7 @@ logger = get_logger()
 @bot.event
 async def on_ready():
     logger.info(f"Logged in as {bot.user}")
-    print(f"We have logged in as {bot.user}")
+    print(f"Logged in as {bot.user}")
     try:
         synced_commands = await bot.tree.sync()
         logger.info(f"Synced {len(synced_commands)} commands")
@@ -122,7 +122,7 @@ Kalendarz jest aktualizowany automatycznie, **codziennie o godzinie 0:00 UTC**.
 W przypadku usunięcia **wiadomości** z kalendarzem wykonaj ponownie `/calendar create`, która odtworzy wiadomość kalendarza.
 
 `/calendar edit` - Otwiera okienko edycji kalendarza. Umożliwia zmianę tytułu oraz wybranie roli, która będzie wysyłać powiadomienia przy aktualizacji kalendarza.
-`/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**. Tej operacji nie można cofnąć.
+`/calendar delete` - Usuwa kalendarz z tego kanału **RAZEM z wydarzeniami**, które są przypisane tylko do tego kalendarza. Tej operacji nie można cofnąć.
 `/calendar update <calendar_id> <quiet>` - Aktualizuje kalendarz. Domyślnie wybierany jest kalendarz z kanału, na którym wykonano komendę.
 Można podać id kalendarza, który ma być zaktualizowany. Można opcjonalnie ustawić `quiet` na `False`, aby powiadomić o aktualizacji.
 
