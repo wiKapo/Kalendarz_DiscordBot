@@ -114,9 +114,12 @@ async def create_calendar_description(channel, calendar: Calendar, update_text: 
     logger = get_logger(LogType.CALENDAR, calendar.id)
 
     if calendar.descriptionMessageId:
-        await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
-        calendar.descriptionMessageId = None
-        logger.info("Removed old calendar description")
+        try:
+            await (await channel.fetch_message(calendar.descriptionMessageId)).delete()
+            calendar.descriptionMessageId = None
+            logger.info("Removed old calendar description")
+        except discord.NotFound:
+            pass
 
     ping_text: str = ""
     if calendar.pingRoleId and not quiet:
