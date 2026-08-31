@@ -180,7 +180,7 @@ class AdminCog(commands.Cog):
 
         try:
             logger.info("Updating sections table")
-            Db().execute("SELECT TimeTag FROM sections")
+            Db().execute("SELECT Timestamp FROM sections")
 
             Db().execute("DROP TABLE IF EXISTS sections ")
             Db().execute("CREATE TABLE IF NOT EXISTS sections ("
