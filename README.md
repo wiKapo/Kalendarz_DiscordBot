@@ -13,7 +13,7 @@ Mój bot do zarządzania wydarzeniami
 ## Wymagania
 - python3.12
 - sqlite3
-- Plik `.env` w folderze `Kalendarz_DiscordBot`, który zawiera pola `BOT_TOKEN=<token bota>` i `USERS=<user_id1,user_id2,...>`
+- Plik `.env` w folderze `Kalendarz_DiscordBot`, który zawiera pola `BOT_TOKEN=<bot_token>` i `USERS=<user_id1,user_id2,...>`
 Użytkownicy wpisani w polu `USERS` mają dostęp do wszystkich komend bota, w tym `/admin`.
 
 ## Komendy dostępne w bocie
