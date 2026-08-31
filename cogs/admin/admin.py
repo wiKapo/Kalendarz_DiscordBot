@@ -67,12 +67,6 @@ class AdminCog(commands.Cog):
                 logger.error(f"Error: {e}", exc_info=True)
                 await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{repr(calendar)}\n"
                                                 f"ERROR: {e}", ephemeral=True)
-                message.message = "***UWAGA*** Bot nie ma dostępu do tego kalendarza. NIE BĘDZIE ON AKTUALIZOWANY. ***UWAGA***"
-                message.set_time(31)
-                message.insert()
-                message.message = f"Stan na: {datetime.now().strftime('%Y.%m.%d %H:%M:%S')}"
-                message.insert()
-                logger.info(f"Sent error message to calendar id={calendar.id}")
 
         logger.info(f"Finished updating {len(calendars)} calendar{"" if len(calendars) == 1 else "s"}")
         await interaction.followup.send(f"Zaktualizowano wszystkie kalendarze w ilości: `{len(calendars)}`",

@@ -13,7 +13,7 @@ from g.classes.event import fetch_outdated_events, fetch_events_from_ids
 from g.classes.logger import get_logger, LogType
 from g.classes.section import fetch_outdated_sections
 from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week
-from g.util import check_dm, check_admin, check_user, send_error_message
+from g.util import check_not_dm, check_admin, check_user, send_error_message
 
 UPDATE_TIME = time()
 NOTIFICATION_TIME = time(hour=7, minute=0, second=0)
@@ -143,7 +143,7 @@ class CalendarCog(commands.Cog):
 
     @cal_group.command(name="create", description="Tworzy nowy kalendarz")
     @discord.app_commands.describe(title="Tytuł kalendarza")
-    @discord.app_commands.check(check_dm)
+    @discord.app_commands.check(check_not_dm)
     @discord.app_commands.check(check_admin)
     async def create(self, interaction: discord.Interaction, title: str | None):
         await calendar_create(interaction, title)
@@ -167,7 +167,7 @@ class CalendarCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @cal_group.command(name="delete", description="Usuwa kalendarz")
-    @discord.app_commands.check(check_dm)
+    @discord.app_commands.check(check_not_dm)
     @discord.app_commands.check(check_admin)
     async def delete(self, interaction: discord.Interaction):
         await calendar_delete(interaction)

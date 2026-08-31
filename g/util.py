@@ -55,7 +55,17 @@ async def check_user(interaction: discord.Interaction) -> bool:
     return False
 
 
+def check_not_dm(interaction: discord.Interaction) -> bool:
+    """
+    :return: True if the interaction is NOT called in a DM channel
+    """
+    return not check_dm(interaction)
+
+
 def check_dm(interaction: discord.Interaction) -> bool:
+    """
+    :return: True if the interaction is called in a DM channel
+    """
     return isinstance(interaction.channel, discord.channel.DMChannel)
 
 
