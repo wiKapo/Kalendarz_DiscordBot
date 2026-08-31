@@ -126,5 +126,5 @@ def select_section(custom_sections: list[Section], timestamp: int) -> tuple[Sect
     return selected_section, selected_custom_section
 
 
-def fetch_outdated_sections() -> list[Section]:
-    return Db().fetch_all("SELECT * FROM sections WHERE EndTimestamp < ?", (datetime.now().timestamp()))
+def fetch_outdated_sections(cutoff_timestamp: int) -> list[Section]:
+    return Db().fetch_all("SELECT * FROM sections WHERE EndTimestamp < ?", (cutoff_timestamp,))

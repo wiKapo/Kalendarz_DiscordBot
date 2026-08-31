@@ -47,7 +47,7 @@ class CalendarCog(commands.Cog):
         else:
             logger.info("No outdated events found")
 
-        outdated_sections = fetch_outdated_sections()
+        outdated_sections = fetch_outdated_sections(int(datetime.now().timestamp()))
         if len(outdated_sections) > 0:
             logger.info(f"Deleting {len(outdated_sections)} old custom sections")
             logger.debug(outdated_sections)
