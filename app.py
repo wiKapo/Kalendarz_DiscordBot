@@ -141,7 +141,7 @@ Można podać id kalendarza, z którego będą pobierane wydarzenia do usunięci
 
     message = """### ---==[ Polecenia menedżerów ]==---
 Role menedżerów są dodawane przez administratorów na danym serwerze.
-Menedżerowie otrzymują dostęp do wszystkich komend `/calendar`, `/event` i `/notification` na danym serwerze.
+Menedżerowie otrzymują dostęp do wszystkich komend `/event` i `/section` na danym serwerze. Mogą również skorzystać z `/calendar edit` i `/calendar update`.
 Menedżerowie nie mogą dodawać nowych menedżerów.
 
 `/user set` - Otwiera okienko z polem wyboru ról dla menedżerów kalendarza.
