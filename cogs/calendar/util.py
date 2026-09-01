@@ -1,6 +1,6 @@
 import discord
 
-from g.classes.calendar import Calendar, remove_all_notifications_from_user
+from g.classes.calendar import Calendar, remove_all_notifications_from_user, fetch_all_notification_calendar_ids_for_user
 from g.classes.logger import get_logger, LogType
 from g.discord_classes import UniversalButton
 
@@ -49,14 +49,15 @@ class NotificationButtonsView(discord.ui.View):
 
 async def remove_notification(interaction: discord.Interaction):
     logger = get_logger(LogType.USER, interaction.user.name)
-    logger.info("Removing notifications for all calendars")
+    calendar_ids = sorted(fetch_all_notification_calendar_ids_for_user(interaction.user.id))
+    logger.info("Removing notifications from all calendars")
     remove_all_notifications_from_user(interaction.user.id)
-    logger.info("Removed all notifications")
+    logger.info(f"Removed notifications from calendars {", ".join(map(lambda x: str(x), calendar_ids))}")
     await interaction.response.send_message("Nie będziesz już otrzymywać powiadomień z kalendarzy", ephemeral=True)
 
 
 class DMNotificationButtonsView(discord.ui.View):
     def __init__(self):
         super().__init__()
-        self.add_item(UniversalButton(label="Zrezygnuj z powiadomień kalendarza", style=discord.ButtonStyle.secondary,
+        self.add_item(UniversalButton(label="Zrezygnuj z powiadomień kalendarzy", style=discord.ButtonStyle.secondary,
                                       action=remove_notification))

@@ -169,6 +169,11 @@ def fetch_all_notifications() -> dict[int, set[Calendar]]:
     return dict(zip(user_ids, notify_calendars))
 
 
+def fetch_all_notification_calendar_ids_for_user(user_id: int) -> set[int]:
+    calendar_ids = Db().fetch_all("SELECT DISTINCT CalendarId FROM notifications WHERE UserId=?", (user_id,))
+    return set(map(lambda x: x[0], calendar_ids))
+
+
 def remove_all_notifications_from_user(user_id: int):
     Db().execute("DELETE FROM notifications WHERE UserId=?", (user_id,))
 
