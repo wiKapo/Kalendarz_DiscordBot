@@ -9,7 +9,7 @@ from g.classes.logger import LogType, get_logger
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
 from g.discord_classes import UpdateMessageView
 
-BOT_VERSION = "1.0"  # TODO ALWAYS UPDATE ME
+BOT_VERSION = "1.0a"  # TODO ALWAYS UPDATE ME
 
 
 # --------- CHECKS ---------

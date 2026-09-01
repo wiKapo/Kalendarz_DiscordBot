@@ -75,11 +75,10 @@ class DeleteEventsModal(discord.ui.Modal):
             "Usuwa wydarzenia, ze **wszystkich** kalendarzy.\n"
             "Użyj `/event edit`, aby usunąć wydarzenia tylko z tego kalendarza"))
 
-        options = format_event_options(events)  # TODO handle having more than 25 events
+        options = format_event_options(events)
         self.event_select = discord.ui.Select(options=options[:25], max_values=min(len(options), 25), required=True)
         self.add_item(discord.ui.Label(text="Wybierz wydarzenia do usunięcia", component=self.event_select,
-                                       description="Najbliższe 25 wydarzeń w polu wyboru" if len(
-                                           options) > 25 else ""))
+                                       description="Najbliższe 25 wydarzeń w polu wyboru" if len(options) > 25 else ""))
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         logger = get_logger(LogType.EVENT)

@@ -84,19 +84,26 @@ class CalendarCog(commands.Cog):
             # Getting all event ids from all calendars user has notifications for
 
             today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-            events = list(filter(lambda e: today.timestamp() <= e.timestamp < (today + timedelta(weeks=2)).timestamp(),
-                                 fetch_events_from_ids(event_ids)))  # Filtering events that are in the next 2 weeks
+            if datetime.now().weekday() == 6:
+                delta = timedelta(weeks=2)
+                range_text = "2 weeks"
+            else:
+                delta = timedelta(days=2)
+                range_text = "2 days"
+            # If today is Sunday, then get the events from the next 2 weeks, otherwise from the next 2 days
+            events = list(filter(lambda e: today.timestamp() <= e.timestamp < (today + delta).timestamp(),
+                                 fetch_events_from_ids(event_ids)))  # Filtering events that are in specified range
             if not events:
-                user_logger.info("No events to be notified about in the next 2 weeks")
+                user_logger.info(f"No events to be notified about in the next {range_text}")
                 continue
 
             events.sort(key=lambda e: e.timestamp)
-            user_logger.info(f"Found {len(events)} events in the next 2 weeks")
+            user_logger.info(f"Found {len(events)} events in the next {range_text}")
             user_logger.debug(events)
 
             calendar_ids = set().union(*(event.calendarIds for event in events))
             calendars = list(filter(lambda c: c.id in calendar_ids, calendars))
-            # Filtering calendars that have events in the next 2 weeks
+            # Filtering calendars that have events in the selected range
 
             notification_message = ""
             section_number = 0
@@ -112,28 +119,25 @@ class CalendarCog(commands.Cog):
                         notification_message += f"## Wydarzenia jutro\n"
                     section_number = 2
 
-                elif datetime.now().weekday() == 6:  # 6 == Sunday
-                    if section_number <= 7 and is_this_week(event_date):
-                        if section_number < 7:
-                            notification_message += f"### Wydarzenia w tym tygodniu\n"
-                        section_number = 7
+                elif section_number <= 7 and is_this_week(event_date):
+                    if section_number < 7:
+                        notification_message += f"### Wydarzenia w tym tygodniu\n"
+                    section_number = 7
 
-                    elif section_number <= 14 and is_next_week(event_date):
-                        if section_number < 14:
-                            notification_message += f"### Wydarzenia w następnym tygodniu\n"
-                        section_number = 14
+                elif section_number <= 14 and is_next_week(event_date):
+                    if section_number < 14:
+                        notification_message += f"### Wydarzenia w następnym tygodniu\n"
+                    section_number = 14
 
                 else:
                     break
 
                 notification_message += f"{event}\n"
-                user_logger.info("Prepared main part of notification message")
 
-            calendar_links = ", ".join(
+            notification_message += f"\nZ kalendarz{"a" if len(calendars) == 1 else "y"} {", ".join(
                 map(lambda c: f"[#{c.id}](https://discord.com/channels/{c.guildId}/{c.channelId}/{c.messageId})",
-                    calendars))
-            notification_message += f"\nZ kalendarz{"a" if len(calendars) == 1 else "y"} {calendar_links}\n"
-            user_logger.info("Prepared final part of notification message")
+                    calendars))}\n"
+            user_logger.info("Prepared notification message")
 
             await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
             user_logger.info("Sent notification")
