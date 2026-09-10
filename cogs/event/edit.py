@@ -127,7 +127,7 @@ def create_event_update_message(new_event: Event, old_event: Event):
 
     for calendar_id in new_event.calendarIds.intersection(old_event.calendarIds):
         logger = get_logger(LogType.CALENDAR, calendar_id)
-        logger.info(f"Changed event from {repr(old_event)} to {repr(new_event)}")
+        logger.info(f"Changed event\nFrom: {repr(old_event)}\nTo: {repr(new_event)}")
         message.calendarId = calendar_id
         message.message = compare_event_changes(new_event, old_event)
         message.insert()
