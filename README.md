@@ -1,6 +1,12 @@
-# Kalendarz v1.0a
+# Kalendarz v1.0b
 Mój bot do zarządzania wydarzeniami
 ![cakendar_icon.png](icons/calendar_icon.png)
+
+## Lista zmian
+### 1.0b
+  - Naprawiono buga przy aktualizowaniu kalendarza 
+### 1.0a
+  - Naprawiono buga przy wysyłaniu wiadomości powiadomienia
 
 ## Instalacja
 - `git clone https://github.com/wiKapo/Kalendarz_DiscordBot`
@@ -80,4 +86,4 @@ Przechowuje interakcje z systemem powiadomień
 - Informacje o stanie bota są zapisywane w pliku `default.log`.
 - Informacje o pętli powiadomień są zapisywane w pliku `notification.log`.
 
-Wersja 1.0a
+Wersja 1.0b

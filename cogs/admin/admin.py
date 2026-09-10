@@ -36,7 +36,7 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(14)
-            message.message = f"**Wersja {BOT_VERSION}** Poprawiono działanie powiadomień"  # TODO ALWAYS UPDATE ME
+            message.message = f"**Wersja {BOT_VERSION}** Naprawiono automatyczną aktualizację kalendarzy"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
