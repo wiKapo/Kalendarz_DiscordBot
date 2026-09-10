@@ -1,4 +1,5 @@
 from datetime import time, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import discord
 from discord.ext import tasks, commands
@@ -15,8 +16,9 @@ from g.classes.section import fetch_outdated_sections
 from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week
 from g.util import check_not_dm, check_admin, check_user, send_error_message
 
-UPDATE_TIME = time()
-NOTIFICATION_TIME = time(hour=7, minute=0, second=0)
+TIMEZONE = ZoneInfo("Europe/Warsaw")
+UPDATE_TIME = time(tzinfo=TIMEZONE)
+NOTIFICATION_TIME = time(hour=7, tzinfo=TIMEZONE)
 
 
 class CalendarCog(commands.Cog):
