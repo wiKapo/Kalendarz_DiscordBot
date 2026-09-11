@@ -1,4 +1,5 @@
 from datetime import time, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import discord
 from discord.ext import tasks, commands
@@ -15,8 +16,9 @@ from g.classes.section import fetch_outdated_sections
 from g.datetime_util import is_today, is_tomorrow, is_this_week, is_next_week
 from g.util import check_not_dm, check_admin, check_user, send_error_message
 
-UPDATE_TIME = time()
-NOTIFICATION_TIME = time(hour=7, minute=0, second=0)
+TIMEZONE = ZoneInfo("Europe/Warsaw")
+UPDATE_TIME = time(tzinfo=TIMEZONE)
+NOTIFICATION_TIME = time(hour=7, tzinfo=TIMEZONE)
 
 
 class CalendarCog(commands.Cog):
@@ -59,7 +61,7 @@ class CalendarCog(commands.Cog):
 
         logger.info("Start of updating all calendars")
         for calendar in calendars:
-            logger.info(f"Updating calendar {repr(calendar)}")
+            logger.info(f"Updating calendar {calendar.id}")
             calendar_message: discord.Message = await (
                 (await (await self.bot.fetch_guild(calendar.guildId)).fetch_channel(calendar.channelId))
                 .fetch_message(calendar.messageId))
@@ -71,13 +73,14 @@ class CalendarCog(commands.Cog):
     async def notification_loop(self):
         notifications: dict[int, set[Calendar]] = fetch_all_notifications()
         notification_logger = get_logger(LogType.NOTIFICATION)
-        notification_logger.info("Start of notification loop")
+        notification_logger.info(f"Start of notification loop. Found {len(notifications)} users with notifications")
+        notifications_sent = 0
+        users_to_notify: list[tuple[tuple[str, int], bool]] = []
 
         for user_id in notifications:
-            user_name = (await self.bot.fetch_user(user_id)).name
+            user_name: str = (await self.bot.fetch_user(user_id)).name
             user_logger = get_logger(LogType.USER, user_name)
 
-            notification_logger.info(f"Checking notifications for user {user_name} ({user_id})")
             user_logger.info(f"Checking notifications")
             calendars = notifications[user_id]
             event_ids = set().union(*(calendar.eventIds for calendar in calendars))
@@ -95,7 +98,9 @@ class CalendarCog(commands.Cog):
                                  fetch_events_from_ids(event_ids)))  # Filtering events that are in specified range
             if not events:
                 user_logger.info(f"No events to be notified about in the next {range_text}")
+                users_to_notify.append(((user_name, user_id), False))
                 continue
+            users_to_notify.append(((user_name, user_id), True))
 
             events.sort(key=lambda e: e.timestamp)
             user_logger.info(f"Found {len(events)} events in the next {range_text}")
@@ -141,7 +146,16 @@ class CalendarCog(commands.Cog):
 
             await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
             user_logger.info("Sent notification")
-        notification_logger.info("Finished notification loop")
+            notifications_sent += 1
+
+        found_users: list[tuple[str, int]] = list(map(lambda u: u[0], users_to_notify))
+        notification_logger.debug(
+            f"Found users: {", ".join(f"{user_name} ({user_id})" for user_name, user_id in found_users)}")
+
+        notified_users: list[str] = list(map(lambda u: u[0][0], filter(lambda u: u[1], users_to_notify)))
+        notification_logger.debug(f"Notified users: {', '.join(user_name for user_name in notified_users)}")
+
+        notification_logger.info(f"Finished notification loop. Sent {notifications_sent} notifications")
 
     cal_group = discord.app_commands.Group(name="calendar", description="Polecenia kalendarza")
 
@@ -181,9 +195,11 @@ class CalendarCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @cal_group.command(name="edit", description="Edytuje kalendarz")
+    @discord.app_commands.describe(
+        calendar_id="Numer kalendarza do edycji (domyślnie kalendarz, który znajduje się na kanale)")
     @discord.app_commands.check(check_user)
-    async def edit(self, interaction: discord.Interaction):
-        await calendar_edit(interaction)
+    async def edit(self, interaction: discord.Interaction, calendar_id: int | None):
+        await calendar_edit(interaction, calendar_id)
 
     @edit.error
     async def edit_error(self, interaction: discord.Interaction, error):

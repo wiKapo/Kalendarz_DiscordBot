@@ -185,6 +185,16 @@ def fetch_calendars_in_guild(guild_id: int) -> list[Calendar]:
     return []
 
 
+async def fetch_calendars_in_guild_with_additional_data(guild: Guild) -> list[Calendar]:
+    data = Db().fetch_all("SELECT * FROM calendars WHERE GuildId=?", (guild.id,))
+    if data:
+        calendars = [Calendar(x) for x in data]
+        for calendar in calendars:
+            await calendar.get_additional_data(guild)
+        return calendars
+    return []
+
+
 def fetch_calendars_in_guild_with_sections(guild_id: int) -> list[Calendar]:
     data = Db().fetch_all(
         "SELECT calendars.* FROM calendars INNER JOIN sections ON calendars.Id = sections.CalendarId "

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 import discord
 
-from g.classes.calendar import Calendar, fetch_calendars_in_guild
+from g.classes.calendar import Calendar, fetch_calendars_in_guild_with_additional_data
 from g.classes.logger import get_logger, LogType
 from g.classes.message import Message
 from g.classes.section import Section
@@ -16,15 +16,18 @@ async def section_add(interaction: discord.Interaction, calendar_id: int | None)
     if not calendar_id:
         logger = get_logger(LogType.CALENDAR)
         logger.info(f"{interaction.user.name} is adding new section")
-        calendars = fetch_calendars_in_guild(interaction.guild_id)
-        for calendar in calendars:
-            await calendar.get_additional_data(interaction.guild)
+        calendars = await fetch_calendars_in_guild_with_additional_data(interaction.guild)
 
-        logger.info("Showing calendar select form")
-        await interaction.response.send_message(
-            "Wybierz kalendarz, do którego chcesz dodać niestandardową sekcję",
-            view=UniversalSelectView(format_calendar_options(calendars), "Wybierz kalendarz", send_section_add_modal),
-            ephemeral=True)
+        if calendars:
+            logger.info("Showing calendar select form")
+            await interaction.response.send_message(
+                "Wybierz kalendarz, do którego chcesz dodać niestandardową sekcję",
+                view=UniversalSelectView(format_calendar_options(calendars), "Wybierz kalendarz",
+                                         send_section_add_modal),
+                ephemeral=True)
+        else:
+            logger.info("There are no calendars in this guild")
+            await interaction.response.send_message("Nie ma kalendarzy na tym serwerze", ephemeral=True)
     else:
         logger = get_logger(LogType.CALENDAR, calendar_id)
         logger.info(f"{interaction.user.name} is adding new section to this calendar")

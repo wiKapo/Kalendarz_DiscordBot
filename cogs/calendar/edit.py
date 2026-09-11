@@ -1,21 +1,49 @@
 import discord
 from discord import Role
 
-from g.classes.calendar import DEFAULT_TITLE_RAW, Calendar
+from g.classes.calendar import DEFAULT_TITLE_RAW, Calendar, fetch_calendars_in_guild_with_additional_data
 from g.classes.logger import get_logger, LogType
+from g.discord_classes import UniversalSelectView, format_calendar_options
 from g.util import check_if_calendar_exists, update_calendar
 
 
-async def calendar_edit(interaction: discord.Interaction):
-    if not await check_if_calendar_exists(interaction):
-        await interaction.response.send_message("Kalendarz nie istnieje na tym kanale", ephemeral=True)
-        return
-    calendar = Calendar()
-    calendar.fetch_by_channel(interaction.guild_id, interaction.channel_id)
+async def calendar_edit(interaction: discord.Interaction, calendar_id: int | None):
+    calendar_id = calendar_id or await check_if_calendar_exists(interaction)
 
+    if calendar_id:
+        calendar = Calendar()
+        calendar.fetch(calendar_id)
+        if not calendar:
+            await interaction.response.send_message(f"Kalendarz o numerze {calendar_id} nie istnieje", ephemeral=True)
+        else:
+            logger = get_logger(LogType.CALENDAR, calendar.id)
+            logger.info(f"Showing edit calendar modal for {interaction.user.name} "
+                        f"in [{interaction.guild.name} - {interaction.guild_id}]")
+
+            await interaction.response.send_modal(
+                EditCalendarModal(calendar, interaction.guild.get_role(calendar.pingRoleId)))
+    else:
+        logger = get_logger(LogType.CALENDAR)
+        logger.info(f"{interaction.user.name} is trying to edit calendar")
+
+        calendars = await fetch_calendars_in_guild_with_additional_data(interaction.guild)
+        if calendars:
+            logger.info("Showing select form")
+            await interaction.response.send_message(
+                "Wybierz kalendarz do edycji",
+                view=UniversalSelectView(format_calendar_options(calendars), "Wybierz kalendarz", send_edit_calendar_modal),
+                ephemeral=True)
+        else:
+            logger.info("There are no calendars in this guild")
+            await interaction.response.send_message("Nie ma kalendarzy na tym serwerze", ephemeral=True)
+
+
+async def send_edit_calendar_modal(interaction: discord.Interaction, values: list[str]):
+    calendar = Calendar()
+    calendar.fetch(int(values[0]))
     logger = get_logger(LogType.CALENDAR, calendar.id)
     logger.info(f"Showing edit calendar modal for {interaction.user.name} "
-                f"in [{interaction.guild.name} - {interaction.guild.id}]")
+                f"in [{interaction.guild.name} - {interaction.guild_id}]")
 
     await interaction.response.send_modal(
         EditCalendarModal(calendar, interaction.guild.get_role(calendar.pingRoleId)))

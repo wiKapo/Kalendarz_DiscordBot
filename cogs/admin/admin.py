@@ -36,7 +36,7 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(14)
-            message.message = f"**Wersja {BOT_VERSION}** Poprawiono działanie powiadomień"  # TODO ALWAYS UPDATE ME
+            message.message = f"**Wersja {BOT_VERSION}** Naprawiono automatyczną aktualizację kalendarzy"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
@@ -44,16 +44,12 @@ class AdminCog(commands.Cog):
                 guild = await self.bot.fetch_guild(calendar.guildId)
                 await update_calendar(guild, calendar, interaction.user.name, True,
                                       f"**Kalendarz został zaktualizowany do wersji {BOT_VERSION}**\n"
-                                      f"Więcej o tej aktualizacji tutaj: https://discord.gg/ayXkVwVkGA "
-                                      f"i pod przyciskiem `Pokaż ostatnie zmiany`\n")
+                                      f"Więcej o tej aktualizacji na moim serwerze (link w opisie bota) i pod przyciskiem `Pokaż ostatnie zmiany`")
                 await update_calendar_buttons(guild, calendar)
 
-                await interaction.followup.send(f"Zaktualizowano kalendarz #{calendar.id}", ephemeral=True)
                 logger.info(f"Updated calendar id={calendar.id}")
             except Exception as e:
-                logger.error(f"Error: {e}", exc_info=True)
-                await interaction.followup.send(f"Aktualizowanie nie powiodło się. Błąd w kalendarzu:{repr(calendar)}\n"
-                                                f"ERROR: {e}", ephemeral=True)
+                logger.error(f"Error with calendar id={calendar.id}:\n{e}", exc_info=True)
 
         logger.info(f"Finished updating {len(calendars)} calendar{"" if len(calendars) == 1 else "s"}")
         await interaction.followup.send(f"Zaktualizowano wszystkie kalendarze w ilości: `{len(calendars)}`",

@@ -9,7 +9,7 @@ from g.classes.logger import LogType, get_logger
 from g.classes.message import fetch_manager_roles_for_guild, fetch_outdated_update_messages
 from g.discord_classes import UpdateMessageView
 
-BOT_VERSION = "1.0a"  # TODO ALWAYS UPDATE ME
+BOT_VERSION = "1.0b"  # TODO ALWAYS UPDATE ME
 
 
 # --------- CHECKS ---------
@@ -78,16 +78,22 @@ async def send_error_message(interaction: discord.Interaction, error):
     if isinstance(error, discord.app_commands.CheckFailure):
         if check_dm(interaction):
             logger.warning(f"User {interaction.user.name} tried to use /{command_name} in DM channel")
-            await interaction.response.send_message(f"`/{command_name}` nie jest wspierane w prywatnych wiadomościach",
-                                                    ephemeral=True)
+            await send_message_safe(interaction, f"`/{command_name}` nie jest wspierane w prywatnych wiadomościach")
         else:
             logger.warning(f"User {interaction.user.name} doesn't have permissions to use /{command_name}")
-            await interaction.response.send_message("Brak uprawnień", ephemeral=True)
+            await send_message_safe(interaction, "Brak uprawnień")
     else:
         logger.error(f"Received an error while executing '/{command_name}':\n{error}", exc_info=True)
-        await interaction.response.send_message(
-            f"Błąd: {error}\nZgłoś do @wiKapo lub na serwerze https://discord.gg/ayXkVwVkGA "
-            f"na kanale: https://discord.com/channels/1479867817015771136/1479868335297527899", ephemeral=True)
+        await send_message_safe(interaction,
+                                f"Błąd: {error}\nZgłoś do @wiKapo lub na serwerze https://discord.gg/ayXkVwVkGA "
+                                f"na kanale: https://discord.com/channels/1479867817015771136/1479868335297527899")
+
+
+async def send_message_safe(interaction: discord.Interaction, message: str):
+    if interaction.response.is_done():
+        await interaction.followup.send(message, ephemeral=True)
+    else:
+        await interaction.response.send_message(message, ephemeral=True)
 
 
 # --------- update message handling ---------
