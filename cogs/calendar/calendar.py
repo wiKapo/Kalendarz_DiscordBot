@@ -195,9 +195,11 @@ class CalendarCog(commands.Cog):
         await send_error_message(interaction, error)
 
     @cal_group.command(name="edit", description="Edytuje kalendarz")
+    @discord.app_commands.describe(
+        calendar_id="Numer kalendarza do edycji (domyślnie kalendarz, który znajduje się na kanale)")
     @discord.app_commands.check(check_user)
-    async def edit(self, interaction: discord.Interaction):
-        await calendar_edit(interaction)
+    async def edit(self, interaction: discord.Interaction, calendar_id: int | None):
+        await calendar_edit(interaction, calendar_id)
 
     @edit.error
     async def edit_error(self, interaction: discord.Interaction, error):
