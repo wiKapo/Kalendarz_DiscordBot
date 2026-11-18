@@ -44,7 +44,7 @@ class AdminCog(commands.Cog):
                 guild = await self.bot.fetch_guild(calendar.guildId)
                 await update_calendar(guild, calendar, interaction.user.name, True,
                                       f"**Kalendarz został zaktualizowany do wersji {BOT_VERSION}**\n"
-                                      f"Więcej o tej aktualizacji na moim serwerze (link w opisie bota) i pod przyciskiem `Pokaż ostatnie zmiany`")
+                                      f"Więcej o tej aktualizacji na [moim serwerze](<https://discord.com/channels/1479867817015771136/1479869349312462948>) i pod przyciskiem `Pokaż ostatnie zmiany`\n")
                 await update_calendar_buttons(guild, calendar)
 
                 logger.info(f"Updated calendar id={calendar.id}")

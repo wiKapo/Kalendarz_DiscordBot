@@ -139,10 +139,10 @@ async def create_calendar_description(channel, calendar: Calendar, update_text: 
 
     ping_text: str = ""
     if calendar.pingRoleId and not quiet:
-        ping_text += f"<@&{calendar.pingRoleId}>\n\n"
+        ping_text += f"<@&{calendar.pingRoleId}>\n"
 
     message = await channel.send(ping_text + (update_text if update_text else "") +
-                                 f"\n-# Wersja kalendarza: v{BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
+                                 f"-# Wersja kalendarza: v{BOT_VERSION} | Numer kalendarza: **{calendar.id}**",
                                  view=UpdateMessageView(calendar.pingRoleId))
     calendar.descriptionMessageId = message.id
     calendar.update()
