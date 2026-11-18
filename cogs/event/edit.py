@@ -156,16 +156,16 @@ def compare_event_changes(new_event: Event, old_event: Event) -> str | None:
         message += f"| *Nazwa*: `{old_event.name}` -> `{new_event.name}` "
 
     if new_event.time != old_event.time:
-        message += f"| *Godzina*: `{old_event.time if old_event.time else "-"}` -> `{new_event.time if new_event.time else "-"}` "
+        message += f"| *Godzina*: {f"`{old_event.time}`" if old_event.time else "puste"} -> {f"`{new_event.time}`" if new_event.time else "puste"} "
 
     if new_event.date != old_event.date:
         message += f"| *Data*: `{old_event.date}` -> `{new_event.date}` "
 
     if new_event.team != old_event.team:
-        message += f"| *Grupa*: `{old_event.team if old_event.team else "-"}` -> `{new_event.team if new_event.team else "-"}` "
+        message += f"| *Grupa*: {f"`{old_event.team}`" if old_event.team else "puste"} -> {f"`{new_event.team}`" if new_event.team else "puste"} "
 
     if new_event.place != old_event.place:
-        message += f"| *Miejsce*: `{old_event.place if old_event.place else "-"}` -> `{new_event.place if new_event.place else "-"}` "
+        message += f"| *Miejsce*: {f"`{old_event.place}`" if old_event.place else "puste"} -> {f"`{new_event.place}`" if new_event.place else "puste"} "
 
     message += "|"
 
