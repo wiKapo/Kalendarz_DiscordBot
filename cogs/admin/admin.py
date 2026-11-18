@@ -30,6 +30,7 @@ class AdminCog(commands.Cog):
         await interaction.response.send_message(
             "Aktualizowanie wszystkich kalendarzy. Poczekaj na potwierdzenie wykonania akcji.", ephemeral=True)
 
+        calendars_error = []
         calendars = fetch_all_calendars()
         for calendar in calendars:
             logger.info(f"Updating calendar id={calendar.id}")
@@ -50,8 +51,11 @@ class AdminCog(commands.Cog):
                 logger.info(f"Updated calendar id={calendar.id}")
             except Exception as e:
                 logger.error(f"Error with calendar id={calendar.id}:\n{e}", exc_info=True)
+                calendars_error.append(calendar.id)
 
         logger.info(f"Finished updating {len(calendars)} calendar{"" if len(calendars) == 1 else "s"}")
+        if calendars_error:
+            logger.error(f"Error with {len(calendars_error)} calendars")
         await interaction.followup.send(f"Zaktualizowano wszystkie kalendarze w ilości: `{len(calendars)}`",
                                         ephemeral=True)
 
