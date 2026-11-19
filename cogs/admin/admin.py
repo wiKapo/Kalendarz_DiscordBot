@@ -300,11 +300,84 @@ class AdminCog(commands.Cog):
 
     @admin_group.command(name="stop", description="[TYLKO DLA ADMINÓW KALENDARZA] Wyłącza bota")
     @discord.app_commands.check(check_calendar_admin)
-    async def stop(self, interaction: discord.Interaction):
+    async def bot_stop(self, interaction: discord.Interaction):
         await interaction.response.send_modal(StopBotModal(self.bot))
 
-    @stop.error
+    @bot_stop.error
     async def stop_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    @admin_group.command(name="loop_status", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                         "Sprawdza status pętli aktualizacji i powiadomień")
+    @discord.app_commands.check(check_calendar_admin)
+    async def loop_status(self, interaction: discord.Interaction):
+        notification_loop_status = self.bot.get_cog("CalendarCog").notification_loop.is_running()
+        update_loop_status = self.bot.get_cog("CalendarCog").update_loop.is_running()
+
+        await interaction.response.send_message(
+            f"Czy działa pętla powiadomień? {"Tak" if notification_loop_status else "Nie"}\n"
+            f"Czy działa pętla aktualizacji? {"Tak" if update_loop_status else "Nie"}", ephemeral=True)
+
+    @loop_status.error
+    async def loop_status_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    notification_loop_group = discord.app_commands.Group(name="notification_loop",
+                                                         description="Zarządzanie pętlą powiadomień",
+                                                         parent=admin_group)
+
+    @notification_loop_group.command(name="start", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                               "Uruchom pętlę powiadomień")
+    @discord.app_commands.check(check_calendar_admin)
+    async def notification_loop_start(self, interaction: discord.Interaction):
+        try:
+            self.bot.get_cog("CalendarCog").notification_loop.start()
+            await interaction.response.send_message("Uruchomiono pętlę powiadomień", ephemeral=True)
+        except RuntimeError:
+            await interaction.response.send_message("Pętla powiadomień jest już uruchomiona", ephemeral=True)
+
+    @notification_loop_start.error
+    async def notification_loop_start_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    @notification_loop_group.command(name="stop", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                              "Zatrzymaj pętlę powiadomień")
+    @discord.app_commands.check(check_calendar_admin)
+    async def notification_loop_stop(self, interaction: discord.Interaction):
+        self.bot.get_cog("CalendarCog").notification_loop.cancel()
+        await interaction.response.send_message("Zatrzymano pętlę powiadomień", ephemeral=True)
+
+    @notification_loop_stop.error
+    async def notification_loop_start_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    update_loop_group = discord.app_commands.Group(name="update_loop",
+                                                   description="Zarządzanie pętlą aktualizacji",
+                                                   parent=admin_group)
+
+    @update_loop_group.command(name="start", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                         "Uruchom pętlę aktualizacji")
+    @discord.app_commands.check(check_calendar_admin)
+    async def update_loop_start(self, interaction: discord.Interaction):
+        try:
+            self.bot.get_cog("CalendarCog").update_loop.start()
+            await interaction.response.send_message("Uruchomiono pętlę aktualizacji", ephemeral=True)
+        except RuntimeError:
+            await interaction.response.send_message("Pętla aktualizacji jest już uruchomiona", ephemeral=True)
+
+    @update_loop_start.error
+    async def update_loop_start_error(self, interaction: discord.Interaction, error):
+        await no_permissions_message(interaction, error)
+
+    @update_loop_group.command(name="stop", description="[TYLKO DLA ADMINÓW KALENDARZA] "
+                                                        "Zatrzymaj pętlę aktualizacji")
+    @discord.app_commands.check(check_calendar_admin)
+    async def update_loop_stop(self, interaction: discord.Interaction):
+        self.bot.get_cog("CalendarCog").update_loop.cancel()
+        await interaction.response.send_message("Zatrzymano pętlę powiadomień", ephemeral=True)
+
+    @update_loop_stop.error
+    async def update_loop_start_error(self, interaction: discord.Interaction, error):
         await no_permissions_message(interaction, error)
 
 
