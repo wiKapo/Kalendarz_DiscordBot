@@ -1,4 +1,4 @@
-# Kalendarz v1.0b
+# Kalendarz v1.0.3
 Mój bot do zarządzania wydarzeniami
 ![cakendar_icon.png](icons/calendar_icon.png)
 
@@ -90,4 +90,4 @@ Przechowuje interakcje z systemem powiadomień
 - Informacje o stanie bota są zapisywane w pliku `default.log`.
 - Informacje o pętli powiadomień są zapisywane w pliku `notification.log`.
 
-Wersja 1.0b
+Wersja 1.0.3
