@@ -1,4 +1,4 @@
-# Kalendarz v1.0b
+# Kalendarz v1.0.3
 Mój bot do zarządzania wydarzeniami
 ![cakendar_icon.png](icons/calendar_icon.png)
 
@@ -71,9 +71,13 @@ Menedżerowie otrzymują dostęp do wszystkich komend `/event` i `/section` na d
 - `/admin create_test_calendar` - Tworzy testowy kalendarz.
 - `/admin remove_admin_cog` - Usuwa tą grupę poleceń z bota.
 - `/admin stop` - Zatrzymuje bota.
-
 - `/admin update_db` - Do migrowania bazy danych z wersji starszych od v1.0.
-- `/admin update_event_loggers` - Do wpisania informacji o lokalizacji wydarzeń.
+- `/admin update_event_loggers` - Do wpisania informacji o lokalizacji wydarzeń do odpowiednich loggerów.
+- `/admin loop_status` - Sprawdza status pętli aktualizacji i powiadomień.
+- `/admin notification_loop start` - Uruchamia pętlę powiadomień.
+- `/admin notification_loop stop` - Zatrzymuje pętlę powiadomień.
+- `/admin update_loop start` - Uruchamia pętlę aktualizacji.
+- `/admin update_loop stop` - Zatrzymuje pętlę aktualizacji.
 
 ## Loggery
 - Każdy kalendarz ma swój własny logger, który jest zapisywany w pliku `calendar_<id>.log` w `/logs/calendar`.  
@@ -86,4 +90,4 @@ Przechowuje interakcje z systemem powiadomień
 - Informacje o stanie bota są zapisywane w pliku `default.log`.
 - Informacje o pętli powiadomień są zapisywane w pliku `notification.log`.
 
-Wersja 1.0b
+Wersja 1.0.3
