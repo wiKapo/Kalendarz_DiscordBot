@@ -144,9 +144,19 @@ class CalendarCog(commands.Cog):
                     calendars))}\n"
             user_logger.info("Prepared notification message")
 
-            await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
-            user_logger.info("Sent notification")
-            notifications_sent += 1
+            try:
+                await self.bot.get_user(user_id).send(notification_message, view=DMNotificationButtonsView())
+                user_logger.info("Sent notification")
+                notifications_sent += 1
+            except discord.Forbidden as e:
+                user_logger.error(
+                    f"Can't send notification to {user_name} ({user_id}) from calendars: {', '.join(calendars)}."
+                    f"\nForbidden\n{e}", exc_info=True)
+            except Exception as e:
+                user_logger.error(
+                    f"Other exception occurred with user {user_name} ({user_id}) who had notifications "
+                    f"from calendars {', '.join(calendars)}\n{e}\n---==---\n",
+                    exc_info=True, stack_info=True)
 
         found_users: list[tuple[str, int]] = list(map(lambda u: u[0], users_to_notify))
         notification_logger.debug(

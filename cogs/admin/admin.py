@@ -37,9 +37,7 @@ class AdminCog(commands.Cog):
             message = Message()
             message.calendarId = calendar.id
             message.set_time(14)
-            message.message = f"**Wersja {BOT_VERSION}** - Dodano możliwość zmiany przypisania wydarzenia do kalendarza bez zmiany zawartości wydarzenia"  # TODO ALWAYS UPDATE ME
-            message.insert_with_check()
-            message.message = f"**Wersja {BOT_VERSION}** - Kilka mniejszych bugfix-ów"
+            message.message = f"**Wersja {BOT_VERSION}** - Poprawienie działania pętli powiadomień"  # TODO ALWAYS UPDATE ME
             message.insert_with_check()
             logger.info("Sent update message")
 
