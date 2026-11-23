@@ -67,6 +67,7 @@ async def show_messages(interaction: discord.Interaction):
     else:
         result = "## Ostatnie zmiany w kalendarzu:\n"
         for message in messages:
+            # TODO Crash when updates reach message length limit
             result += "- " + str(message) + "\n"
         await interaction.response.send_message(result, ephemeral=True)
 

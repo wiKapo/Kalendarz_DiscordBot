@@ -1,13 +1,12 @@
-import copy
-
 import discord
 from discord import Interaction
 
+from cogs.event.modals import EventModal
 from g.classes.calendar import Calendar, fetch_calendars_in_guild, fetch_calendars_from_ids
 from g.classes.event import fetch_events_from_guild, Event
 from g.classes.logger import LogType, get_logger
 from g.classes.message import Message
-from g.discord_classes import format_calendar_options, UniversalSelectView, format_event_options
+from g.discord_classes import UniversalSelectView, format_event_options
 from g.util import check_if_calendar_exists, update_calendar
 
 
@@ -57,68 +56,32 @@ async def send_event_edit_modal(interaction: discord.Interaction, values: list[s
     for calendar in calendars:
         await calendar.get_additional_data(interaction.guild)
 
-    await interaction.response.send_modal(EventEditModal(event, calendars))
+    await interaction.response.send_modal(EventModal(calendars, edit_event, event=event))
 
 
-class EventEditModal(discord.ui.Modal):
-    event: Event
+async def edit_event(interaction: discord.Interaction, new_event: Event, old_event: Event):
+    user_loggers = get_logger(LogType.USER, interaction.user.name)
+    user_loggers.info(f"Editing event {new_event.id}")
+    logger = get_logger(LogType.EVENT, new_event.id)
+    logger.debug(f"New: {repr(new_event)}")
+    logger.debug(f"Old: {repr(old_event)}")
 
-    def __init__(self, event: Event, calendars: list[Calendar]):
-        self.event = event
-        super().__init__(title="Edytuj wydarzenie")
+    if new_event == old_event:
+        logger.info("No changes were made to the event")
+        await interaction.response.send_message("Nie wprowadzono zmian do wydarzenia", ephemeral=True)
+        return
 
-        self.calendar_select = discord.ui.Select(options=format_calendar_options(calendars, self.event.calendarIds),
-                                                 max_values=len(calendars))
-        self.add_item(discord.ui.Label(text="Do których kalendarzy przypisać wydarzenie?",
-                                       component=self.calendar_select))
+    new_event.update()
+    create_event_update_message(new_event, old_event)
 
-        self.name_input = discord.ui.TextInput(default=event.name, placeholder="Podaj nazwę wydarzenia")
-        self.add_item(discord.ui.Label(text="Nazwa", component=self.name_input))
+    modified_calendars_ids = old_event.calendarIds.union(new_event.calendarIds)
+    logger.info(f"Affected calendars: {modified_calendars_ids}")
+    calendars = fetch_calendars_from_ids(modified_calendars_ids)
 
-        self.datetime_input = discord.ui.TextInput(default=event.datetime, placeholder="Podaj datę i/lub godzinę")
-        self.add_item(discord.ui.Label(text="Data i czas", component=self.datetime_input,
-                                       description="Format: `dd.mm(.yyyy)( hh:mm)` Zamiast `:` można wpisać `.`"))
+    await interaction.response.send_message(f"Wydarzenie *{new_event.name}* zostało zmienione", ephemeral=True)
 
-        self.team_input = discord.ui.TextInput(default=event.team, placeholder="Podaj grupę (np. 1, 3B)",
-                                               required=False)
-        self.add_item(discord.ui.Label(text="Grupa", component=self.team_input))
-
-        self.place_input = discord.ui.TextInput(default=event.place, placeholder="Podaj miejsce wydarzenia",
-                                                required=False)
-        self.add_item(discord.ui.Label(text="Miejsce", component=self.place_input))
-
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        old_event = copy.deepcopy(self.event)
-        user_loggers = get_logger(LogType.USER, interaction.user.name)
-        user_loggers.info(f"Editing event {self.event.id}")
-        logger = get_logger(LogType.EVENT, self.event.id)
-        logger.info(f"{interaction.user.name} is editing this event")
-
-        self.event.name = self.name_input.value
-        self.event.set_datetime(self.datetime_input.value)
-        self.event.team = self.team_input.value
-        self.event.place = self.place_input.value
-        self.event.calendarIds = set(map(lambda x: int(x), self.calendar_select.values))
-        self.event.update_calendar_connections()
-        logger.debug(f"Old event: {repr(old_event)}")
-        logger.debug(f"New event: {repr(self.event)}")
-
-        if old_event == self.event:
-            logger.info("No changes were made to the event")
-            await interaction.response.send_message("Nie wprowadzono zmian do wydarzenia", ephemeral=True)
-            return
-
-        self.event.update()
-        create_event_update_message(self.event, old_event)
-
-        modified_calendars_ids = old_event.calendarIds.union(self.event.calendarIds)
-        logger.info(f"Affected calendars: {modified_calendars_ids}")
-        calendars = fetch_calendars_from_ids(modified_calendars_ids)
-
-        await interaction.response.send_message(f"Wydarzenie *{self.event.name}* zostało zmienione", ephemeral=True)
-
-        for calendar in calendars:
-            await update_calendar(interaction.guild, calendar, interaction.user.name)
+    for calendar in calendars:
+        await update_calendar(interaction.guild, calendar, interaction.user.name)
 
 
 def create_event_update_message(new_event: Event, old_event: Event):
