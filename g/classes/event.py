@@ -26,8 +26,8 @@ class Event:
                 self.calendarIds.add(calendar_id[0])
 
     def __repr__(self):
-        return (f"Event[{self.id}]: {self.name} team[{self.team}] place[{self.place}] {self.timestamp} {self.wholeDay} "
-                f"in calendars {self.calendarIds}")
+        return (f"Event{f"[{self.id}]" if self.id else ""}: {self.name} team[{self.team}] place[{self.place}]"
+                f" {self.timestamp} {self.wholeDay} in calendars {self.calendarIds}")
 
     def __str__(self):
         message = ""
