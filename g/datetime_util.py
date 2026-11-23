@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 
 def is_today(check: datetime) -> bool:
-    return check.date() == datetime.now()
+    return check.date() == datetime.now().date()
 
 
 def is_tomorrow(check: datetime) -> bool:
